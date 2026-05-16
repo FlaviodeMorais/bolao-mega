@@ -105,6 +105,38 @@ function criarPixMP(valor, concurso, cotas, firstName, lastName) {
   }
 }
 
+// ── Webhook Mercado Pago ──
+function doPost(e) {
+  try {
+    const body = JSON.parse(e.postData.contents);
+    if (body.type === 'payment') {
+      const id   = String(body.data.id);
+      const resp = UrlFetchApp.fetch(`https://api.mercadopago.com/v1/payments/${id}`, {
+        headers: { 'Authorization': `Bearer ${MP_TOKEN}` },
+        muteHttpExceptions: true
+      });
+      const pag = JSON.parse(resp.getContentText());
+      if (pag && pag.status === 'approved') {
+        atualizarStatus(id, 'Pago ✅');
+      }
+    }
+    return ContentService.createTextOutput('OK');
+  } catch (err) {
+    return ContentService.createTextOutput('Error: ' + err.message);
+  }
+}
+
+function atualizarStatus(paymentId, novoStatus) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  const rows  = sheet.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][6]) === paymentId) {
+      sheet.getRange(i + 1, 6).setValue(novoStatus);
+      break;
+    }
+  }
+}
+
 // ── Verificação automática de pagamentos (gatilho a cada 5 min) ──
 function verificarPagamentosPendentes() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
