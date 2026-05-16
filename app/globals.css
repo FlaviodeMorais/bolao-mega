@@ -403,6 +403,30 @@ hr { border: none; border-top: 1px solid var(--divider); margin: 20px 0; }
 }
 .pay-timer strong { font-weight: 700; }
 
+/* Recibo */
+.receipt-card {
+  border: 1px solid #e0e0e0;
+  border-bottom: 3px solid var(--caixa-amber);
+  border-radius: 4px; padding: 14px 18px; margin-bottom: 28px;
+}
+.receipt-pix-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.receipt-meio    { font-size: 12px; color: #666; }
+.pix-logo        { font-size: 15px; font-weight: 900; color: #32BCAD; letter-spacing: -0.5px; }
+.receipt-grid    { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; }
+.receipt-lbl     { font-size: 12px; color: var(--caixa-amber); }
+.receipt-val     { font-size: 12px; font-weight: 700; color: var(--caixa-amber); }
+.receipt-situacao { font-size: 12px; font-weight: 700; color: #333; }
+.receipt-situacao.pago { color: var(--mega-green); }
+
+/* Step wrap fix */
+.pay-step-wrap { display: contents; }
+
+/* Confirmed */
+.pay-confirmed       { text-align: center; padding: 20px 0 28px; }
+.pay-confirmed-icon  { font-size: 52px; margin-bottom: 12px; }
+.pay-confirmed-title { font-size: 22px; font-weight: 700; color: var(--mega-green); margin-bottom: 8px; }
+.pay-confirmed-sub   { font-size: 14px; color: var(--on-surface-2); }
+
 /* Fechar */
 .pay-fechar {
   display: block; margin: 0 auto;

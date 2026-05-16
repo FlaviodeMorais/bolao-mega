@@ -20,9 +20,13 @@ export default function Home() {
   const [enviando, setEnviando]   = useState(false)
   const [relogio, setRelogio]     = useState('')
   const [countdown, setCountdown] = useState('')
-  const [payTimer, setPayTimer]   = useState('')
+  const [payTimer, setPayTimer]     = useState('')
+  const [payStep, setPayStep]       = useState(0)
+  const [payStatus, setPayStatus]   = useState<'aguardando'|'pago'|'unknown'>('aguardando')
+  const [payCreated, setPayCreated] = useState('')
   const pollRef    = useRef<ReturnType<typeof setInterval> | null>(null)
   const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null)
+  const statusRef  = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const concurso = concursoAtivo?.concurso
 
@@ -138,6 +142,23 @@ export default function Home() {
         if (secs <= 0) clearInterval(timerRef.current!)
       }, 1000)
       setPayTimer('30:00')
+      setPayStep(0)
+      setPayStatus('aguardando')
+      setPayCreated(new Date().toLocaleString('pt-BR'))
+      // Poll status a cada 5s
+      if (statusRef.current) clearInterval(statusRef.current)
+      const pid = pixRes.paymentId
+      statusRef.current = setInterval(async () => {
+        const r = await fetch(`/api/status?paymentId=${pid}`)
+        const d = await r.json()
+        if (d.status === 'pago') {
+          setPayStatus('pago')
+          setPayStep(2)
+          clearInterval(statusRef.current!)
+          clearInterval(timerRef.current!)
+          recarregar()
+        }
+      }, 5000)
     } finally {
       setEnviando(false)
     }
@@ -294,47 +315,91 @@ export default function Home() {
         <div className="pay-overlay">
           <div className="pay-box">
 
-            {/* Stepper Caixa */}
+            {/* Stepper */}
             <div className="pay-stepper">
-              <div className="pay-step-item active">
-                <div className="pay-dot active">◆</div>
-                <div className="pay-step-label">Aguardando<br/>Pagamento Pix</div>
+              {[
+                'Aguardando\nPagamento Pix',
+                'Em\nProcessamento',
+                'Pagamento\nConfirmado',
+              ].map((label, i) => (
+                <div key={i} className="pay-step-wrap">
+                  {i > 0 && <div className={`pay-line${payStep >= i ? ' done' : ''}`} />}
+                  <div className="pay-step-item" key={`item-${i}`}>
+                    <div className={`pay-dot${payStep >= i ? ' active' : ''}${payStep === i ? ' current' : ''}`}>
+                      {payStep > i ? '✓' : payStep === i ? '◆' : ''}
+                    </div>
+                    {(payStep === i || i === 0) && (
+                      <div className="pay-step-label">{label.split('\n').map((l,k) => <span key={k}>{l}<br/></span>)}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Recibo */}
+            <div className="receipt-card">
+              <div className="receipt-pix-row">
+                <span className="receipt-meio">Meio de pagamento:</span>
+                <span className="pix-logo">◈ pix</span>
               </div>
-              <div className="pay-line" />
-              <div className="pay-step-item">
-                <div className="pay-dot" />
-              </div>
-              <div className="pay-line" />
-              <div className="pay-step-item">
-                <div className="pay-dot" />
+              <div className="receipt-grid">
+                <div>
+                  <span className="receipt-lbl">Número da Compra: </span>
+                  <span className="receipt-val">{pix.paymentId.substring(0,10)}</span>
+                </div>
+                <div>
+                  <span className="receipt-lbl">ID: </span>
+                  <span className="receipt-val">{pix.paymentId}</span>
+                </div>
+                <div>
+                  <span className="receipt-lbl">Situação da Compra: </span>
+                  <span className={`receipt-situacao${payStatus === 'pago' ? ' pago' : ''}`}>
+                    {payStatus === 'pago' ? 'Pagamento Confirmado' : 'Em Processamento'}
+                  </span>
+                </div>
+                <div>
+                  <span className="receipt-lbl">Data da Compra: </span>
+                  <span className="receipt-val">{payCreated}</span>
+                </div>
               </div>
             </div>
 
-            {/* QR Code */}
-            <div className="pay-scan-title">Escaneie o código a seguir</div>
-            <img className="pay-qr" src={`data:image/png;base64,${pix.qrCodeBase64}`} alt="QR Code PIX" />
+            {/* QR Code — só mostra se aguardando */}
+            {payStatus !== 'pago' && (
+              <>
+                <div className="pay-scan-title">Escaneie o código a seguir</div>
+                <img className="pay-qr" src={`data:image/png;base64,${pix.qrCodeBase64}`} alt="QR Code PIX" />
+                <div className="pay-copy-title">Ou copie este código para efetuar o pagamento</div>
+                <div className="pay-instruction">
+                  No seu internet Banking ou app escolha pagamento via pix.
+                  Depois copie e cole o seguinte código
+                </div>
+                <div className="pay-code-row">
+                  <div className="pay-code">{pix.pixCode}</div>
+                  <button type="button" className="pay-copy-btn" onClick={copiarPix}>📋 Copiar código</button>
+                </div>
+                {payTimer && (
+                  <div className="pay-timer">⊙ Você tem <strong>{payTimer} minutos</strong> para efetuar o pagamento</div>
+                )}
+              </>
+            )}
 
-            {/* Copy */}
-            <div className="pay-copy-title">Ou copie este código para efetuar o pagamento</div>
-            <div className="pay-instruction">
-              No seu internet Banking ou app escolha pagamento via pix.
-              Depois copie e cole o seguinte código
-            </div>
-            <div className="pay-code-row">
-              <div className="pay-code">{pix.pixCode}</div>
-              <button type="button" className="pay-copy-btn" onClick={copiarPix}>
-                📋 Copiar código
-              </button>
-            </div>
-
-            {/* Timer */}
-            {payTimer && (
-              <div className="pay-timer">
-                ⊙ Você tem <strong>{payTimer} minutos</strong> para efetuar o pagamento
+            {/* Confirmado */}
+            {payStatus === 'pago' && (
+              <div className="pay-confirmed">
+                <div className="pay-confirmed-icon">✅</div>
+                <div className="pay-confirmed-title">Pagamento Confirmado!</div>
+                <div className="pay-confirmed-sub">
+                  {pix.nome} · Cotas: {pix.cotas.join(', ')} · R$ {pix.total.toFixed(2).replace('.', ',')}
+                </div>
               </div>
             )}
 
-            <button type="button" className="pay-fechar" onClick={() => { setPix(null); if(timerRef.current) clearInterval(timerRef.current) }}>
+            <button type="button" className="pay-fechar" onClick={() => {
+              setPix(null)
+              if (timerRef.current) clearInterval(timerRef.current)
+              if (statusRef.current) clearInterval(statusRef.current)
+            }}>
               Fechar
             </button>
           </div>
