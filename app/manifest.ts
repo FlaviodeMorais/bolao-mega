@@ -13,7 +13,7 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ['games', 'finance'],
     icons: [
       { src: '/icon', sizes: '512x512', type: 'image/png', purpose: 'any' },
-      { src: '/apple-icon', sizes: '180x180', type: 'image/png', purpose: 'any maskable' },
+      { src: '/apple-icon', sizes: '180x180', type: 'image/png', purpose: 'maskable' },
     ],
   }
 }
