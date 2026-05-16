@@ -175,6 +175,11 @@ export default function AdminPage() {
             {/* BOLÕES */}
             <div className={styles.panel}>
               <div className={styles.panelTitle}>🎰 Bolões</div>
+              {boloes.length === 0 && !showCreate && (
+                <div className={styles.empty}>
+                  Nenhum bolão criado. Clique em &quot;+ Novo Bolão&quot; para começar.
+                </div>
+              )}
               {boloes.map(b => (
                 <div key={b.id} className={`${styles.bolaoCard} ${bolaoAtual?.id === b.id ? styles.selected : ''}`}
                   onClick={() => setBolaoAtual(b)}>
