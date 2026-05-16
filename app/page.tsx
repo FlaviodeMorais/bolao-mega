@@ -150,9 +150,23 @@ export default function Home() {
           {concursoAtivo?.concurso && (
             <div className="ativo-banner">
               <div className="ativo-label">🎯 Concurso do Bolão</div>
-              <div className="ativo-num">#{concursoAtivo.concurso}</div>
-              {concursoAtivo.data && <div className="ativo-info">📅 {concursoAtivo.data}</div>}
-              {concursoAtivo.premio && <div className="ativo-premio">🏆 Prêmio estimado: {concursoAtivo.premio}</div>}
+              <div className="ativo-row">
+                <div>
+                  <div className="ativo-num">#{concursoAtivo.concurso}</div>
+                  {concursoAtivo.data   && <div className="ativo-info">📅 {concursoAtivo.data}</div>}
+                  {concursoAtivo.premio && <div className="ativo-premio">🏆 {concursoAtivo.premio}</div>}
+                </div>
+                <div className="ativo-stats">
+                  <div className="ativo-stat">
+                    <div className="ativo-stat-val">{disp}/20</div>
+                    <div className="ativo-stat-lbl">COTAS LIVRES</div>
+                  </div>
+                  <div className="ativo-stat">
+                    <div className="ativo-stat-val">{participantes.length}</div>
+                    <div className="ativo-stat-lbl">PARTICIPANTES</div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 

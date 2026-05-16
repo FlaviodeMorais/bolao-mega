@@ -152,7 +152,7 @@ input:focus { border-color: var(--amarelo); box-shadow: 0 0 8px rgba(212,160,23,
 
 /* COTAS */
 .cotas-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; margin-bottom: 4px; }
-.cota { background: #0D0F0A; border: 1px solid var(--borda); border-radius: 2px; padding: 10px 4px; text-align: center; cursor: pointer; transition: all 0.15s; user-select: none; }
+.cota { background: #0D0F0A; border: 1px solid var(--borda); border-radius: 2px; padding: 10px 4px; text-align: center; cursor: pointer; transition: all 0.15s; -webkit-user-select: none; user-select: none; }
 .cota.ativo  { background: var(--amarelo); border-color: var(--amarelo); box-shadow: 0 0 10px rgba(212,160,23,0.4); }
 .cota.ocupada { background: #1a0a0a; border-color: var(--laranja); opacity: 0.6; cursor: not-allowed; }
 .c-num { font-family: 'Share Tech Mono', monospace; font-size: 15px; color: var(--areia); display: block; letter-spacing: 1px; }
@@ -190,11 +190,16 @@ input:focus { border-color: var(--amarelo); box-shadow: 0 0 8px rgba(212,160,23,
 hr { border: none; border-top: 1px solid #2A3520; margin: 20px 0; }
 
 /* ATIVO BANNER */
-.ativo-banner { background: #0D1A0D; border: 1px solid var(--amarelo); border-radius: 2px; padding: 12px 16px; margin-bottom: 16px; }
-.ativo-label  { font-family: 'Share Tech Mono', monospace; font-size: 9px; letter-spacing: 2px; color: #8B7355; text-transform: uppercase; }
-.ativo-num    { font-size: 24px; font-weight: 700; color: var(--amarelo); letter-spacing: 3px; }
-.ativo-info   { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--areia); margin-top: 2px; }
-.ativo-premio { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--verde-ok); margin-top: 3px; letter-spacing: 1px; }
+.ativo-banner    { background: #0D1A0D; border: 1px solid var(--amarelo); border-radius: 2px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 0 16px rgba(212,160,23,0.1); }
+.ativo-label     { font-family: 'Share Tech Mono', monospace; font-size: 9px; letter-spacing: 2px; color: #8B7355; text-transform: uppercase; margin-bottom: 8px; }
+.ativo-row       { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.ativo-num       { font-size: 26px; font-weight: 700; color: var(--amarelo); letter-spacing: 3px; }
+.ativo-info      { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--areia); margin-top: 3px; }
+.ativo-premio    { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--verde-ok); margin-top: 3px; letter-spacing: 1px; }
+.ativo-stats     { display: flex; gap: 16px; flex-shrink: 0; }
+.ativo-stat      { text-align: center; }
+.ativo-stat-val  { font-size: 20px; font-weight: 700; color: var(--amarelo); font-family: 'Oswald', sans-serif; }
+.ativo-stat-lbl  { font-family: 'Share Tech Mono', monospace; font-size: 8px; color: #8B7355; letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
 
 /* PARTICIPANTES */
 .p-box { background: #0D0F0A; border: 1px solid var(--borda); border-radius: 2px; padding: 12px; margin-bottom: 16px; }
