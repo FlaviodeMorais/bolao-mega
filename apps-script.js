@@ -244,7 +244,10 @@ function getTakenCotas(sheet, concurso) {
   const taken = [];
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][1]).trim() === concurso) {
-      String(rows[i][3]).split(',').forEach(c => { const t = c.trim(); if (t) taken.push(t); });
+      String(rows[i][3]).split(',').forEach(c => {
+        const t = c.trim();
+        if (t) taken.push(String(parseInt(t)).padStart(2, '0'));
+      });
     }
   }
   return [...new Set(taken)];
