@@ -68,6 +68,40 @@ function doGet(e) {
     });
   }
 
+  // action === 'list': retorna participantes do concurso
+  if (action === 'list') {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    const rows  = sheet.getDataRange().getValues();
+    const participantes = [];
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][1]).trim() === concurso) {
+        participantes.push({
+          nome:   rows[i][2],
+          cotas:  rows[i][3],
+          total:  rows[i][4],
+          status: rows[i][5]
+        });
+      }
+    }
+    return jsonOut({ success: true, participantes: participantes });
+  }
+
+  // action === 'confirmar': marca pagamento como confirmado (admin)
+  if (action === 'confirmar') {
+    const senha = (e.parameter.senha || '').trim();
+    const nome  = (e.parameter.nome  || '').trim();
+    if (senha !== 'MEGA2026') return jsonOut({ success: false, error: 'Senha incorreta.' });
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    const rows  = sheet.getDataRange().getValues();
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][1]).trim() === concurso && String(rows[i][2]).trim() === nome) {
+        sheet.getRange(i + 1, 6).setValue('Pago ✅');
+        return jsonOut({ success: true });
+      }
+    }
+    return jsonOut({ success: false, error: 'Participante não encontrado.' });
+  }
+
   // action === 'get': retorna cotas ocupadas
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   const taken = getTakenCotas(sheet, concurso);
