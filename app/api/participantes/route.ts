@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { concurso, nome, cotas, total, mp_payment_id, pix_code } = body
+  const { concurso, nome, telefone, cotas, total, mp_payment_id, pix_code } = body
 
   // Verifica conflitos
   const { data: existing } = await supabase
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('participantes')
-    .insert({ concurso, nome, cotas, total, mp_payment_id, pix_code, status: 'aguardando' })
+    .insert({ concurso, nome, telefone, cotas, total, mp_payment_id, pix_code, status: 'aguardando' })
     .select()
     .single()
 

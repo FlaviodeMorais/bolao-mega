@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     if (pagamento?.status === 'approved') {
       const { data: part } = await supabase
         .from('participantes')
-        .select('nome, cotas, total, concurso')
+        .select('nome, cotas, total, concurso, telefone')
         .eq('mp_payment_id', paymentId)
         .single()
 
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
         .eq('mp_payment_id', paymentId)
 
       if (part) {
-        await notificarPagamento(part.nome, part.cotas, part.concurso, Number(part.total))
+        await notificarPagamento(part.nome, part.cotas, part.concurso, Number(part.total), part.telefone)
       }
     }
 

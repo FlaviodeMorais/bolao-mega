@@ -23,6 +23,13 @@ function toGroup(text: string) {
   return send('messages/text', { to: GROUP_ID, body: text })
 }
 
+function toNumber(telefone: string, text: string) {
+  if (!telefone) return
+  const number = telefone.replace(/\D/g, '')
+  const to = number.startsWith('55') ? `${number}@s.whatsapp.net` : `55${number}@s.whatsapp.net`
+  return send('messages/text', { to, body: text })
+}
+
 export async function notificarInscricao(nome: string, cotas: string[], concurso: number, total: number) {
   await toGroup(
     `✅ *NOVA INSCRIÇÃO*\n\n` +
@@ -34,15 +41,26 @@ export async function notificarInscricao(nome: string, cotas: string[], concurso
   )
 }
 
-export async function notificarPagamento(nome: string, cotas: string[], concurso: number, total: number) {
-  await toGroup(
+export async function notificarPagamento(nome: string, cotas: string[], concurso: number, total: number, telefone?: string) {
+  const msg =
     `💚 *PAGAMENTO CONFIRMADO*\n\n` +
     `👤 *${nome}*\n` +
     `🎟️ Cotas: ${cotas.join(', ')}\n` +
     `💰 R$ ${total.toFixed(2).replace('.', ',')}\n` +
     `🎯 Concurso: #${concurso}\n\n` +
     `_Boa sorte! 🍀_`
-  )
+
+  await toGroup(msg)
+
+  if (telefone) {
+    await toNumber(telefone,
+      `✅ *Seu pagamento foi confirmado!*\n\n` +
+      `🎟️ Cotas: *${cotas.join(', ')}*\n` +
+      `💰 R$ ${total.toFixed(2).replace('.', ',')}\n` +
+      `🎯 Concurso: #${concurso}\n\n` +
+      `Boa sorte! 🍀`
+    )
+  }
 }
 
 export async function notificarResultado(concurso: number, numeros: string[], premio: string) {

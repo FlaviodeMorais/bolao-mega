@@ -12,6 +12,7 @@ interface PixData { pixCode: string; qrCodeBase64: string; paymentId: string; fo
 
 export default function Home() {
   const [nome, setNome]           = useState('')
+  const [telefone, setTelefone]   = useState('')
   const [cotasOcupadas, setCotasOcupadas]  = useState<string[]>([])
   const [selecionadas, setSelecionadas]    = useState<string[]>([])
   const [participantes, setParticipantes]  = useState<Participante[]>([])
@@ -93,9 +94,10 @@ export default function Home() {
   }
 
   async function confirmar() {
-    if (!nome.trim())         { alert('⚠️ Informe seu nome!'); return }
-    if (!concurso)            { alert('⚠️ Nenhum concurso ativo. Aguarde o admin.'); return }
-    if (!selecionadas.length) { alert('⚠️ Selecione ao menos uma cota!'); return }
+    if (!nome.trim())            { alert('⚠️ Informe seu nome!'); return }
+    if (!telefone.trim() || telefone.replace(/\D/g, '').length < 11) { alert('⚠️ Informe seu WhatsApp com DDD!'); return }
+    if (!concurso)               { alert('⚠️ Nenhum concurso ativo. Aguarde o admin.'); return }
+    if (!selecionadas.length)    { alert('⚠️ Selecione ao menos uma cota!'); return }
 
     setEnviando(true)
     try {
@@ -115,6 +117,7 @@ export default function Home() {
         body: JSON.stringify({
           concurso: parseInt(concurso),
           nome: nome.trim(),
+          telefone: '55' + telefone.replace(/\D/g, ''),
           cotas: selecionadas.sort(),
           total,
           mp_payment_id: pixRes.paymentId,
@@ -128,7 +131,7 @@ export default function Home() {
       const nomeSalvo   = nome.trim()
       const totalSalvo  = cotasSalvas.length * VALOR_COTA
       setPix({ ...pixRes, nome: nomeSalvo, cotas: cotasSalvas, total: totalSalvo })
-      setNome('')
+      setNome(''); setTelefone('')
       setSelecionadas([])
       recarregar()
       // Inicia timer de 30 min
@@ -240,7 +243,24 @@ export default function Home() {
 
           <div className="field">
             <label className="field-label">// Nome completo *</label>
-            <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="NOME COMPLETO" />
+            <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome completo" />
+          </div>
+
+          <div className="field">
+            <label className="field-label">WhatsApp (com DDD) *</label>
+            <input
+              type="tel"
+              value={telefone}
+              onChange={e => {
+                const v = e.target.value.replace(/\D/g, '').slice(0, 11)
+                const f = v.length <= 2 ? v
+                  : v.length <= 7  ? `(${v.slice(0,2)}) ${v.slice(2)}`
+                  : `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`
+                setTelefone(f)
+              }}
+              placeholder="(19) 99999-9999"
+              inputMode="numeric"
+            />
           </div>
 
           <div className="field">
