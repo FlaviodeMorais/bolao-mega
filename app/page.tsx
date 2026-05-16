@@ -8,7 +8,7 @@ interface Participante {
   id: string; nome: string; cotas: string[]; total: number; status: string
 }
 interface ConcursoAtivo { concurso: string; data: string; premio: string }
-interface PixData { pixCode: string; qrCodeBase64: string; paymentId: string; fonte: string }
+interface PixData { pixCode: string; qrCodeBase64: string; paymentId: string; fonte: string; nome: string; cotas: string[]; total: number }
 
 export default function Home() {
   const [nome, setNome]           = useState('')
@@ -98,7 +98,10 @@ export default function Home() {
 
       if (reg.error) { alert('⚠️ ' + reg.error); return }
 
-      setPix(pixRes)
+      const cotasSalvas = [...selecionadas].sort()
+      const nomeSalvo   = nome.trim()
+      const totalSalvo  = cotasSalvas.length * VALOR_COTA
+      setPix({ ...pixRes, nome: nomeSalvo, cotas: cotasSalvas, total: totalSalvo })
       setNome('')
       setSelecionadas([])
       recarregar()
@@ -237,10 +240,10 @@ export default function Home() {
         <div className="modal-overlay ativo">
           <div className="modal-box">
             <div className="modal-titulo">🎟️ QR Code PIX Gerado</div>
-            <div className="modal-nome">{nome || 'Participante'}</div>
-            <div className="modal-cotas">Cotas: {selecionadas.join(', ')}</div>
+            <div className="modal-nome">{pix.nome}</div>
+            <div className="modal-cotas">Cotas: {pix.cotas.join(', ')}</div>
             <img className="modal-qr" src={`data:image/png;base64,${pix.qrCodeBase64}`} alt="QR Code PIX" />
-            <div className="modal-total">R$ {total.toFixed(2).replace('.', ',')}</div>
+            <div className="modal-total">R$ {pix.total.toFixed(2).replace('.', ',')}</div>
             <div className="modal-pix-label">// Pix Copia e Cola</div>
             <div className="modal-pix-code">{pix.pixCode}</div>
             <button type="button" className="btn-copiar" onClick={copiarPix}>📋 COPIAR CÓDIGO PIX</button>
