@@ -482,7 +482,7 @@
     <div class="modal-pix-code" id="mQrCode"></div>
     <button type="button" class="btn-copiar" onclick="copiarPix()">📋 COPIAR CÓDIGO PIX</button>
     <button type="button" class="btn-fechar" onclick="fecharModal()">✖ FECHAR</button>
-    <div class="modal-aviso">⏰ Pague até 12:00 da data do concurso.<br>A confirmação é automática.</div>
+    <div class="modal-aviso" id="mAviso">⏰ Pague até 12:00 da data do concurso.</div>
   </div>
 </div>
 
@@ -596,7 +596,12 @@
         document.getElementById('mCotas').textContent  = 'Cotas: ' + data.cotas;
         document.getElementById('mTotal').textContent  = data.total;
         document.getElementById('mQrCode').textContent = data.pixCode;
-        document.getElementById('mQrImg').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(data.pixCode);
+        document.getElementById('mQrImg').src = data.qrCodeBase64
+          ? 'data:image/png;base64,' + data.qrCodeBase64
+          : 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(data.pixCode);
+        document.getElementById('mAviso').textContent = data.fonte === 'mp'
+          ? '⏰ Pague até 12:00. Confirmação automática ao receber o PIX.'
+          : '⏰ Pague até 12:00. Informe o comprovante ao admin após pagar.';
         document.getElementById('modalPix').classList.add('ativo');
         buscarCotas(concurso);
         document.getElementById('nome').value = '';
