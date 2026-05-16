@@ -180,7 +180,6 @@ export default function Home() {
           <span className="logo">🍀</span>
           <div className="header-brand">
             <span className="brand">MEGA-SENA</span>
-            <span className="sub-brand">GRUPO MEGA 💯 · Bolão Fechado</span>
           </div>
           <a href="/admin" className="header-link">
             <span className="material-icons-round">settings</span>
@@ -193,7 +192,6 @@ export default function Home() {
           <div className="rule"><span className="ico">📅</span><span><strong>3 sorteios por semana.</strong> Grupo fechado para membros confirmados.</span></div>
           <div className="rule"><span className="ico">⏰</span><span>Pagamento até as <strong>12:00 da data do concurso.</strong></span></div>
           <div className="rule"><span className="ico">🔄</span><span>Cotas não pagas serão redistribuídas ou adquiridas por outro membro.</span></div>
-          <div className="rule"><span className="ico">🚫</span><span>Membro que <strong>não participar das rodadas</strong> será <strong>eliminado.</strong></span></div>
         </div>
 
         {concursoAtivo?.concurso && (
