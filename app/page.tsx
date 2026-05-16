@@ -144,10 +144,13 @@ export default function Home() {
       <div className="page-wrap">
         <div className="site-header">
           <span className="logo">🍀</span>
-          <div>
-            <span className="brand">GRUPO MEGA 💯</span>
-            <span className="sub-brand">Bolão Mega-Sena · Grupo Fechado</span>
+          <div className="header-brand">
+            <span className="brand">mega-sena</span>
+            <span className="sub-brand">GRUPO MEGA 💯 · Bolão Fechado</span>
           </div>
+          <a href="/admin" className="header-link">
+            <span className="material-icons-round">settings</span>
+          </a>
         </div>
 
         <div className="rules-box rules-box-page">
