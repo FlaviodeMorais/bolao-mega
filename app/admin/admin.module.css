@@ -1,0 +1,52 @@
+.loginWrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0D0F0A; }
+.loginBox  { background: #1A1C14; border: 2px solid #D4A017; border-radius: 4px; padding: 40px; width: 320px; text-align: center; }
+.loginTitle { font-family: 'Oswald', sans-serif; font-size: 22px; font-weight: 700; color: #D4A017; letter-spacing: 4px; margin-bottom: 4px; }
+.loginSub  { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #8B7355; letter-spacing: 2px; margin-bottom: 24px; }
+.loginInput { width: 100%; padding: 12px 14px; background: #0D0F0A; border: 1px solid #4E6233; border-radius: 2px; font-family: 'Share Tech Mono', monospace; font-size: 14px; color: #E8D8B0; outline: none; letter-spacing: 2px; text-align: center; margin-bottom: 8px; }
+.loginErr  { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #C0551A; margin-bottom: 8px; }
+.loginBtn  { width: 100%; padding: 14px; background: #D4A017; color: #0D0D0D; border: none; border-radius: 2px; font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 3px; cursor: pointer; }
+
+.wrap   { min-height: 100vh; background: #0D0F0A; padding: 24px; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid #2A3520; padding-bottom: 16px; }
+.title  { font-family: 'Oswald', sans-serif; font-size: 22px; font-weight: 700; color: #D4A017; letter-spacing: 3px; }
+.linkForm { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #8B7355; text-decoration: none; letter-spacing: 2px; }
+.linkForm:hover { color: #C8B88A; }
+
+.statsGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.statCard  { background: #1A1C14; border: 1px solid #2A3520; border-radius: 2px; padding: 16px; }
+.statLabel { font-family: 'Share Tech Mono', monospace; font-size: 9px; letter-spacing: 2px; color: #8B7355; text-transform: uppercase; margin-bottom: 6px; }
+.statVal   { font-family: 'Oswald', sans-serif; font-size: 22px; font-weight: 700; color: #D4A017; }
+.statSub   { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: #C8B88A; margin-top: 3px; }
+
+.grid2  { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.panel  { background: #1A1C14; border: 1px solid #2A3520; border-radius: 4px; padding: 20px; }
+.panelTitle { font-family: 'Share Tech Mono', monospace; font-size: 10px; letter-spacing: 3px; color: #8B7355; text-transform: uppercase; margin-bottom: 14px; }
+
+.btnLoad { padding: 8px 16px; background: #0D0F0A; color: #C8B88A; border: 1px solid #4E6233; border-radius: 2px; font-family: 'Share Tech Mono', monospace; font-size: 10px; letter-spacing: 1px; cursor: pointer; margin-bottom: 12px; }
+.btnLoad:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.concursoCard { background: #0D0F0A; border: 1px solid #333; border-radius: 2px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+.concursoCard.ativo { border-color: #D4A017; }
+.ccNum    { font-family: 'Oswald', sans-serif; font-size: 18px; font-weight: 700; color: #D4A017; }
+.ccData   { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #C8B88A; margin-top: 2px; }
+.ccPremio { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #4CAF50; margin-top: 2px; }
+.btnSel   { padding: 6px 14px; background: #0D1A0D; color: #4CAF50; border: 1px solid #4CAF50; border-radius: 2px; font-family: 'Share Tech Mono', monospace; font-size: 9px; letter-spacing: 1px; cursor: pointer; }
+.btnSelAtivo { background: #D4A017; color: #0D0D0D; border-color: #D4A017; }
+
+.empty { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #4E6233; text-align: center; padding: 16px; }
+
+.partRow     { background: #0D0F0A; border: 1px solid #2A3520; border-radius: 2px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.partInfo    { flex: 1; }
+.partNome    { font-family: 'Oswald', sans-serif; font-size: 15px; color: #E8D8B0; }
+.partCotas   { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #C8B88A; opacity: 0.7; margin-top: 2px; }
+.partTotal   { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #D4A017; margin-top: 2px; }
+.partActions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.statusPago  { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #4CAF50; }
+.statusPend  { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #C0551A; }
+.btnConfirm  { padding: 4px 10px; background: #1a3a1a; color: #4CAF50; border: 1px solid #4CAF50; border-radius: 2px; font-family: 'Share Tech Mono', monospace; font-size: 9px; cursor: pointer; }
+.btnExcluir  { padding: 4px 8px; background: transparent; color: #C0551A; border: 1px solid #C0551A; border-radius: 2px; font-family: 'Share Tech Mono', monospace; font-size: 9px; cursor: pointer; }
+
+@media (max-width: 768px) {
+  .statsGrid { grid-template-columns: repeat(2, 1fr); }
+  .grid2     { grid-template-columns: 1fr; }
+}
