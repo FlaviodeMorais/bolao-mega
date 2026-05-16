@@ -268,6 +268,15 @@
 .btnExcluir:hover { background: rgba(239,68,68,.12); color: #EF4444; border-color: rgba(239,68,68,.40); }
 
 /* ── RESPONSIVE ── */
+.panelFull { grid-column: 1 / -1; }
+
+.histTable { width: 100%; border-collapse: collapse; font-size: 13px; }
+.histTable th { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(255,255,255,.28); padding: 8px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,.07); }
+.histTable td { padding: 12px; color: rgba(255,255,255,.75); border-bottom: 1px solid rgba(255,255,255,.05); cursor: pointer; transition: background .15s; }
+.histTable tr:hover td { background: rgba(0,166,81,.07); }
+.histTable td:first-child { font-weight: 700; color: #00A651; font-family: 'JetBrains Mono', monospace; }
+.histTable tr:last-child td { border-bottom: none; }
+
 @media (max-width: 900px) {
   .statsGrid { grid-template-columns: repeat(2,1fr); }
   .grid2     { grid-template-columns: 1fr; }

@@ -5,6 +5,7 @@ import styles from './admin.module.css'
 interface Participante { id: string; nome: string; cotas: string[]; total: number; status: string }
 interface Concurso    { num: number; data: string; premio: string }
 interface Bolao       { id: string; nome: string; slug: string; valor_cota: number; total_cotas: number; ativo: boolean }
+interface HistoricoItem { concurso: number; total: number; arrecadado: number; pagos: number }
 
 export default function AdminPage() {
   const [logado, setLogado]               = useState(false)
@@ -20,6 +21,8 @@ export default function AdminPage() {
   const [premioAtivo, setPremioAtivo]     = useState('')
   const [proximos, setProximos]           = useState<Concurso[]>([])
   const [loadingCaixa, setLoadingCaixa]   = useState(false)
+  const [historico, setHistorico]         = useState<HistoricoItem[]>([])
+  const [showHistorico, setShowHistorico] = useState(false)
 
   // Criar bolão
   const [showCreate, setShowCreate]       = useState(false)
@@ -36,6 +39,12 @@ export default function AdminPage() {
     })
     if (res.ok) { setLogado(true); setErrLogin(''); carregarBoloes() }
     else setErrLogin('Senha incorreta.')
+  }
+
+  async function carregarHistorico() {
+    const res = await fetch('/api/historico').then(r => r.json())
+    setHistorico(res.historico || [])
+    setShowHistorico(true)
   }
 
   async function carregarBoloes() {
@@ -235,6 +244,38 @@ export default function AdminPage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* HISTÓRICO */}
+          <div className={`${styles.panel} ${styles.panelFull}`}>
+            <div className={styles.panelTitle}>📊 Histórico de Concursos</div>
+            <button type="button" className={styles.btnLoad} onClick={carregarHistorico}>
+              📂 Carregar Histórico
+            </button>
+            {showHistorico && (
+              historico.length === 0
+                ? <div className={styles.empty}>Nenhum histórico encontrado</div>
+                : <table className={styles.histTable}>
+                    <thead>
+                      <tr>
+                        <th>Concurso</th>
+                        <th>Participantes</th>
+                        <th>Pagos</th>
+                        <th>Arrecadado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {historico.map(h => (
+                        <tr key={h.concurso} onClick={() => { setConcursoAtivo(String(h.concurso)); carregarDados() }}>
+                          <td>#{h.concurso}</td>
+                          <td>{h.total}</td>
+                          <td>{h.pagos}</td>
+                          <td>R$ {h.arrecadado.toFixed(2).replace('.', ',')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+            )}
           </div>
 
           {/* PARTICIPANTES */}

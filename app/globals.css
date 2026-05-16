@@ -126,6 +126,18 @@ body::before {
   padding-bottom: var(--s12);
 }
 
+/* ── BOLAO TAG ── */
+.bolao-tag {
+  margin: var(--s3) var(--s4) 0;
+  display: inline-block;
+  background: rgba(0,166,81,.15);
+  border: 1px solid rgba(0,166,81,.30);
+  border-radius: var(--pill);
+  padding: 5px 14px;
+  font-size: 12px; font-weight: 700;
+  color: var(--green); letter-spacing: .5px;
+}
+
 /* ── TOP BAR ── */
 .site-header {
   position: sticky; top: 0; z-index: 100;
