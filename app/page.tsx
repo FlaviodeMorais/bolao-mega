@@ -162,44 +162,48 @@ export default function Home() {
           <div className="rule"><span className="ico">🚫</span><span>Membro que <strong>não participar das rodadas</strong> será <strong>eliminado.</strong></span></div>
         </div>
 
-        <div className="card">
-        <div className="form-body">
-          {concursoAtivo?.concurso && (
-            <div className="mega-card">
-              <div className="mega-header">
-                <span className="mega-clover">🍀</span>
-                <span className="mega-title">mega-sena</span>
-                <span className="mega-concurso">Concurso #{concursoAtivo.concurso}</span>
-              </div>
-              <div className="mega-body">
-                {concursoAtivo.premio && (
-                  <div className="mega-prize">{concursoAtivo.premio}</div>
-                )}
-                <div className="mega-prize-label">Prêmio estimado do concurso #{concursoAtivo.concurso}</div>
-                {concursoAtivo.data && (
-                  <>
-                    <div className="mega-draw-label">Sorteio</div>
-                    <div className="mega-draw-date">{concursoAtivo.data} às 21h00</div>
-                  </>
-                )}
-                {countdown && (
-                  <div className="mega-countdown">⏱ Apostas se encerram em {countdown}</div>
-                )}
-                <div className="mega-divider" />
-                <div className="mega-stats">
-                  <div className="mega-stat">
-                    <div className="mega-stat-val">{disp}/20</div>
-                    <div className="mega-stat-lbl">Cotas Livres</div>
-                  </div>
-                  <div className="mega-stat-sep" />
-                  <div className="mega-stat">
-                    <div className="mega-stat-val">{participantes.length}</div>
-                    <div className="mega-stat-lbl">Participantes</div>
-                  </div>
+        {concursoAtivo?.concurso && (
+          <div className="mega-card">
+            <div className="mega-header">
+              <span className="mega-clover">🍀</span>
+              <span className="mega-title">mega-sena</span>
+              <span className="mega-concurso">Concurso #{concursoAtivo.concurso}</span>
+            </div>
+            <div className="mega-body">
+              {concursoAtivo.premio
+                ? <div className="mega-prize">{concursoAtivo.premio}</div>
+                : <div className="mega-prize">—</div>
+              }
+              <div className="mega-prize-label">Prêmio estimado do concurso #{concursoAtivo.concurso}</div>
+              {concursoAtivo.data && (
+                <>
+                  <div className="mega-draw-label">Sorteio</div>
+                  <div className="mega-draw-date">{concursoAtivo.data} às 21h00</div>
+                </>
+              )}
+              {countdown && (
+                <div className="mega-countdown">
+                  Apostas se encerram em <span>{countdown}</span>
+                </div>
+              )}
+              <div className="mega-divider" />
+              <div className="mega-stats">
+                <div className="mega-stat">
+                  <div className="mega-stat-val">{disp}/20</div>
+                  <div className="mega-stat-lbl">Cotas Livres</div>
+                </div>
+                <div className="mega-stat-sep" />
+                <div className="mega-stat">
+                  <div className="mega-stat-val">{participantes.length}</div>
+                  <div className="mega-stat-lbl">Participantes</div>
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
+
+        <div className="card">
+        <div className="form-body">
 
           <div className="sec-title">📋 IDENTIFICAÇÃO DO AGENTE</div>
 
