@@ -27,17 +27,16 @@ export default function AdminPage() {
   }
 
   const carregarDados = useCallback(async () => {
-    const [ca, part] = await Promise.all([
-      fetch('/api/concurso-ativo').then(r => r.json()),
-      concursoAtivo
-        ? fetch(`/api/participantes?concurso=${concursoAtivo}`).then(r => r.json())
-        : Promise.resolve({ participantes: [] }),
-    ])
-    setConcursoAtivo(ca.concurso || '')
+    const ca = await fetch('/api/concurso-ativo').then(r => r.json())
+    const concurso = ca.concurso || ''
+    setConcursoAtivo(concurso)
     setDataAtiva(ca.data || '')
     setPremioAtivo(ca.premio || '')
-    setParticipantes(part.participantes || [])
-  }, [concursoAtivo])
+    if (concurso) {
+      const part = await fetch(`/api/participantes?concurso=${concurso}`).then(r => r.json())
+      setParticipantes(part.participantes || [])
+    }
+  }, [])
 
   useEffect(() => { if (logado) carregarDados() }, [logado, carregarDados])
 
