@@ -591,12 +591,12 @@
     .then(r => r.json())
     .then(data => {
       if (data.success) {
-        pixCodeAtual = data.qrCode;
-        document.getElementById('mNome').textContent  = data.nome;
-        document.getElementById('mCotas').textContent = 'Cotas: ' + data.cotas;
-        document.getElementById('mTotal').textContent = data.total;
-        document.getElementById('mQrCode').textContent = data.qrCode;
-        document.getElementById('mQrImg').src = 'data:image/png;base64,' + data.qrCodeBase64;
+        pixCodeAtual = data.pixCode;
+        document.getElementById('mNome').textContent   = data.nome;
+        document.getElementById('mCotas').textContent  = 'Cotas: ' + data.cotas;
+        document.getElementById('mTotal').textContent  = data.total;
+        document.getElementById('mQrCode').textContent = data.pixCode;
+        document.getElementById('mQrImg').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(data.pixCode);
         document.getElementById('modalPix').classList.add('ativo');
         buscarCotas(concurso);
         document.getElementById('nome').value = '';
