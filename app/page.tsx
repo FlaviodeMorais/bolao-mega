@@ -141,31 +141,25 @@ export default function Home() {
 
   return (
     <>
-      <div className="card">
-        <div className="header">
-          <div className="patch">🎖️</div>
-          <h1>GRUPO MEGA 💯</h1>
-          <div className="sub">OPERAÇÃO MEGA-SENA · SETOR ESPECIAL</div>
-          <div className="classified">⚠ GRUPO FECHADO ⚠</div>
+      <div className="page-wrap">
+        <div className="site-header">
+          <span className="logo">🍀</span>
+          <div>
+            <span className="brand">GRUPO MEGA 💯</span>
+            <span className="sub-brand">Bolão Mega-Sena · Grupo Fechado</span>
+          </div>
         </div>
 
-        <div className="stats">
-          <div className="stat"><div className="s-label">Apostas</div><div className="s-val">100</div></div>
-          <div className="sep" />
-          <div className="stat"><div className="s-label">Cotas</div><div className="s-val">20</div></div>
-          <div className="sep" />
-          <div className="stat"><div className="s-label">Por Cota</div><div className="s-val">R$ 30</div></div>
-        </div>
-
-        <div className="rules-box">
-          <div className="rules-title">🚨 DIRETIVAS DO GRUPO</div>
+        <div className="rules-box rules-box-page">
+          <div className="rules-title">📋 Regras do Grupo</div>
           <div className="rule"><span className="ico">🎯</span><span><strong>100 apostas</strong> por concurso · <strong>20 cotas</strong> de <strong>R$ 30,00</strong> cada.</span></div>
           <div className="rule"><span className="ico">📅</span><span><strong>3 sorteios por semana.</strong> Grupo fechado para membros confirmados.</span></div>
           <div className="rule"><span className="ico">⏰</span><span>Pagamento até as <strong>12:00 da data do concurso.</strong></span></div>
           <div className="rule"><span className="ico">🔄</span><span>Cotas não pagas serão redistribuídas ou adquiridas por outro membro.</span></div>
-          <div className="rule"><span className="ico">🚫</span><span>Membro que <strong>não participar das rodadas</strong> será <strong>eliminado [BAN].</strong></span></div>
+          <div className="rule"><span className="ico">🚫</span><span>Membro que <strong>não participar das rodadas</strong> será <strong>eliminado.</strong></span></div>
         </div>
 
+        <div className="card">
         <div className="form-body">
           {concursoAtivo?.concurso && (
             <div className="mega-card">
@@ -255,7 +249,7 @@ export default function Home() {
             </div>
           </div>
 
-          <button className="btn" onClick={confirmar} disabled={enviando}>
+          <button type="button" className="btn" onClick={confirmar} disabled={enviando}>
             {enviando ? '⏳ GERANDO PIX...' : '🍀 CONFIRMAR MISSÃO'}
           </button>
 
@@ -278,9 +272,10 @@ export default function Home() {
           )}
 
           <div className="footer">
-            <strong>BOA SORTE A TODOS 🤞</strong><br />
-            DÚVIDAS → FALE COM O ADMIN DO GRUPO
+            <strong>Boa sorte a todos! 🍀</strong><br />
+            Dúvidas? Fale com o administrador do grupo.
           </div>
+        </div>
         </div>
       </div>
 
