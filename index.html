@@ -519,16 +519,14 @@
     btn.textContent = '⏳ ENVIANDO...';
     btn.disabled = true;
 
-    fetch(APPS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        concurso: concurso,
-        nome: nome,
-        cotas: selecionadas.sort(),
-        pagamento: pag.value === 'pago' ? 'Pix enviado ✅' : 'Pagará até 12:00 ⏳'
-      })
-    })
+    const params = new URLSearchParams({
+      action:    'submit',
+      concurso:  concurso,
+      nome:      nome,
+      cotas:     selecionadas.sort().join(','),
+      pagamento: pag.value === 'pago' ? 'Pix enviado' : 'Pagará até 12:00'
+    });
+    fetch(`${APPS_URL}?${params}`)
     .then(r => r.json())
     .then(data => {
       if (data.success) {

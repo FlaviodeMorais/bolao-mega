@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git --version)",
+      "Bash(git config *)",
+      "Bash(gh auth *)",
+      "Bash(winget install *)",
+      "PowerShell(winget install --id GitHub.cli --accept-source-agreements --accept-package-agreements)",
+      "PowerShell(choco --version)",
+      "PowerShell(choco install gh -y)",
+      "PowerShell(Get-Command gh -ErrorAction SilentlyContinue)",
+      "PowerShell(refreshenv)",
+      "PowerShell(gh --version)",
+      "PowerShell(Import-Module $env:ChocolateyInstall\\\\helpers\\\\chocolateyProfile.psm1; refreshenv; gh --version)",
+      "WebFetch(domain:flaviodemorais.github.io)",
+      "WebFetch(domain:script.google.com)",
+      "WebFetch(domain:script.googleusercontent.com)"
+    ]
+  }
+}
