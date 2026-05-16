@@ -220,6 +220,18 @@
     letter-spacing: 1px; color: var(--verde2); display: block; margin-top: 2px;
   }
   .cota.ativo .c-lbl { color: rgba(0,0,0,0.55); }
+  .cota.ocupada {
+    background: #1a0a0a; border-color: var(--laranja);
+    opacity: 0.6; cursor: not-allowed;
+  }
+  .cota.ocupada .c-num { color: var(--laranja); }
+  .cota.ocupada .c-lbl { color: var(--laranja); }
+  .disponivel-bar {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; color: var(--areia); letter-spacing: 2px;
+    text-align: right; margin-bottom: 10px; opacity: 0.7;
+  }
+  .disponivel-bar span { color: var(--amarelo); font-weight: 700; }
 
   /* TOTAL */
   .total-bar {
@@ -354,12 +366,18 @@
     </div>
 
     <div class="field">
+      <label class="field-label">// Nº do Concurso *</label>
+      <input type="text" id="concurso" placeholder="Ex: 3201" oninput="carregarCotas()">
+    </div>
+
+    <div class="field">
       <label class="field-label">// Data / Hora do registro</label>
       <div class="datetime-box" id="relogio">--/--/---- · --:--:--</div>
     </div>
 
     <hr>
     <div class="sec-title">🎟️ SELECIONAR COTAS</div>
+    <div class="disponivel-bar" id="dispBar">DISPONÍVEIS: <span id="dispNum">20</span>/20</div>
 
     <div class="cotas-grid" id="cotasGrid"></div>
 
@@ -408,24 +426,73 @@
 </div>
 
 <script>
-  // ── Cotas ──
+  // ── Configuração ──
+  const APPS_URL = 'https://script.google.com/macros/s/AKfycby4rTSqdndbdK_jb14ZCEzpzMh4P1XH85zkZkbFgGM4NnRNoM4lBPV_aWyDx9VFVw1i/exec';
   const VALOR = 30, TOTAL = 20;
+
+  // ── Cotas ──
   const grid = document.getElementById('cotasGrid');
   let selecionadas = [];
+  let cotasOcupadas = [];
+  let debounceTimer = null;
 
   for (let i = 1; i <= TOTAL; i++) {
+    const num = String(i).padStart(2,'0');
     const div = document.createElement('div');
     div.className = 'cota';
-    div.innerHTML = `<span class="c-num">${String(i).padStart(2,'0')}</span><span class="c-lbl">COTA</span>`;
+    div.id = `cota-${num}`;
+    div.innerHTML = `<span class="c-num">${num}</span><span class="c-lbl">COTA</span>`;
     div.addEventListener('click', () => {
-      const idx = selecionadas.indexOf(i);
+      if (div.classList.contains('ocupada')) return;
+      const idx = selecionadas.indexOf(num);
       if (idx > -1) { selecionadas.splice(idx,1); div.classList.remove('ativo'); }
-      else          { selecionadas.push(i);        div.classList.add('ativo');    }
-      const n = selecionadas.length;
-      document.getElementById('total').textContent = 'R$ ' + (n * VALOR).toFixed(2).replace('.',',');
-      document.getElementById('cotasInfo').textContent = `${n} cota${n!==1?'s':''} selecionada${n!==1?'s':''}`;
+      else          { selecionadas.push(num);      div.classList.add('ativo');    }
+      atualizarTotal();
     });
     grid.appendChild(div);
+  }
+
+  function atualizarTotal() {
+    const n = selecionadas.length;
+    document.getElementById('total').textContent = 'R$ ' + (n * VALOR).toFixed(2).replace('.',',');
+    document.getElementById('cotasInfo').textContent = `${n} cota${n!==1?'s':''} selecionada${n!==1?'s':''}`;
+  }
+
+  function atualizarDisponivel(taken) {
+    const disp = TOTAL - taken.length;
+    document.getElementById('dispNum').textContent = disp;
+  }
+
+  function carregarCotas() {
+    clearTimeout(debounceTimer);
+    const concurso = document.getElementById('concurso').value.trim();
+    if (!concurso) return;
+    debounceTimer = setTimeout(() => buscarCotas(concurso), 700);
+  }
+
+  function buscarCotas(concurso) {
+    fetch(`${APPS_URL}?concurso=${encodeURIComponent(concurso)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) return;
+        cotasOcupadas = data.taken || [];
+        selecionadas = selecionadas.filter(c => !cotasOcupadas.includes(c));
+
+        for (let i = 1; i <= TOTAL; i++) {
+          const num = String(i).padStart(2,'0');
+          const el  = document.getElementById(`cota-${num}`);
+          el.classList.remove('ativo','ocupada');
+          if (cotasOcupadas.includes(num)) {
+            el.classList.add('ocupada');
+            el.querySelector('.c-lbl').textContent = 'OCUPADA';
+          } else {
+            el.querySelector('.c-lbl').textContent = 'COTA';
+          }
+        }
+        atualizarTotal();
+        atualizarDisponivel(cotasOcupadas);
+      })
+      .catch(() => {});
   }
 
   // ── Relógio ──
@@ -439,12 +506,48 @@
 
   // ── Confirmação ──
   function confirmar() {
-    const nome = document.getElementById('nome').value.trim();
-    const pag  = document.querySelector('input[name="pag"]:checked');
-    if (!nome)             { alert('⚠️ Informe seu nome completo!'); return; }
+    const nome     = document.getElementById('nome').value.trim();
+    const concurso = document.getElementById('concurso').value.trim();
+    const pag      = document.querySelector('input[name="pag"]:checked');
+
+    if (!nome)              { alert('⚠️ Informe seu nome completo!'); return; }
+    if (!concurso)          { alert('⚠️ Informe o número do concurso!'); return; }
     if (!selecionadas.length){ alert('⚠️ Selecione ao menos uma cota!'); return; }
-    if (!pag)              { alert('⚠️ Informe o status do pagamento!'); return; }
-    alert(`✅ MISSÃO CONFIRMADA!\n\n👤 ${nome}\n🎟️ Cotas: ${selecionadas.sort((a,b)=>a-b).join(', ')}\n💰 Total: R$ ${(selecionadas.length*VALOR).toFixed(2).replace('.',',')}\n💳 ${pag.value === 'pago' ? 'Pix enviado ✅' : 'Pagará até 12:00 ⏳'}`);
+    if (!pag)               { alert('⚠️ Informe o status do pagamento!'); return; }
+
+    const btn = document.querySelector('.btn');
+    btn.textContent = '⏳ ENVIANDO...';
+    btn.disabled = true;
+
+    fetch(APPS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        concurso: concurso,
+        nome: nome,
+        cotas: selecionadas.sort(),
+        pagamento: pag.value === 'pago' ? 'Pix enviado ✅' : 'Pagará até 12:00 ⏳'
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        alert(data.message);
+        buscarCotas(concurso);
+        document.getElementById('nome').value = '';
+        selecionadas = [];
+        document.querySelectorAll('.cota.ativo').forEach(el => el.classList.remove('ativo'));
+        document.querySelector('input[name="pag"]:checked').checked = false;
+        atualizarTotal();
+      } else {
+        alert('⚠️ ' + data.error);
+      }
+    })
+    .catch(() => alert('⚠️ Erro de conexão. Tente novamente.'))
+    .finally(() => {
+      btn.textContent = '🍀 CONFIRMAR MISSÃO';
+      btn.disabled = false;
+    });
   }
 </script>
 </body>
