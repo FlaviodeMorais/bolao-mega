@@ -6,7 +6,10 @@ const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'bolao-mega-se
 export async function verificarSenha(senha: string): Promise<boolean> {
   const hash = process.env.ADMIN_PASSWORD_HASH
   if (!hash) return senha === 'MEGA2026'
-  return bcrypt.compare(senha, hash)
+  if (hash.startsWith('$2b$') || hash.startsWith('$2a$')) {
+    return bcrypt.compare(senha, hash)
+  }
+  return senha === hash
 }
 
 export async function gerarToken(): Promise<string> {
