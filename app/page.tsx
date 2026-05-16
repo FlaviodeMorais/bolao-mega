@@ -179,7 +179,7 @@ export default function Home() {
         <div className="site-header">
           <span className="logo">🍀</span>
           <div className="header-brand">
-            <span className="brand">mega-sena</span>
+            <span className="brand">MEGA-SENA</span>
             <span className="sub-brand">GRUPO MEGA 💯 · Bolão Fechado</span>
           </div>
           <a href="/admin" className="header-link">
@@ -200,7 +200,7 @@ export default function Home() {
           <div className="mega-card">
             <div className="mega-header">
               <span className="mega-clover">🍀</span>
-              <span className="mega-title">mega-sena</span>
+              <span className="mega-title">MEGA-SENA</span>
               <span className="mega-concurso">Concurso #{concursoAtivo.concurso}</span>
             </div>
             <div className="mega-body">
