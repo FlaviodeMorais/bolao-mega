@@ -183,14 +183,16 @@ export default function AdminPage() {
               {boloes.map(b => (
                 <div key={b.id} className={`${styles.bolaoCard} ${bolaoAtual?.id === b.id ? styles.selected : ''}`}
                   onClick={() => setBolaoAtual(b)}>
-                  <div>
+                  <div className={styles.bolaoInfo}>
                     <div className={styles.bolaoNome}>{b.nome}</div>
-                    <div className={styles.bolaoSlug}>/{b.slug}</div>
+                    <div className={styles.bolaoUrl}>
+                      {typeof window !== 'undefined' ? `${window.location.origin}/${b.slug}` : `.../${b.slug}`}
+                    </div>
                   </div>
                   <div className={styles.bolaoActions}>
                     {b.ativo && <span className={styles.bolaoAtivo}>ATIVO</span>}
                     <button type="button" className={styles.btnSel} onClick={e => { e.stopPropagation(); copiarLink(b.slug) }}>
-                      {linkCopiado ? '✓ Copiado' : '🔗 Link'}
+                      {linkCopiado ? '✓ Copiado' : '🔗 Copiar'}
                     </button>
                   </div>
                 </div>

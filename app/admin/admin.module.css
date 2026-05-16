@@ -160,8 +160,13 @@
 }
 .bolaoCard:hover   { border-color: rgba(0,166,81,.28); background: rgba(0,166,81,.06); }
 .bolaoCard.selected { border-color: #00A651; background: rgba(0,166,81,.09); }
+.bolaoInfo  { flex: 1; min-width: 0; }
 .bolaoNome  { font-size: 15px; font-weight: 700; color: rgba(255,255,255,.88); }
-.bolaoSlug  { font-size: 11px; color: rgba(255,255,255,.30); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+.bolaoUrl   {
+  font-size: 11px; color: #00A651; margin-top: 3px;
+  font-family: 'JetBrains Mono', monospace;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .bolaoAtivo {
   font-size: 10px; font-weight: 700; color: #00A651;
   background: rgba(0,166,81,.14); padding: 3px 10px;
