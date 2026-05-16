@@ -19,6 +19,7 @@ export default function Home() {
   const [pix, setPix]             = useState<PixData | null>(null)
   const [enviando, setEnviando]   = useState(false)
   const [relogio, setRelogio]     = useState('')
+  const [countdown, setCountdown] = useState('')
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const concurso = concursoAtivo?.concurso
@@ -39,6 +40,25 @@ export default function Home() {
   useEffect(() => {
     fetch('/api/concurso-ativo').then(r => r.json()).then(setConcursoAtivo)
   }, [])
+
+  // Countdown até o sorteio
+  useEffect(() => {
+    if (!concursoAtivo?.data) return
+    const datePart = concursoAtivo.data.split(' ·')[0]
+    const [dd, mm] = datePart.split('/').map(Number)
+    const year = new Date().getFullYear()
+    const draw = new Date(year, mm - 1, dd, 21, 0, 0)
+    const tick = () => {
+      const diff = draw.getTime() - Date.now()
+      if (diff <= 0) { setCountdown('Apostas encerradas'); return }
+      const h = Math.floor(diff / 3600000)
+      const m = Math.floor((diff % 3600000) / 60000)
+      setCountdown(`${h}h ${m}min`)
+    }
+    tick()
+    const id = setInterval(tick, 30000)
+    return () => clearInterval(id)
+  }, [concursoAtivo?.data])
 
   // Poll de cotas e participantes a cada 10s
   const recarregar = useCallback(async () => {
@@ -148,22 +168,36 @@ export default function Home() {
 
         <div className="form-body">
           {concursoAtivo?.concurso && (
-            <div className="ativo-banner">
-              <div className="ativo-label">🎯 Concurso do Bolão</div>
-              <div className="ativo-row">
-                <div>
-                  <div className="ativo-num">#{concursoAtivo.concurso}</div>
-                  {concursoAtivo.data   && <div className="ativo-info">📅 {concursoAtivo.data}</div>}
-                  {concursoAtivo.premio && <div className="ativo-premio">🏆 {concursoAtivo.premio}</div>}
-                </div>
-                <div className="ativo-stats">
-                  <div className="ativo-stat">
-                    <div className="ativo-stat-val">{disp}/20</div>
-                    <div className="ativo-stat-lbl">COTAS LIVRES</div>
+            <div className="mega-card">
+              <div className="mega-header">
+                <span className="mega-clover">🍀</span>
+                <span className="mega-title">mega-sena</span>
+                <span className="mega-concurso">Concurso #{concursoAtivo.concurso}</span>
+              </div>
+              <div className="mega-body">
+                {concursoAtivo.premio && (
+                  <div className="mega-prize">{concursoAtivo.premio}</div>
+                )}
+                <div className="mega-prize-label">Prêmio estimado do concurso #{concursoAtivo.concurso}</div>
+                {concursoAtivo.data && (
+                  <>
+                    <div className="mega-draw-label">Sorteio</div>
+                    <div className="mega-draw-date">{concursoAtivo.data} às 21h00</div>
+                  </>
+                )}
+                {countdown && (
+                  <div className="mega-countdown">⏱ Apostas se encerram em {countdown}</div>
+                )}
+                <div className="mega-divider" />
+                <div className="mega-stats">
+                  <div className="mega-stat">
+                    <div className="mega-stat-val">{disp}/20</div>
+                    <div className="mega-stat-lbl">Cotas Livres</div>
                   </div>
-                  <div className="ativo-stat">
-                    <div className="ativo-stat-val">{participantes.length}</div>
-                    <div className="ativo-stat-lbl">PARTICIPANTES</div>
+                  <div className="mega-stat-sep" />
+                  <div className="mega-stat">
+                    <div className="mega-stat-val">{participantes.length}</div>
+                    <div className="mega-stat-lbl">Participantes</div>
                   </div>
                 </div>
               </div>
