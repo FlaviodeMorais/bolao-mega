@@ -239,7 +239,6 @@ export default function Home() {
         <div className="card">
         <div className="form-body">
 
-          <div className="sec-title">📋 IDENTIFICAÇÃO DO AGENTE</div>
 
           <div className="field">
             <label className="field-label">// Nome completo *</label>
