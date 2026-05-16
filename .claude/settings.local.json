@@ -14,7 +14,23 @@
       "PowerShell(Import-Module $env:ChocolateyInstall\\\\helpers\\\\chocolateyProfile.psm1; refreshenv; gh --version)",
       "WebFetch(domain:flaviodemorais.github.io)",
       "WebFetch(domain:script.google.com)",
-      "WebFetch(domain:script.googleusercontent.com)"
+      "WebFetch(domain:script.googleusercontent.com)",
+      "WebFetch(domain:www.mercadopago.com.br)",
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "PowerShell(New-Item -ItemType Directory -Path \"c:\\\\Users\\\\MORAIS\\\\Documentos\\\\GitHub\\\\bolao-mega\\\\_legado\" -Force)",
+      "PowerShell(Move-Item \"c:\\\\Users\\\\MORAIS\\\\Documentos\\\\GitHub\\\\bolao-mega\\\\index.html\" \"c:\\\\Users\\\\MORAIS\\\\Documentos\\\\GitHub\\\\bolao-mega\\\\_legado\\\\\")",
+      "PowerShell(Move-Item \"c:\\\\Users\\\\MORAIS\\\\Documentos\\\\GitHub\\\\bolao-mega\\\\apps-script.js\" \"c:\\\\Users\\\\MORAIS\\\\Documentos\\\\GitHub\\\\bolao-mega\\\\_legado\\\\\")",
+      "WebFetch(domain:bolao-mega-zeta.vercel.app)",
+      "WebFetch(domain:www.loteriasonline.caixa.gov.br)",
+      "WebFetch(domain:loteriasonline.caixa.gov.br)",
+      "WebFetch(domain:www.caixa.gov.br)",
+      "Bash(curl -s -L \"https://www.loteriasonline.caixa.gov.br/silce-web/\" -H \"User-Agent: Mozilla/5.0\")",
+      "Bash(Select-String -Pattern \"style|color|font|#[0-9a-fA-F]{3,6}|rgb\\\\\\(\" -AllMatches)",
+      "Bash(Select-Object -First 50)",
+      "PowerShell($response = Invoke-WebRequest -Uri \"https://www.loteriasonline.caixa.gov.br/silce-web/\" -UserAgent \"Mozilla/5.0\" -ErrorAction SilentlyContinue; if \\($response\\) { $response.Content | Select-String -Pattern \"color|font|#[0-9a-fA-F]{6}|rgba?|--\" -AllMatches | Select-Object -First 100 })",
+      "WebFetch(domain:loterias.caixa.gov.br)",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\MORAIS\\\\Documentos\\\\GitHub\\\\bolao-mega\\\\app\\\\api\\\\status\")"
     ]
   }
 }
