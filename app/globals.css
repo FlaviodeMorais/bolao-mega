@@ -306,48 +306,111 @@ hr { border: none; border-top: 1px solid var(--divider); margin: 20px 0; }
 .p-pending { color: var(--warning); font-size: 11px; font-weight: 600; }
 .p-empty   { color: var(--on-surface-3); font-size: 13px; text-align: center; padding: 20px; }
 
-/* ── MODAL PIX (Material Dialog) ── */
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.50); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
-.modal-overlay.ativo { display: flex; }
-.modal-box {
-  background: var(--surface);
-  border-radius: var(--radius-xl);
-  padding: 28px 24px;
-  max-width: 360px; width: 100%;
-  text-align: center;
-  box-shadow: 0 24px 48px rgba(0,0,0,0.20);
-}
-.modal-titulo  { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; color: var(--mega-green); text-transform: uppercase; margin-bottom: 6px; }
-.modal-nome    { font-size: 22px; font-weight: 700; color: var(--on-surface); margin-bottom: 2px; }
-.modal-cotas   { font-size: 13px; color: var(--on-surface-2); margin-bottom: 16px; }
-.modal-qr      { width: 200px; height: 200px; border: 3px solid var(--mega-green); border-radius: var(--radius-md); margin: 0 auto 16px; display: block; }
-.modal-total   { font-size: 36px; font-weight: 900; color: var(--mega-green); margin-bottom: 14px; }
-.modal-pix-label { font-size: 11px; font-weight: 500; color: var(--on-surface-3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-.modal-pix-code {
-  font-size: 10px; color: var(--on-surface-2);
-  background: var(--background); border: 1px solid var(--divider);
-  border-radius: var(--radius-md); padding: 10px;
-  word-break: break-all; margin-bottom: 12px;
-  max-height: 70px; overflow-y: auto; text-align: left;
-}
-.btn-copiar {
-  width: 100%; padding: 14px;
-  background: var(--mega-green); color: #fff;
-  border: none; border-radius: var(--radius-xl);
+/* ── PAYMENT SCREEN (estilo Caixa) ── */
+:root { --caixa-amber: #f5a623; --caixa-blue: #0070cc; }
+
+.pay-overlay {
+  position: fixed; inset: 0;
+  background: #fff; z-index: 200;
+  overflow-y: auto;
   font-family: 'Roboto', sans-serif;
-  font-size: 14px; font-weight: 700; cursor: pointer; margin-bottom: 8px;
-  transition: background 0.2s;
 }
-.btn-copiar:hover { background: var(--mega-green-dark); }
-.btn-fechar {
-  width: 100%; padding: 13px;
+.pay-box {
+  max-width: 600px; margin: 0 auto;
+  padding: 40px 24px 60px;
+}
+
+/* Stepper */
+.pay-stepper {
+  display: flex; align-items: flex-start;
+  justify-content: center; gap: 0;
+  margin-bottom: 40px;
+}
+.pay-step-item {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 8px;
+  flex-shrink: 0;
+}
+.pay-dot {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: transparent;
+}
+.pay-dot.active {
+  background: var(--caixa-amber);
+  color: #fff; font-size: 16px;
+}
+.pay-step-label {
+  font-size: 11px; font-weight: 500;
+  color: var(--caixa-amber); text-align: center;
+  line-height: 1.4; max-width: 80px;
+}
+.pay-line {
+  flex: 1; height: 2px;
+  background: #e0e0e0;
+  margin-top: 16px; min-width: 60px; max-width: 120px;
+}
+
+/* QR Section */
+.pay-scan-title {
+  font-size: 18px; font-weight: 700;
+  color: var(--on-surface); text-align: center;
+  margin-bottom: 24px;
+}
+.pay-qr {
+  display: block; margin: 0 auto 32px;
+  width: 220px; height: 220px;
+}
+
+/* Copy Section */
+.pay-copy-title {
+  font-size: 16px; font-weight: 700;
+  color: var(--on-surface); text-align: center;
+  margin-bottom: 12px;
+}
+.pay-instruction {
+  font-size: 13px; color: var(--caixa-amber);
+  text-align: center; margin-bottom: 16px;
+  line-height: 1.5;
+}
+.pay-code-row {
+  display: flex; gap: 0;
+  border: 1px solid #e0e0e0; border-radius: var(--radius-md);
+  overflow: hidden; margin-bottom: 20px;
+}
+.pay-code {
+  flex: 1; padding: 12px 14px;
+  font-size: 11px; color: #555;
+  word-break: break-all; line-height: 1.4;
+  background: #fafafa;
+}
+.pay-copy-btn {
+  flex-shrink: 0; padding: 12px 20px;
+  background: var(--caixa-amber); color: #fff;
+  border: none; font-family: 'Roboto', sans-serif;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  white-space: nowrap; transition: background 0.2s;
+}
+.pay-copy-btn:hover { background: #e09520; }
+
+/* Timer */
+.pay-timer {
+  text-align: center; font-size: 14px;
+  color: var(--caixa-blue); font-weight: 500;
+  margin-bottom: 24px;
+}
+.pay-timer strong { font-weight: 700; }
+
+/* Fechar */
+.pay-fechar {
+  display: block; margin: 0 auto;
+  padding: 10px 32px;
   background: transparent; color: var(--on-surface-3);
-  border: 1.5px solid var(--divider);
-  border-radius: var(--radius-xl);
+  border: 1px solid #e0e0e0; border-radius: 20px;
   font-family: 'Roboto', sans-serif;
-  font-size: 14px; font-weight: 500; cursor: pointer;
+  font-size: 13px; cursor: pointer;
   transition: all 0.2s;
 }
-.btn-fechar:hover { border-color: var(--error); color: var(--error); }
-.modal-aviso { font-size: 12px; color: var(--on-surface-3); margin-top: 12px; line-height: 1.6; }
-.fonte-mp    { color: var(--mega-green); font-weight: 600; }
+.pay-fechar:hover { border-color: #999; color: #666; }

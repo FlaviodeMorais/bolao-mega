@@ -20,7 +20,9 @@ export default function Home() {
   const [enviando, setEnviando]   = useState(false)
   const [relogio, setRelogio]     = useState('')
   const [countdown, setCountdown] = useState('')
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [payTimer, setPayTimer]   = useState('')
+  const pollRef    = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const concurso = concursoAtivo?.concurso
 
@@ -125,6 +127,17 @@ export default function Home() {
       setNome('')
       setSelecionadas([])
       recarregar()
+      // Inicia timer de 30 min
+      let secs = 30 * 60
+      if (timerRef.current) clearInterval(timerRef.current)
+      timerRef.current = setInterval(() => {
+        secs--
+        const m = String(Math.floor(secs / 60)).padStart(2, '0')
+        const s = String(secs % 60).padStart(2, '0')
+        setPayTimer(`${m}:${s}`)
+        if (secs <= 0) clearInterval(timerRef.current!)
+      }, 1000)
+      setPayTimer('30:00')
     } finally {
       setEnviando(false)
     }
@@ -247,17 +260,8 @@ export default function Home() {
             <div className="t-value">R$ {total.toFixed(2).replace('.', ',')}</div>
           </div>
 
-          <div className="pix-card">
-            <span className="pix-icon">💳</span>
-            <div>
-              <div className="pi-label">// Chave Pix (CPF)</div>
-              <div className="pi-chave">272.105.928-90</div>
-              <div className="pi-prazo">⏰ PRAZO: 12:00 DA DATA DO CONCURSO</div>
-            </div>
-          </div>
-
           <button type="button" className="btn" onClick={confirmar} disabled={enviando}>
-            {enviando ? '⏳ GERANDO PIX...' : '🍀 CONFIRMAR MISSÃO'}
+            {enviando ? '⏳ Gerando pagamento...' : 'Ir para Pagamento'}
           </button>
 
           {participantes.length > 0 && (
@@ -287,22 +291,52 @@ export default function Home() {
       </div>
 
       {pix && (
-        <div className="modal-overlay ativo">
-          <div className="modal-box">
-            <div className="modal-titulo">🎟️ QR Code PIX Gerado</div>
-            <div className="modal-nome">{pix.nome}</div>
-            <div className="modal-cotas">Cotas: {pix.cotas.join(', ')}</div>
-            <img className="modal-qr" src={`data:image/png;base64,${pix.qrCodeBase64}`} alt="QR Code PIX" />
-            <div className="modal-total">R$ {pix.total.toFixed(2).replace('.', ',')}</div>
-            <div className="modal-pix-label">// Pix Copia e Cola</div>
-            <div className="modal-pix-code">{pix.pixCode}</div>
-            <button type="button" className="btn-copiar" onClick={copiarPix}>📋 COPIAR CÓDIGO PIX</button>
-            <button type="button" className="btn-fechar" onClick={() => setPix(null)}>✖ FECHAR</button>
-            <div className={`modal-aviso ${pix.fonte === 'mp' ? 'fonte-mp' : ''}`}>
-              {pix.fonte === 'mp'
-                ? '✅ Pagamento verificado automaticamente pelo Mercado Pago.'
-                : '⏰ Pague até 12:00. Informe o comprovante ao admin após pagar.'}
+        <div className="pay-overlay">
+          <div className="pay-box">
+
+            {/* Stepper Caixa */}
+            <div className="pay-stepper">
+              <div className="pay-step-item active">
+                <div className="pay-dot active">◆</div>
+                <div className="pay-step-label">Aguardando<br/>Pagamento Pix</div>
+              </div>
+              <div className="pay-line" />
+              <div className="pay-step-item">
+                <div className="pay-dot" />
+              </div>
+              <div className="pay-line" />
+              <div className="pay-step-item">
+                <div className="pay-dot" />
+              </div>
             </div>
+
+            {/* QR Code */}
+            <div className="pay-scan-title">Escaneie o código a seguir</div>
+            <img className="pay-qr" src={`data:image/png;base64,${pix.qrCodeBase64}`} alt="QR Code PIX" />
+
+            {/* Copy */}
+            <div className="pay-copy-title">Ou copie este código para efetuar o pagamento</div>
+            <div className="pay-instruction">
+              No seu internet Banking ou app escolha pagamento via pix.
+              Depois copie e cole o seguinte código
+            </div>
+            <div className="pay-code-row">
+              <div className="pay-code">{pix.pixCode}</div>
+              <button type="button" className="pay-copy-btn" onClick={copiarPix}>
+                📋 Copiar código
+              </button>
+            </div>
+
+            {/* Timer */}
+            {payTimer && (
+              <div className="pay-timer">
+                ⊙ Você tem <strong>{payTimer} minutos</strong> para efetuar o pagamento
+              </div>
+            )}
+
+            <button type="button" className="pay-fechar" onClick={() => { setPix(null); if(timerRef.current) clearInterval(timerRef.current) }}>
+              Fechar
+            </button>
           </div>
         </div>
       )}
