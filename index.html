@@ -444,6 +444,40 @@
     font-family: 'Share Tech Mono', monospace; font-size: 12px;
     letter-spacing: 2px; outline: none;
   }
+
+  /* CONCURSO ATIVO BANNER */
+  .ativo-banner {
+    background: #0D1A0D; border: 1px solid var(--amarelo);
+    border-radius: 2px; padding: 10px 14px; margin-bottom: 16px;
+    display: none;
+  }
+  .ativo-banner.visivel { display: block; }
+  .ativo-label { font-family: 'Share Tech Mono'; font-size: 9px; letter-spacing: 2px; color: #8B7355; text-transform: uppercase; }
+  .ativo-num   { font-size: 22px; font-weight: 700; color: var(--amarelo); letter-spacing: 3px; }
+  .ativo-info  { font-family: 'Share Tech Mono'; font-size: 10px; color: var(--areia); margin-top: 2px; }
+  .ativo-premio { font-family: 'Share Tech Mono'; font-size: 11px; color: #4CAF50; margin-top: 3px; letter-spacing: 1px; }
+
+  /* CONCURSO CARDS */
+  .concurso-card {
+    background: #0D0F0A; border: 1px solid #333;
+    border-radius: 2px; padding: 10px 12px; margin-bottom: 6px;
+    display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; transition: border-color 0.2s;
+  }
+  .concurso-card:hover { border-color: var(--amarelo); }
+  .concurso-card.selecionado { border-color: var(--amarelo); background: #12140D; }
+  .cc-num  { font-size: 16px; font-weight: 700; color: var(--amarelo); font-family: 'Oswald'; }
+  .cc-data { font-family: 'Share Tech Mono'; font-size: 10px; color: var(--areia); margin-top: 2px; }
+  .cc-premio { font-family: 'Share Tech Mono'; font-size: 10px; color: #4CAF50; text-align: right; }
+  .btn-selecionar {
+    padding: 5px 12px; font-size: 9px; letter-spacing: 1px;
+    background: #1a3a1a; color: #4CAF50;
+    border: 1px solid #4CAF50; border-radius: 2px;
+    cursor: pointer; font-family: 'Share Tech Mono';
+    margin-left: 10px; white-space: nowrap;
+  }
+  .btn-selecionar.ativo-btn { background: var(--amarelo); color: #0D0D0D; border-color: var(--amarelo); }
+  .admin-sec-title { margin-top: 12px; }
 </style>
 </head>
 <body>
@@ -488,6 +522,14 @@
   <!-- FORM -->
   <div class="form-body">
 
+    <!-- BANNER CONCURSO ATIVO -->
+    <div class="ativo-banner" id="ativoBanner">
+      <div class="ativo-label">🎯 Concurso do Bolão</div>
+      <div class="ativo-num" id="ativoNum"></div>
+      <div class="ativo-info" id="ativoInfo"></div>
+      <div class="ativo-premio" id="ativoPremio"></div>
+    </div>
+
     <div class="sec-title">📋 IDENTIFICAÇÃO DO AGENTE</div>
 
     <div class="field">
@@ -530,8 +572,13 @@
     <hr>
     <button type="button" class="admin-toggle" onclick="toggleAdmin()">🔒 ÁREA DO ADMIN</button>
     <div class="admin-box" id="adminBox">
-      <input type="password" class="admin-senha" id="adminSenha" placeholder="SENHA ADMIN">
-      <div id="adminLista"><div class="p-empty">Informe o concurso e a senha</div></div>
+      <input type="password" class="admin-senha" id="adminSenha" placeholder="SENHA ADMIN" oninput="adminSenhaDigitada()">
+
+      <div class="sec-title admin-sec-title">🎲 PRÓXIMOS CONCURSOS</div>
+      <div id="proximosConcursos"><div class="p-empty">Digite a senha para carregar</div></div>
+
+      <div class="sec-title admin-sec-title">👥 PARTICIPANTES</div>
+      <div id="adminLista"><div class="p-empty">Selecione um concurso acima</div></div>
     </div>
 
     <div class="footer">
@@ -670,6 +717,133 @@
   function toggleAdmin() {
     document.getElementById('adminBox').classList.toggle('ativo');
   }
+
+  // ── Concurso Ativo ──
+  function carregarConcursoAtivo() {
+    fetch(`${APPS_URL}?action=getConcursoAtivo`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && data.concurso) {
+          exibirBannerAtivo(data.concurso, data.data, data.premio);
+          const campo = document.getElementById('concurso');
+          if (!campo.value) {
+            campo.value = data.concurso;
+            carregarCotas();
+          }
+        }
+      }).catch(() => {});
+  }
+
+  function exibirBannerAtivo(numero, data, premio) {
+    document.getElementById('ativoNum').textContent   = `# ${numero}`;
+    document.getElementById('ativoInfo').textContent  = data  ? `📅 ${data}` : '';
+    document.getElementById('ativoPremio').textContent = premio ? `🏆 Prêmio estimado: ${premio}` : '';
+    document.getElementById('ativoBanner').classList.add('visivel');
+  }
+
+  function adminSenhaDigitada() {
+    const senha = document.getElementById('adminSenha').value;
+    if (senha.length >= 4) buscarProximosConcursos();
+  }
+
+  // ── Buscar Próximos Concursos (API Caixa) ──
+  async function buscarProximosConcursos() {
+    const box = document.getElementById('proximosConcursos');
+    box.innerHTML = '<div class="p-empty">Carregando...</div>';
+    const API = 'https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena';
+    try {
+      let data;
+      try {
+        const r = await fetch(API);
+        data = await r.json();
+      } catch {
+        const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(API)}`);
+        const w = await r.json();
+        data = JSON.parse(w.contents);
+      }
+      renderConcursos(data);
+    } catch {
+      box.innerHTML = '<div class="p-empty">Erro ao carregar — verifique a conexão</div>';
+    }
+  }
+
+  function renderConcursos(data) {
+    const ultimo = parseInt(data.numero || data.numeroConcurso || 0);
+    const proxData = data.dataProximoConcurso || '';
+    const proxPremio = data.valorEstimadoProximoConcurso
+      ? formatarPremio(data.valorEstimadoProximoConcurso) : '—';
+
+    const d1 = parseBRDate(proxData);
+    const d2 = proxData ? proximaData(d1) : null;
+    const d3 = d2 ? proximaData(d2) : null;
+
+    const concursos = [
+      { num: ultimo + 1, data: formatarData(d1), premio: proxPremio },
+      { num: ultimo + 2, data: formatarData(d2), premio: 'Acumulando' },
+      { num: ultimo + 3, data: formatarData(d3), premio: 'Acumulando' }
+    ];
+
+    const ativoAtual = document.getElementById('ativoNum').textContent.replace('# ','').trim();
+    document.getElementById('proximosConcursos').innerHTML = concursos.map(c => `
+      <div class="concurso-card ${String(c.num) === ativoAtual ? 'selecionado' : ''}">
+        <div>
+          <div class="cc-num"># ${c.num}</div>
+          <div class="cc-data">${c.data}</div>
+        </div>
+        <div class="cc-premio">${c.premio}</div>
+        <button type="button" class="btn-selecionar ${String(c.num) === ativoAtual ? 'ativo-btn' : ''}"
+          onclick="selecionarConcursoAdmin(${c.num},'${c.data}','${c.premio}')">
+          ${String(c.num) === ativoAtual ? '✔ ATIVO' : 'SELECIONAR'}
+        </button>
+      </div>`).join('');
+  }
+
+  function selecionarConcursoAdmin(numero, data, premio) {
+    const senha = document.getElementById('adminSenha').value;
+    if (!senha) { alert('Digite a senha admin.'); return; }
+    const params = new URLSearchParams({ action: 'setConcursoAtivo', numero, data, premio, senha });
+    fetch(`${APPS_URL}?${params}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          exibirBannerAtivo(numero, data, premio);
+          document.getElementById('concurso').value = numero;
+          carregarCotas();
+          buscarProximosConcursos();
+        } else alert('⚠️ ' + d.error);
+      });
+  }
+
+  function parseBRDate(str) {
+    if (!str) return null;
+    const [dd, mm, yyyy] = str.split('/').map(Number);
+    return new Date(yyyy, mm - 1, dd);
+  }
+
+  function proximaData(d) {
+    if (!d) return null;
+    const dia = d.getDay();
+    const add = dia === 2 ? 2 : dia === 4 ? 2 : dia === 6 ? 3 : 1;
+    const n = new Date(d);
+    n.setDate(n.getDate() + add);
+    return n;
+  }
+
+  function formatarData(d) {
+    if (!d) return '—';
+    const dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} · ${dias[d.getDay()]}`;
+  }
+
+  function formatarPremio(v) {
+    if (!v) return '—';
+    if (v >= 1e9) return `R$ ${(v/1e9).toFixed(1).replace('.',',')} bi`;
+    if (v >= 1e6) return `R$ ${(v/1e6).toFixed(1).replace('.',',')} mi`;
+    return `R$ ${v.toLocaleString('pt-BR')}`;
+  }
+
+  // Carrega concurso ativo ao iniciar
+  carregarConcursoAtivo();
 
   function confirmarPagamento(nome, concurso) {
     const senha = document.getElementById('adminSenha').value;

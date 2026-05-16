@@ -118,6 +118,31 @@ function doGet(e) {
     return jsonOut({ success: false, error: 'Participante não encontrado.' });
   }
 
+  // action === 'getConcursoAtivo'
+  if (action === 'getConcursoAtivo') {
+    const props = PropertiesService.getScriptProperties();
+    return jsonOut({
+      success:  true,
+      concurso: props.getProperty('concursoAtivo') || '',
+      data:     props.getProperty('dataAtivo')     || '',
+      premio:   props.getProperty('premioAtivo')   || ''
+    });
+  }
+
+  // action === 'setConcursoAtivo' (admin)
+  if (action === 'setConcursoAtivo') {
+    const senha  = (e.parameter.senha  || '').trim();
+    const numero = (e.parameter.numero || '').trim();
+    const data   = (e.parameter.data   || '').trim();
+    const premio = (e.parameter.premio || '').trim();
+    if (senha !== 'MEGA2026') return jsonOut({ success: false, error: 'Senha incorreta.' });
+    const props = PropertiesService.getScriptProperties();
+    props.setProperty('concursoAtivo', numero);
+    props.setProperty('dataAtivo',     data);
+    props.setProperty('premioAtivo',   premio);
+    return jsonOut({ success: true });
+  }
+
   // action === 'get': retorna cotas ocupadas
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   const taken = getTakenCotas(sheet, concurso);
