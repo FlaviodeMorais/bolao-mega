@@ -31,7 +31,17 @@
       "PowerShell($response = Invoke-WebRequest -Uri \"https://www.loteriasonline.caixa.gov.br/silce-web/\" -UserAgent \"Mozilla/5.0\" -ErrorAction SilentlyContinue; if \\($response\\) { $response.Content | Select-String -Pattern \"color|font|#[0-9a-fA-F]{6}|rgba?|--\" -AllMatches | Select-Object -First 100 })",
       "WebFetch(domain:loterias.caixa.gov.br)",
       "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\MORAIS\\\\Documentos\\\\GitHub\\\\bolao-mega\\\\app\\\\api\\\\status\")",
-      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\MORAIS\\\\Documentos\\\\GitHub\\\\bolao-mega\\\\app\\\\api\\\\boloes\")"
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\MORAIS\\\\Documentos\\\\GitHub\\\\bolao-mega\\\\app\\\\api\\\\boloes\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\MORAIS\\\\Documentos\\\\GitHub\\\\bolao-mega\\\\app\\\\api\\\\\" -Recurse -File | Select-Object -ExpandProperty FullName)",
+      "WebFetch(domain:whapi.cloud)",
+      "WebFetch(domain:fly.io)",
+      "WebFetch(domain:render.com)",
+      "WebFetch(domain:koyeb.com)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:green-api.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\MORAIS\\\\Documentos\\\\GitHub\\\\bolao-mega\\\\app\\\\api\\\\cron\")"
     ]
   }
 }

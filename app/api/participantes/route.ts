@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { notificarInscricao } from '@/lib/whatsapp'
 
 export async function GET(req: NextRequest) {
   const concurso = req.nextUrl.searchParams.get('concurso')
@@ -42,5 +43,9 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Notifica grupo no WhatsApp
+  await notificarInscricao(nome, cotas, concurso, total)
+
   return NextResponse.json({ participante: data })
 }

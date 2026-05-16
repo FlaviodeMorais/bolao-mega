@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/resultado?secret=BOLAO_CRON_2026",
+      "schedule": "0 22 * * 2,4,6"
+    },
+    {
+      "path": "/api/cron/lembrete?secret=BOLAO_CRON_2026",
+      "schedule": "0 10 * * 2,4,6"
+    }
+  ]
+}
