@@ -30,7 +30,8 @@
       "Bash(Select-Object -First 50)",
       "PowerShell($response = Invoke-WebRequest -Uri \"https://www.loteriasonline.caixa.gov.br/silce-web/\" -UserAgent \"Mozilla/5.0\" -ErrorAction SilentlyContinue; if \\($response\\) { $response.Content | Select-String -Pattern \"color|font|#[0-9a-fA-F]{6}|rgba?|--\" -AllMatches | Select-Object -First 100 })",
       "WebFetch(domain:loterias.caixa.gov.br)",
-      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\MORAIS\\\\Documentos\\\\GitHub\\\\bolao-mega\\\\app\\\\api\\\\status\")"
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\MORAIS\\\\Documentos\\\\GitHub\\\\bolao-mega\\\\app\\\\api\\\\status\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\MORAIS\\\\Documentos\\\\GitHub\\\\bolao-mega\\\\app\\\\api\\\\boloes\")"
     ]
   }
 }

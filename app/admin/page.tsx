@@ -2,13 +2,18 @@
 import { useState, useEffect, useCallback } from 'react'
 import styles from './admin.module.css'
 
-interface Participante { id: string; nome: string; cotas: string[]; total: number; status: string; created_at: string }
-interface Concurso { num: number; data: string; premio: string }
+interface Participante { id: string; nome: string; cotas: string[]; total: number; status: string }
+interface Concurso    { num: number; data: string; premio: string }
+interface Bolao       { id: string; nome: string; slug: string; valor_cota: number; total_cotas: number; ativo: boolean }
 
 export default function AdminPage() {
   const [logado, setLogado]               = useState(false)
   const [senha, setSenha]                 = useState('')
   const [errLogin, setErrLogin]           = useState('')
+
+  // Dados
+  const [boloes, setBoloes]               = useState<Bolao[]>([])
+  const [bolaoAtual, setBolaoAtual]       = useState<Bolao | null>(null)
   const [participantes, setParticipantes] = useState<Participante[]>([])
   const [concursoAtivo, setConcursoAtivo] = useState('')
   const [dataAtiva, setDataAtiva]         = useState('')
@@ -16,14 +21,26 @@ export default function AdminPage() {
   const [proximos, setProximos]           = useState<Concurso[]>([])
   const [loadingCaixa, setLoadingCaixa]   = useState(false)
 
+  // Criar bolão
+  const [showCreate, setShowCreate]       = useState(false)
+  const [novoNome, setNovoNome]           = useState('')
+  const [novoSlug, setNovoSlug]           = useState('')
+  const [criando, setCriando]             = useState(false)
+  const [linkCopiado, setLinkCopiado]     = useState(false)
+
   async function login() {
     const res = await fetch('/api/auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ senha }),
     })
-    if (res.ok) { setLogado(true); setErrLogin('') }
+    if (res.ok) { setLogado(true); setErrLogin(''); carregarBoloes() }
     else setErrLogin('Senha incorreta.')
+  }
+
+  async function carregarBoloes() {
+    const res = await fetch('/api/boloes').then(r => r.json())
+    setBoloes(res.boloes || [])
   }
 
   const carregarDados = useCallback(async () => {
@@ -40,6 +57,18 @@ export default function AdminPage() {
 
   useEffect(() => { if (logado) carregarDados() }, [logado, carregarDados])
 
+  async function criarBolao() {
+    if (!novoNome || !novoSlug) return
+    setCriando(true)
+    await fetch('/api/boloes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome: novoNome, slug: novoSlug }),
+    })
+    await carregarBoloes()
+    setNovoNome(''); setNovoSlug(''); setShowCreate(false); setCriando(false)
+  }
+
   async function buscarCaixa() {
     setLoadingCaixa(true)
     try {
@@ -50,14 +79,12 @@ export default function AdminPage() {
         const w = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(API)}`).then(r => r.json())
         data = JSON.parse(w.contents as string)
       }
-      const ultimo = parseInt(String(data.numero || data.numeroConcurso || 0))
+      const ultimo  = parseInt(String(data.numero || data.numeroConcurso || 0))
       const proxData = String(data.dataProximoConcurso || '')
       const premioVal = data.valorEstimadoProximoConcurso as number
-
       const d1 = parseBRDate(proxData)
       const d2 = d1 ? nextDrawDate(d1) : null
       const d3 = d2 ? nextDrawDate(d2) : null
-
       setProximos([
         { num: ultimo+1, data: formatData(d1), premio: premioVal ? formatPremio(premioVal) : '—' },
         { num: ultimo+2, data: formatData(d2), premio: 'Acumulando' },
@@ -72,18 +99,13 @@ export default function AdminPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ concurso: c.num, data: c.data, premio: c.premio }),
     })
-    setConcursoAtivo(String(c.num))
-    setDataAtiva(c.data)
-    setPremioAtivo(c.premio)
-    setParticipantes([])
+    setConcursoAtivo(String(c.num)); setDataAtiva(c.data); setPremioAtivo(c.premio)
+    const part = await fetch(`/api/participantes?concurso=${c.num}`).then(r => r.json())
+    setParticipantes(part.participantes || [])
   }
 
   async function confirmarPagamento(id: string) {
-    await fetch(`/api/participantes/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'pago' }),
-    })
+    await fetch(`/api/participantes/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'pago' }) })
     carregarDados()
   }
 
@@ -93,18 +115,26 @@ export default function AdminPage() {
     carregarDados()
   }
 
+  function copiarLink(slug: string) {
+    const url = `${window.location.origin}/${slug}`
+    navigator.clipboard.writeText(url).then(() => { setLinkCopiado(true); setTimeout(() => setLinkCopiado(false), 2000) })
+  }
+
   const totalArrecadado = participantes.filter(p => p.status === 'pago').reduce((s, p) => s + Number(p.total), 0)
-  const cotasLivres = 20 - [...new Set(participantes.flatMap(p => p.cotas))].length
+  const totalCotas      = [...new Set(participantes.flatMap(p => Array.isArray(p.cotas) ? p.cotas : []))].length
+  const cotasLivres     = 20 - totalCotas
 
   if (!logado) return (
     <div className={styles.loginWrap}>
       <div className={styles.loginBox}>
-        <div className={styles.loginTitle}>🔒 ÁREA DO ADMIN</div>
+        <div className={styles.loginTitle}>🍀 Admin</div>
         <div className={styles.loginSub}>GRUPO MEGA 💯</div>
-        <input type="password" placeholder="SENHA ADMIN" value={senha} onChange={e => setSenha(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && login()} className={styles.loginInput} />
+        <input type="password" placeholder="SENHA ADMIN" value={senha}
+          onChange={e => setSenha(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && login()}
+          className={styles.loginInput} />
         {errLogin && <div className={styles.loginErr}>{errLogin}</div>}
-        <button className={styles.loginBtn} onClick={login}>ENTRAR</button>
+        <button type="button" className={styles.loginBtn} onClick={login}>Entrar</button>
       </div>
     </div>
   )
@@ -112,81 +142,121 @@ export default function AdminPage() {
   return (
     <div className={styles.wrap}>
       <div className={styles.header}>
-        <h1 className={styles.title}>⚙️ PAINEL ADMIN — GRUPO MEGA 💯</h1>
-        <a href="/" className={styles.linkForm}>← Ver formulário</a>
+        <h1 className={styles.title}>⚙️ Painel Admin — Grupo Mega 💯</h1>
+        <a href="/" className={styles.linkForm}>← Formulário</a>
       </div>
 
-      {/* STATS */}
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>Concurso Ativo</div>
-          <div className={styles.statVal}>{concursoAtivo ? `#${concursoAtivo}` : '—'}</div>
-          {dataAtiva && <div className={styles.statSub}>{dataAtiva}</div>}
+      <div className={styles.content}>
+        {/* Stats */}
+        <div className={styles.statsGrid}>
+          <div className={styles.statCard}>
+            <div className={styles.statLabel}>Concurso Ativo</div>
+            <div className={styles.statVal}>{concursoAtivo ? `#${concursoAtivo}` : '—'}</div>
+            {dataAtiva && <div className={styles.statSub}>{dataAtiva}</div>}
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statLabel}>Cotas Livres</div>
+            <div className={styles.statVal}>{cotasLivres}/20</div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statLabel}>Arrecadado</div>
+            <div className={styles.statVal}>R$ {totalArrecadado.toFixed(2).replace('.', ',')}</div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statLabel}>Prêmio Estimado</div>
+            <div className={styles.statVal}>{premioAtivo || '—'}</div>
+          </div>
         </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>Cotas Livres</div>
-          <div className={styles.statVal}>{cotasLivres}/20</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>Arrecadado</div>
-          <div className={styles.statVal}>R$ {totalArrecadado.toFixed(2).replace('.', ',')}</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>Prêmio Estimado</div>
-          <div className={styles.statVal}>{premioAtivo || '—'}</div>
-        </div>
-      </div>
 
-      <div className={styles.grid2}>
-        {/* SELETOR DE CONCURSOS */}
-        <div className={styles.panel}>
-          <div className={styles.panelTitle}>🎲 PRÓXIMOS CONCURSOS</div>
-          <button className={styles.btnLoad} onClick={buscarCaixa} disabled={loadingCaixa}>
-            {loadingCaixa ? 'Carregando...' : '🔄 Buscar na Caixa'}
-          </button>
-          {proximos.map(c => (
-            <div key={c.num} className={`${styles.concursoCard} ${String(c.num) === concursoAtivo ? styles.ativo : ''}`}>
-              <div>
-                <div className={styles.ccNum}>#{c.num}</div>
-                <div className={styles.ccData}>{c.data}</div>
-                <div className={styles.ccPremio}>{c.premio}</div>
-              </div>
-              <button
-                className={`${styles.btnSel} ${String(c.num) === concursoAtivo ? styles.btnSelAtivo : ''}`}
-                onClick={() => selecionarConcurso(c)}
-              >
-                {String(c.num) === concursoAtivo ? '✔ ATIVO' : 'SELECIONAR'}
-              </button>
+        <div className={styles.grid2}>
+          {/* LEFT COLUMN */}
+          <div className={styles.leftCol}>
+
+            {/* BOLÕES */}
+            <div className={styles.panel}>
+              <div className={styles.panelTitle}>🎰 Bolões</div>
+              {boloes.map(b => (
+                <div key={b.id} className={`${styles.bolaoCard} ${bolaoAtual?.id === b.id ? styles.selected : ''}`}
+                  onClick={() => setBolaoAtual(b)}>
+                  <div>
+                    <div className={styles.bolaoNome}>{b.nome}</div>
+                    <div className={styles.bolaoSlug}>/{b.slug}</div>
+                  </div>
+                  <div className={styles.bolaoActions}>
+                    {b.ativo && <span className={styles.bolaoAtivo}>ATIVO</span>}
+                    <button type="button" className={styles.btnSel} onClick={e => { e.stopPropagation(); copiarLink(b.slug) }}>
+                      {linkCopiado ? '✓ Copiado' : '🔗 Link'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {!showCreate
+                ? <button type="button" className={styles.btnLoad} onClick={() => setShowCreate(true)}>+ Novo Bolão</button>
+                : (
+                  <div className={styles.createForm}>
+                    <input className={styles.createInput} placeholder="Nome do bolão" value={novoNome} onChange={e => setNovoNome(e.target.value)} />
+                    <input className={styles.createInput} placeholder="slug (ex: grupo-vip)"
+                      value={novoSlug}
+                      onChange={e => setNovoSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))} />
+                    <button type="button" className={styles.btnCreate} onClick={criarBolao} disabled={criando}>
+                      {criando ? 'Criando...' : 'Criar Bolão'}
+                    </button>
+                  </div>
+                )
+              }
             </div>
-          ))}
-        </div>
 
-        {/* PARTICIPANTES */}
-        <div className={styles.panel}>
-          <div className={styles.panelTitle}>👥 PARTICIPANTES — #{concursoAtivo || '?'}</div>
-          <button className={styles.btnLoad} onClick={carregarDados}>🔄 Atualizar</button>
-          {participantes.length === 0
-            ? <div className={styles.empty}>Nenhum participante registrado</div>
-            : participantes.map(p => (
-              <div key={p.id} className={styles.partRow}>
-                <div className={styles.partInfo}>
-                  <div className={styles.partNome}>{p.nome}</div>
-                  <div className={styles.partCotas}>{Array.isArray(p.cotas) ? p.cotas.join(', ') : p.cotas}</div>
-                  <div className={styles.partTotal}>R$ {Number(p.total).toFixed(2).replace('.', ',')}</div>
+            {/* PRÓXIMOS CONCURSOS */}
+            <div className={styles.panel}>
+              <div className={styles.panelTitle}>🎲 Próximos Concursos</div>
+              <button type="button" className={styles.btnLoad} onClick={buscarCaixa} disabled={loadingCaixa}>
+                {loadingCaixa ? '⟳ Carregando...' : '🔄 Buscar na Caixa'}
+              </button>
+              {proximos.map(c => (
+                <div key={c.num} className={`${styles.concursoCard} ${String(c.num) === concursoAtivo ? styles.ativo : ''}`}>
+                  <div>
+                    <div className={styles.ccNum}>#{c.num}</div>
+                    <div className={styles.ccData}>{c.data}</div>
+                    <div className={styles.ccPremio}>{c.premio}</div>
+                  </div>
+                  <button type="button"
+                    className={`${styles.btnSel} ${String(c.num) === concursoAtivo ? styles.btnSelAtivo : ''}`}
+                    onClick={() => selecionarConcurso(c)}>
+                    {String(c.num) === concursoAtivo ? '✔ Ativo' : 'Selecionar'}
+                  </button>
                 </div>
-                <div className={styles.partActions}>
-                  {p.status === 'pago'
-                    ? <span className={styles.statusPago}>✅ PAGO</span>
-                    : <>
-                        <span className={styles.statusPend}>⏳ PENDENTE</span>
-                        <button className={styles.btnConfirm} onClick={() => confirmarPagamento(p.id)}>✔ PAGO</button>
-                      </>
-                  }
-                  <button className={styles.btnExcluir} onClick={() => excluir(p.id, p.nome)}>✖</button>
+              ))}
+            </div>
+          </div>
+
+          {/* PARTICIPANTES */}
+          <div className={styles.panel}>
+            <div className={styles.panelTitle}>👥 Participantes — #{concursoAtivo || '?'}</div>
+            <button type="button" className={styles.btnLoad} onClick={carregarDados}>🔄 Atualizar</button>
+            {participantes.length === 0
+              ? <div className={styles.empty}>Nenhum participante registrado</div>
+              : participantes.map(p => (
+                <div key={p.id} className={styles.partRow}>
+                  <div className={styles.partInfo}>
+                    <div className={styles.partNome}>{p.nome}</div>
+                    <div className={styles.partCotas}>{Array.isArray(p.cotas) ? p.cotas.join(', ') : p.cotas}</div>
+                    <div className={styles.partTotal}>R$ {Number(p.total).toFixed(2).replace('.', ',')}</div>
+                  </div>
+                  <div className={styles.partActions}>
+                    {p.status === 'pago'
+                      ? <span className={styles.statusPago}>✅ Pago</span>
+                      : <>
+                          <span className={styles.statusPend}>⏳</span>
+                          <button type="button" className={styles.btnConfirm} onClick={() => confirmarPagamento(p.id)}>✔ Confirmar</button>
+                        </>
+                    }
+                    <button type="button" className={styles.btnExcluir} onClick={() => excluir(p.id, p.nome)}>✕</button>
+                  </div>
                 </div>
-              </div>
-            ))
-          }
+              ))
+            }
+          </div>
         </div>
       </div>
     </div>
