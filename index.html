@@ -314,6 +314,77 @@
   .footer strong { color: var(--areia); }
 
   hr { border: none; border-top: 1px solid #2A3520; margin: 20px 0; }
+
+  /* MODAL PIX */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.92); z-index: 200;
+    align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal-overlay.ativo { display: flex; }
+  .modal-box {
+    background: var(--fundo); border: 2px solid var(--amarelo);
+    border-radius: 4px; padding: 28px 24px; max-width: 360px; width: 100%;
+    text-align: center; box-shadow: 0 0 40px rgba(212,160,23,0.3);
+  }
+  .modal-titulo {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; letter-spacing: 3px; color: var(--amarelo);
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  .modal-nome {
+    font-size: 18px; font-weight: 700; color: var(--areia2);
+    margin-bottom: 4px; letter-spacing: 1px;
+  }
+  .modal-cotas {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px; color: var(--areia); opacity: 0.7; margin-bottom: 16px;
+  }
+  .modal-qr {
+    width: 200px; height: 200px; border: 3px solid var(--amarelo);
+    border-radius: 4px; margin: 0 auto 16px; display: block;
+    background: #fff;
+  }
+  .modal-total {
+    font-size: 28px; font-weight: 700; color: var(--amarelo);
+    margin-bottom: 14px; text-shadow: 0 0 12px rgba(212,160,23,0.4);
+  }
+  .modal-pix-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px; letter-spacing: 2px; color: #8B7355;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  .modal-pix-code {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; color: var(--areia2);
+    background: #0D0F0A; border: 1px solid var(--borda);
+    border-radius: 2px; padding: 10px;
+    word-break: break-all; margin-bottom: 10px;
+    max-height: 80px; overflow-y: auto; text-align: left;
+  }
+  .btn-copiar {
+    width: 100%; padding: 12px;
+    background: var(--verde-mil); color: var(--areia2);
+    border: 1px solid var(--borda); border-radius: 2px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px; letter-spacing: 2px; cursor: pointer;
+    margin-bottom: 8px; transition: background 0.2s;
+  }
+  .btn-copiar:hover { background: var(--verde2); }
+  .btn-fechar {
+    width: 100%; padding: 12px;
+    background: transparent; color: var(--laranja);
+    border: 1px solid var(--laranja); border-radius: 2px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; letter-spacing: 2px; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-fechar:hover { background: rgba(192,85,26,0.1); }
+  .modal-aviso {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px; color: var(--laranja); letter-spacing: 1px;
+    margin-top: 12px; line-height: 1.6;
+  }
 </style>
 </head>
 <body>
@@ -389,32 +460,6 @@
       <div class="t-value" id="total">R$ 0,00</div>
     </div>
 
-    <hr>
-    <div class="sec-title">💸 PAGAMENTO</div>
-
-    <div class="pix-card">
-      <span class="pix-icon">💳</span>
-      <div>
-        <div class="pi-label">// Chave Pix (CPF)</div>
-        <div class="pi-chave">272.105.928-90</div>
-        <div class="pi-prazo">⏰ PRAZO: 12:00 DA DATA DO CONCURSO</div>
-      </div>
-    </div>
-
-    <div class="field">
-      <label class="field-label">// Status do pagamento *</label>
-      <div class="radio-group">
-        <label class="radio-opt">
-          <input type="radio" name="pag" value="pago">
-          <span>✅ PIX JÁ ENVIADO</span>
-        </label>
-        <label class="radio-opt">
-          <input type="radio" name="pag" value="pendente">
-          <span>⏳ PAGAREI ATÉ 12:00</span>
-        </label>
-      </div>
-    </div>
-
     <button class="btn" onclick="confirmar()">🍀 CONFIRMAR MISSÃO</button>
 
     <div class="footer">
@@ -422,6 +467,22 @@
       DÚVIDAS → FALE COM O ADMIN DO GRUPO
     </div>
 
+  </div>
+</div>
+
+<!-- MODAL PIX -->
+<div class="modal-overlay" id="modalPix">
+  <div class="modal-box">
+    <div class="modal-titulo">🎟️ QR Code Pix Gerado</div>
+    <div class="modal-nome" id="mNome"></div>
+    <div class="modal-cotas" id="mCotas"></div>
+    <img class="modal-qr" id="mQrImg" src="" alt="QR Code PIX">
+    <div class="modal-total" id="mTotal"></div>
+    <div class="modal-pix-label">// Pix Copia e Cola</div>
+    <div class="modal-pix-code" id="mQrCode"></div>
+    <button type="button" class="btn-copiar" onclick="copiarPix()">📋 COPIAR CÓDIGO PIX</button>
+    <button type="button" class="btn-fechar" onclick="fecharModal()">✖ FECHAR</button>
+    <div class="modal-aviso">⏰ Pague até 12:00 da data do concurso.<br>A confirmação é automática.</div>
   </div>
 </div>
 
@@ -505,37 +566,42 @@
   tick(); setInterval(tick, 1000);
 
   // ── Confirmação ──
+  let pixCodeAtual = '';
+
   function confirmar() {
     const nome     = document.getElementById('nome').value.trim();
     const concurso = document.getElementById('concurso').value.trim();
-    const pag      = document.querySelector('input[name="pag"]:checked');
 
-    if (!nome)              { alert('⚠️ Informe seu nome completo!'); return; }
-    if (!concurso)          { alert('⚠️ Informe o número do concurso!'); return; }
+    if (!nome)               { alert('⚠️ Informe seu nome completo!'); return; }
+    if (!concurso)           { alert('⚠️ Informe o número do concurso!'); return; }
     if (!selecionadas.length){ alert('⚠️ Selecione ao menos uma cota!'); return; }
-    if (!pag)               { alert('⚠️ Informe o status do pagamento!'); return; }
 
     const btn = document.querySelector('.btn');
-    btn.textContent = '⏳ ENVIANDO...';
+    btn.textContent = '⏳ GERANDO PIX...';
     btn.disabled = true;
 
     const params = new URLSearchParams({
-      action:    'submit',
-      concurso:  concurso,
-      nome:      nome,
-      cotas:     selecionadas.sort().join(','),
-      pagamento: pag.value === 'pago' ? 'Pix enviado' : 'Pagará até 12:00'
+      action:   'submit',
+      concurso: concurso,
+      nome:     nome,
+      cotas:    selecionadas.sort().join(',')
     });
+
     fetch(`${APPS_URL}?${params}`)
     .then(r => r.json())
     .then(data => {
       if (data.success) {
-        alert(data.message);
+        pixCodeAtual = data.qrCode;
+        document.getElementById('mNome').textContent  = data.nome;
+        document.getElementById('mCotas').textContent = 'Cotas: ' + data.cotas;
+        document.getElementById('mTotal').textContent = data.total;
+        document.getElementById('mQrCode').textContent = data.qrCode;
+        document.getElementById('mQrImg').src = 'data:image/png;base64,' + data.qrCodeBase64;
+        document.getElementById('modalPix').classList.add('ativo');
         buscarCotas(concurso);
         document.getElementById('nome').value = '';
         selecionadas = [];
         document.querySelectorAll('.cota.ativo').forEach(el => el.classList.remove('ativo'));
-        document.querySelector('input[name="pag"]:checked').checked = false;
         atualizarTotal();
       } else {
         alert('⚠️ ' + data.error);
@@ -546,6 +612,18 @@
       btn.textContent = '🍀 CONFIRMAR MISSÃO';
       btn.disabled = false;
     });
+  }
+
+  function copiarPix() {
+    navigator.clipboard.writeText(pixCodeAtual).then(() => {
+      const btn = document.querySelector('.btn-copiar');
+      btn.textContent = '✅ COPIADO!';
+      setTimeout(() => { btn.textContent = '📋 COPIAR CÓDIGO PIX'; }, 2000);
+    });
+  }
+
+  function fecharModal() {
+    document.getElementById('modalPix').classList.remove('ativo');
   }
 </script>
 </body>
