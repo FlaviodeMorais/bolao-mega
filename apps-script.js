@@ -102,6 +102,22 @@ function doGet(e) {
     return jsonOut({ success: false, error: 'Participante não encontrado.' });
   }
 
+  // action === 'excluir': remove participante (admin)
+  if (action === 'excluir') {
+    const senha = (e.parameter.senha || '').trim();
+    const nome  = (e.parameter.nome  || '').trim();
+    if (senha !== 'MEGA2026') return jsonOut({ success: false, error: 'Senha incorreta.' });
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    const rows  = sheet.getDataRange().getValues();
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][1]).trim() === concurso && String(rows[i][2]).trim() === nome) {
+        sheet.deleteRow(i + 1);
+        return jsonOut({ success: true });
+      }
+    }
+    return jsonOut({ success: false, error: 'Participante não encontrado.' });
+  }
+
   // action === 'get': retorna cotas ocupadas
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   const taken = getTakenCotas(sheet, concurso);

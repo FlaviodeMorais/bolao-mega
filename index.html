@@ -658,9 +658,12 @@
     lista.innerHTML = participantes.map(p => `
       <div class="admin-row">
         <span style="color:var(--areia2)">${p.nome} <span style="color:#555;font-size:9px">${p.cotas}</span></span>
-        ${p.status === 'Pago ✅'
-          ? `<span class="p-status-pago">PAGO ✅</span>`
-          : `<button type="button" class="btn-confirmar" onclick="confirmarPagamento('${p.nome}','${concurso}')">✔ CONFIRMAR</button>`}
+        <span style="display:flex;gap:4px">
+          ${p.status === 'Pago ✅'
+            ? `<span class="p-status-pago">PAGO ✅</span>`
+            : `<button type="button" class="btn-confirmar" onclick="confirmarPagamento('${p.nome}','${concurso}')">✔ PAGO</button>`}
+          <button type="button" class="btn-confirmar" style="color:var(--laranja);border-color:var(--laranja)" onclick="excluirParticipante('${p.nome}','${concurso}')">✖</button>
+        </span>
       </div>`).join('');
   }
 
@@ -675,12 +678,21 @@
     fetch(`${APPS_URL}?${params}`)
       .then(r => r.json())
       .then(data => {
-        if (data.success) {
-          buscarParticipantes(concurso);
-          buscarCotas(concurso);
-        } else {
-          alert('⚠️ ' + data.error);
-        }
+        if (data.success) { buscarParticipantes(concurso); buscarCotas(concurso); }
+        else alert('⚠️ ' + data.error);
+      });
+  }
+
+  function excluirParticipante(nome, concurso) {
+    const senha = document.getElementById('adminSenha').value;
+    if (!senha) { alert('Digite a senha admin.'); return; }
+    if (!confirm(`Excluir ${nome} do concurso ${concurso}?`)) return;
+    const params = new URLSearchParams({ action: 'excluir', concurso, nome, senha });
+    fetch(`${APPS_URL}?${params}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) { buscarParticipantes(concurso); buscarCotas(concurso); }
+        else alert('⚠️ ' + data.error);
       });
   }
 
