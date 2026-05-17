@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       num_apostas:  num_apostas || 1,
       taxa_admin:   taxa_admin  || 0,
       total_cotas:  total_cotas || 20,
-      valor_cota:   valor_cota  || 30,
+      valor_cota:   valor_cota  || 0,
     })
     .select()
     .single()

@@ -25,23 +25,37 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const { concurso, nome, telefone, cotas, total, mp_payment_id, pix_code, bolao_slug } = body
 
-  // Valida valor da cota contra o banco (evita valor desatualizado no form)
+  // Valida configuração e valor da cota contra o banco
   if (bolao_slug) {
     const { data: bolao } = await supabase
       .from('boloes')
-      .select('valor_cota, total_cotas')
+      .select('valor_cota, total_cotas, encerrado, ativo')
       .eq('slug', bolao_slug)
       .single()
 
-    if (bolao) {
-      const totalEsperado = parseFloat((cotas.length * Number(bolao.valor_cota)).toFixed(2))
-      const totalEnviado  = parseFloat(Number(total).toFixed(2))
-      if (Math.abs(totalEsperado - totalEnviado) > 0.01) {
-        return NextResponse.json(
-          { error: `Valor desatualizado. Recarregue a página — valor atual da cota: R$ ${Number(bolao.valor_cota).toFixed(2).replace('.', ',')}` },
-          { status: 409 }
-        )
-      }
+    if (!bolao) {
+      return NextResponse.json({ error: 'Bolão não encontrado.' }, { status: 404 })
+    }
+    if (!bolao.ativo) {
+      return NextResponse.json({ error: 'Este bolão está cancelado.' }, { status: 409 })
+    }
+    if (bolao.encerrado) {
+      return NextResponse.json({ error: 'Este bolão já foi encerrado.' }, { status: 409 })
+    }
+    if (!bolao.valor_cota || Number(bolao.valor_cota) <= 0) {
+      return NextResponse.json(
+        { error: 'Bolão ainda não configurado pelo administrador. Aguarde.' },
+        { status: 409 }
+      )
+    }
+
+    const totalEsperado = parseFloat((cotas.length * Number(bolao.valor_cota)).toFixed(2))
+    const totalEnviado  = parseFloat(Number(total).toFixed(2))
+    if (Math.abs(totalEsperado - totalEnviado) > 0.01) {
+      return NextResponse.json(
+        { error: `Valor desatualizado. Recarregue a página — valor atual: R$ ${Number(bolao.valor_cota).toFixed(2).replace('.', ',')} por cota.` },
+        { status: 409 }
+      )
     }
   }
 

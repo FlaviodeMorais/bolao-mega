@@ -289,6 +289,11 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas,
             </div>
             <hr />
             <div className="sec-title">🎟️ Selecionar Cotas</div>
+            {VALOR_COTA === 0 && (
+              <div className="bolao-nao-config">
+                ⚠️ Bolão aguardando configuração do administrador.
+              </div>
+            )}
             <div className="disponivel-bar">Disponíveis: <span>{disp}/{TOTAL_COTAS}</span></div>
             <div className="cotas-grid">
               {Array.from({ length: TOTAL_COTAS }, (_, i) => {
