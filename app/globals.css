@@ -412,16 +412,9 @@ input[type="text"], input[type="password"], input[type="tel"] { -webkit-appearan
   border-radius: 10px; padding: 10px 14px; margin-bottom: 10px;
   gap: 12px;
 }
-.cota-preco-detalhe {
-  display: flex; flex-direction: column; gap: 2px;
-}
 .cota-preco-label {
   font-size: 10px; font-weight: 700; letter-spacing: 1px;
   text-transform: uppercase; color: rgba(255,255,255,.40);
-}
-.cota-preco-config {
-  font-size: 11px; font-weight: 500;
-  color: rgba(255,255,255,.35);
 }
 .cota-preco-val {
   font-size: 22px; font-weight: 800;

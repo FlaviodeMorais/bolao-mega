@@ -221,13 +221,7 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas,
             <hr />
             <div className="sec-title">🎟️ Selecionar Cotas</div>
             <div className="cota-preco-info">
-              <div className="cota-preco-detalhe">
-                <span className="cota-preco-label">Valor por cota</span>
-                <span className="cota-preco-config">
-                  {numApostas} aposta{numApostas !== 1 ? 's' : ''} · {dezenas} dezenas
-                  {taxaAdmin > 0 ? ` · taxa R$ ${taxaAdmin.toFixed(2).replace('.', ',')}` : ''}
-                </span>
-              </div>
+              <span className="cota-preco-label">Valor por cota</span>
               <span className="cota-preco-val">R$ {VALOR_COTA.toFixed(2).replace('.', ',')}</span>
             </div>
             <div className="disponivel-bar">Disponíveis: <span>{disp}/{TOTAL_COTAS}</span></div>
