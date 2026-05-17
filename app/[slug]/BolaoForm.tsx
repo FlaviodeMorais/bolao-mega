@@ -80,43 +80,68 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
     tick(); const id = setInterval(tick, 1000); return () => clearInterval(id)
   }, [])
 
-  // Concurso ativo
-  useEffect(() => { fetch('/api/concurso-ativo').then(r => r.json()).then(setConcursoAtivo) }, [])
+  // ── INIT: busca tudo em paralelo, sem corrida de dados ──────────
+  useEffect(() => {
+    setConfigOk(false)
 
-  // Sincroniza config COMPLETA do bolão via API — único ponto de verdade
-  const sincronizarConfig = useCallback((forceReload = false) => {
-    if (forceReload) setConfigOk(false)
-    fetch('/api/boloes')
-      .then(r => r.json())
-      .then(d => {
+    Promise.all([
+      fetch('/api/concurso-ativo').then(r => r.json()),
+      fetch('/api/boloes').then(r => r.json()),
+    ]).then(([ca, d]) => {
+      // 1. Concurso
+      setConcursoAtivo(ca)
+      const num = String(ca.concurso || '')
+
+      // 2. Config do bolão
+      const b = (d.boloes || []).find((x: { slug: string }) => x.slug === bolaoSlug)
+      if (b) {
+        setValorCota(Number(b.valor_cota) || 0)
+        setTotalCotas(Number(b.total_cotas) || 20)
+        setDezenas(Number(b.dezenas) || 6)
+        setNumApostas(Number(b.num_apostas) || 1)
+        setBolaoNome(b.nome || bolaoNomeProp)
+        setEncerrado(!!b.encerrado)
+      }
+
+      // 3. Cotas e participantes — usa concurso já confirmado (sem depender de state)
+      if (num) {
+        Promise.all([
+          fetch(`/api/cotas?concurso=${num}&bolao=${bolaoSlug}`).then(r => r.json()),
+          fetch(`/api/participantes?concurso=${num}&bolao=${bolaoSlug}`).then(r => r.json()),
+        ]).then(([c, p]) => {
+          setCotasOcupadas(c.cotas || [])
+          setParticipantes(p.participantes || [])
+          setSelecionadas(prev => prev.filter(s => !(c.cotas || []).includes(s)))
+          setConfigOk(true)
+        })
+      } else {
+        setConfigOk(true)
+      }
+    }).catch(() => setConfigOk(false))
+  }, [bolaoSlug, bolaoNomeProp])
+
+  // Revalida config ao focar a aba e a cada 60s
+  useEffect(() => {
+    const atualizar = () => {
+      Promise.all([
+        fetch('/api/boloes').then(r => r.json()),
+        fetch('/api/concurso-ativo').then(r => r.json()),
+      ]).then(([d, ca]) => {
+        setConcursoAtivo(ca)
         const b = (d.boloes || []).find((x: { slug: string }) => x.slug === bolaoSlug)
         if (!b) return
-        const vc = Number(b.valor_cota)
-        const tc = Number(b.total_cotas)
-        setValorCota(vc > 0 ? vc : 0)
-        setTotalCotas(tc > 0 ? tc : 20)
-        if (b.dezenas)     setDezenas(Number(b.dezenas))
-        if (b.num_apostas) setNumApostas(Number(b.num_apostas))
-        if (b.nome)        setBolaoNome(b.nome)
+        setValorCota(Number(b.valor_cota) || 0)
+        setTotalCotas(Number(b.total_cotas) || 20)
+        setDezenas(Number(b.dezenas) || 6)
+        setNumApostas(Number(b.num_apostas) || 1)
+        setBolaoNome(b.nome || bolaoNomeProp)
         setEncerrado(!!b.encerrado)
-        setConfigOk(true)
-      })
-      .catch(() => setConfigOk(false))
-  }, [bolaoSlug])
-
-  // Busca config ao montar
-  useEffect(() => { sincronizarConfig(true) }, [sincronizarConfig])
-
-  // Revalida ao voltar para a aba e a cada 60s (detecta mudanças do admin)
-  useEffect(() => {
-    const onFocus = () => sincronizarConfig(false)
-    window.addEventListener('focus', onFocus)
-    const intervalo = setInterval(() => sincronizarConfig(false), 60000)
-    return () => {
-      window.removeEventListener('focus', onFocus)
-      clearInterval(intervalo)
+      }).catch(() => {})
     }
-  }, [sincronizarConfig])
+    window.addEventListener('focus', atualizar)
+    const intervalo = setInterval(atualizar, 60000)
+    return () => { window.removeEventListener('focus', atualizar); clearInterval(intervalo) }
+  }, [bolaoSlug, bolaoNomeProp])
 
   // Countdown — usa hora do campo data se vier no formato "DD/MM · Dia · HHhMM", senão 20h00
   useEffect(() => {
@@ -136,22 +161,23 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
   }, [concursoAtivo?.data])
 
   const recarregar = useCallback(async () => {
-    if (!concurso) return
+    const num = concursoAtivo?.concurso
+    if (!num) return
     const [c, p] = await Promise.all([
-      fetch(`/api/cotas?concurso=${concurso}&bolao=${bolaoSlug}`).then(r => r.json()),
-      fetch(`/api/participantes?concurso=${concurso}&bolao=${bolaoSlug}`).then(r => r.json()),
+      fetch(`/api/cotas?concurso=${num}&bolao=${bolaoSlug}`).then(r => r.json()),
+      fetch(`/api/participantes?concurso=${num}&bolao=${bolaoSlug}`).then(r => r.json()),
     ])
     setCotasOcupadas(c.cotas || [])
     setParticipantes(p.participantes || [])
     setSelecionadas(prev => prev.filter(s => !(c.cotas || []).includes(s)))
-  }, [concurso])
+  }, [concursoAtivo?.concurso, bolaoSlug])
 
   useEffect(() => {
-    recarregar()
+    if (!concursoAtivo?.concurso) return
     if (pollRef.current) clearInterval(pollRef.current)
     pollRef.current = setInterval(recarregar, 10000)
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
-  }, [recarregar])
+  }, [recarregar, concursoAtivo?.concurso])
 
   function toggleCota(num: string) {
     if (cotasOcupadas.includes(num)) return
