@@ -21,7 +21,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   // Busca dados do participante antes de atualizar
   const { data: part } = await supabase
     .from('participantes')
-    .select('nome, cotas, total, concurso, telefone, status, acrescimo')
+    .select('nome, cotas, total, concurso, telefone, status, acrescimo, acrescimo_pago')
     .eq('id', params.id)
     .single()
 

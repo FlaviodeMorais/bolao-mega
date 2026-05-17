@@ -40,11 +40,12 @@ interface Props {
 }
 
 export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas, dezenas: dezenasProp, numApostas: numApostasProp, taxaAdmin: taxaAdminProp, encerrado }: Props) {
-  // Valores vindos do servidor (SSR) como ponto de partida
-  const [VALOR_COTA, setValorCota]   = useState(Number(valorCota)  || 0)
-  const [TOTAL_COTAS, setTotalCotas] = useState(Number(totalCotas) || 20)
-  const [dezenas, setDezenas]        = useState(Number(dezenasProp)   || 6)
-  const [numApostas, setNumApostas]  = useState(Number(numApostasProp) || 1)
+  // Config do bolão — sempre confirmada pela API antes de liberar a seleção
+  const [VALOR_COTA, setValorCota]     = useState(0)
+  const [TOTAL_COTAS, setTotalCotas]   = useState(Number(totalCotas) || 20)
+  const [dezenas, setDezenas]          = useState(Number(dezenasProp)    || 6)
+  const [numApostas, setNumApostas]    = useState(Number(numApostasProp) || 1)
+  const [configOk, setConfigOk]        = useState(false)
 
   const [nome, setNome]                   = useState('')
   const [telefone, setTelefone]           = useState('')
@@ -80,8 +81,9 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas,
   // Concurso ativo
   useEffect(() => { fetch('/api/concurso-ativo').then(r => r.json()).then(setConcursoAtivo) }, [])
 
-  // Busca config do bolão direto da API (ignora cache SSR do servidor)
+  // Busca config SEMPRE da API — nunca usa valor do cache SSR
   useEffect(() => {
+    setConfigOk(false)
     fetch('/api/boloes')
       .then(r => r.json())
       .then(d => {
@@ -89,12 +91,13 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas,
         if (!b) return
         const vc = Number(b.valor_cota)
         const tc = Number(b.total_cotas)
-        if (vc > 0) setValorCota(vc)
-        if (tc > 0) setTotalCotas(tc)
-        if (b.dezenas)    setDezenas(Number(b.dezenas))
+        setValorCota(vc > 0 ? vc : 0)
+        setTotalCotas(tc > 0 ? tc : 20)
+        if (b.dezenas)     setDezenas(Number(b.dezenas))
         if (b.num_apostas) setNumApostas(Number(b.num_apostas))
+        setConfigOk(true)
       })
-      .catch(() => {})
+      .catch(() => setConfigOk(false))
   }, [bolaoSlug])
 
   // Revalida ao voltar para a aba
@@ -289,32 +292,39 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas,
             </div>
             <hr />
             <div className="sec-title">🎟️ Selecionar Cotas</div>
-            {VALOR_COTA === 0 && (
+            {!configOk && (
+              <div className="bolao-nao-config">⏳ Carregando configuração...</div>
+            )}
+            {configOk && VALOR_COTA === 0 && (
               <div className="bolao-nao-config">
                 ⚠️ Bolão aguardando configuração do administrador.
               </div>
             )}
-            <div className="disponivel-bar">Disponíveis: <span>{disp}/{TOTAL_COTAS}</span></div>
-            <div className="cotas-grid">
-              {Array.from({ length: TOTAL_COTAS }, (_, i) => {
-                const num = String(i + 1).padStart(2, '0')
-                return (
-                  <div key={num} className={`cota${selecionadas.includes(num) ? ' ativo' : ''}${cotasOcupadas.includes(num) ? ' ocupada' : ''}`} onClick={() => toggleCota(num)}>
-                    <span className="c-num">{num}</span>
-                    <span className="c-lbl">{cotasOcupadas.includes(num) ? 'OCUPADA' : 'COTA'}</span>
-                  </div>
-                )
-              })}
-            </div>
-            <div className="total-bar">
-              <div><div className="t-label">Total a pagar</div><div className="t-cotas">{selecionadas.length} cota{selecionadas.length !== 1 ? 's' : ''}</div></div>
-              <div className="t-value">R$ {total.toFixed(2).replace('.', ',')}</div>
-            </div>
-            <button type="button" className="btn"
-              onClick={() => { if (!selecionadas.length) { alert('⚠️ Selecione ao menos uma cota!'); return } setAceitouTermos(false); setShowTermos(true) }}
-              disabled={enviando || !selecionadas.length}>
-              Ir para Pagamento
-            </button>
+            {configOk && VALOR_COTA > 0 && (
+              <>
+                <div className="disponivel-bar">Disponíveis: <span>{disp}/{TOTAL_COTAS}</span></div>
+                <div className="cotas-grid">
+                  {Array.from({ length: TOTAL_COTAS }, (_, i) => {
+                    const num = String(i + 1).padStart(2, '0')
+                    return (
+                      <div key={num} className={`cota${selecionadas.includes(num) ? ' ativo' : ''}${cotasOcupadas.includes(num) ? ' ocupada' : ''}`} onClick={() => toggleCota(num)}>
+                        <span className="c-num">{num}</span>
+                        <span className="c-lbl">{cotasOcupadas.includes(num) ? 'OCUPADA' : 'COTA'}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="total-bar">
+                  <div><div className="t-label">Total a pagar</div><div className="t-cotas">{selecionadas.length} cota{selecionadas.length !== 1 ? 's' : ''}</div></div>
+                  <div className="t-value">R$ {total.toFixed(2).replace('.', ',')}</div>
+                </div>
+                <button type="button" className="btn"
+                  onClick={() => { if (!selecionadas.length) { alert('⚠️ Selecione ao menos uma cota!'); return } setAceitouTermos(false); setShowTermos(true) }}
+                  disabled={enviando || !selecionadas.length}>
+                  Ir para Pagamento
+                </button>
+              </>
+            )}
             {participantes.length > 0 && (
               <>
                 <hr />
