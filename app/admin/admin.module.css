@@ -255,6 +255,76 @@
 .partCardRight  { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
 .statusCancel   { font-size: 11px; color: rgba(239,68,68,.55); font-weight: 600; }
 
+/* ── ENCERRAMENTO ── */
+.btnEncerrar {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 100px;
+  background: rgba(239,68,68,.08); color: rgba(239,68,68,.70);
+  border: 1px solid rgba(239,68,68,.22);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: all .2s;
+}
+.btnEncerrar:hover { background: rgba(239,68,68,.18); color: #EF4444; border-color: rgba(239,68,68,.40); }
+
+.encerradoBanner {
+  background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.22);
+  border-radius: 10px; padding: 12px 16px; margin-bottom: 12px;
+  font-size: 13px; font-weight: 600; color: rgba(239,68,68,.80);
+}
+.encerrarSucesso {
+  background: rgba(0,166,81,.10); border: 1px solid rgba(0,166,81,.25);
+  border-radius: 10px; padding: 12px 16px; margin-bottom: 12px;
+  font-size: 13px; font-weight: 600; color: #00A651;
+}
+.encerrarPanel {
+  background: rgba(239,68,68,.06); border: 1px solid rgba(239,68,68,.20);
+  border-radius: 14px; padding: 18px; margin-bottom: 14px;
+}
+.encerrarTitle {
+  font-size: 13px; font-weight: 800; color: #EF4444; margin-bottom: 14px;
+  letter-spacing: .2px;
+}
+.encerrarCalc {
+  background: rgba(0,0,0,.20); border-radius: 10px;
+  padding: 12px 14px; margin-bottom: 12px;
+}
+.encerrarRow {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: rgba(255,255,255,.50); padding: 4px 0;
+}
+.encerrarRow span:last-child { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+.encerrarDestaque {
+  border-top: 1px solid rgba(255,255,255,.08); margin-top: 6px;
+  padding-top: 10px; color: #EF4444; font-weight: 700; font-size: 14px;
+}
+.encerrarInfo {
+  font-size: 11px; color: rgba(255,255,255,.40); line-height: 1.9;
+  margin-bottom: 14px;
+}
+.encerrarActions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btnEncerrarConfirm {
+  padding: 10px 20px; border-radius: 100px;
+  background: #EF4444; color: #fff; border: none;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: all .2s; box-shadow: 0 4px 16px rgba(239,68,68,.35);
+}
+.btnEncerrarConfirm:hover:not(:disabled) { background: #DC2626; }
+.btnEncerrarConfirm:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── ACRÉSCIMO ── */
+.partCardStatusCol { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.acrescimoRow {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end;
+  padding: 5px 10px; border-radius: 8px;
+  background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.20);
+}
+.acrescimoLbl {
+  font-size: 11px; font-weight: 700; color: #F59E0B;
+  font-family: 'JetBrains Mono', monospace;
+}
+
 /* ── CONFIGURADOR TOGGLE ── */
 .configToggle {
   display: flex; justify-content: space-between; align-items: center;

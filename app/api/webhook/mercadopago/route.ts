@@ -12,19 +12,33 @@ export async function POST(req: NextRequest) {
     const pagamento = await buscarPagamentoMP(paymentId)
 
     if (pagamento?.status === 'approved') {
+      // Pagamento principal
       const { data: part } = await supabase
         .from('participantes')
         .select('nome, cotas, total, concurso, telefone')
         .eq('mp_payment_id', paymentId)
         .single()
 
-      await supabase
-        .from('participantes')
-        .update({ status: 'pago' })
-        .eq('mp_payment_id', paymentId)
-
       if (part) {
+        await supabase.from('participantes').update({ status: 'pago' }).eq('mp_payment_id', paymentId)
         await notificarPagamento(part.nome, part.cotas, part.concurso, Number(part.total), part.telefone)
+      } else {
+        // Pagamento de acréscimo
+        const { data: partAcr } = await supabase
+          .from('participantes')
+          .select('nome, cotas, acrescimo, concurso, telefone')
+          .eq('acrescimo_payment_id', paymentId)
+          .single()
+
+        if (partAcr) {
+          await supabase.from('participantes')
+            .update({ acrescimo_pago: true })
+            .eq('acrescimo_payment_id', paymentId)
+          await notificarPagamento(
+            partAcr.nome, partAcr.cotas, partAcr.concurso,
+            Number(partAcr.acrescimo), partAcr.telefone
+          )
+        }
       }
     }
 

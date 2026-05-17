@@ -82,6 +82,28 @@ export async function notificarLembrete(concurso: number, pendentes: number) {
   )
 }
 
+export async function notificarAcrescimo(
+  telefone: string, nome: string, cotas: string[],
+  acrescimo: number, pixCode: string, bolaoNome: string
+) {
+  const valor = acrescimo.toFixed(2).replace('.', ',')
+  await toNumber(telefone,
+    `🔔 *COMPLEMENTO DE PAGAMENTO*\n\n` +
+    `Olá *${nome}*!\n\n` +
+    `O bolão *${bolaoNome}* foi encerrado com cotas não vendidas.\n` +
+    `O saldo restante foi dividido entre os participantes.\n\n` +
+    `💰 *Seu complemento: R$ ${valor}*\n` +
+    `🎟️ Suas cotas: ${cotas.join(', ')}\n\n` +
+    `📋 *Código PIX para pagamento:*\n${pixCode}\n\n` +
+    `_Copie e pague no seu banco ou app. Boa sorte! 🍀_`
+  )
+  await toGroup(
+    `🔔 *ENCERRAMENTO — ${bolaoNome}*\n\n` +
+    `Acréscimo de *R$ ${valor}* enviado para *${nome}* via WhatsApp.\n` +
+    `🎟️ Cotas: ${cotas.join(', ')}`
+  )
+}
+
 export async function buscarGrupos(): Promise<{ id: string; name: string }[]> {
   if (!WHAPI_TOKEN) return []
   try {

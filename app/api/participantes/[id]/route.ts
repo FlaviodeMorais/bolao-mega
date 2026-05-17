@@ -10,10 +10,16 @@ async function isAdmin(req: NextRequest) {
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   if (!(await isAdmin(req))) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const { status } = await req.json()
+  const body = await req.json()
+  const fields: Record<string, unknown> = {}
+  if ('status'         in body) fields.status          = body.status
+  if ('acrescimo_pago' in body) fields.acrescimo_pago  = body.acrescimo_pago
+
+  if (!Object.keys(fields).length) return NextResponse.json({ error: 'Nenhum campo' }, { status: 400 })
+
   const { error } = await supabase
     .from('participantes')
-    .update({ status })
+    .update(fields)
     .eq('id', params.id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

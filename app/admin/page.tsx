@@ -5,11 +5,13 @@ import styles from './admin.module.css'
 interface Participante {
   id: string; nome: string; cotas: string[]; total: number
   status: string; telefone?: string; criado_em?: string
+  acrescimo?: number; acrescimo_pago?: boolean
 }
 interface Concurso    { num: number; data: string; premio: string }
 interface Bolao       {
   id: string; nome: string; slug: string; valor_cota: number
-  total_cotas: number; ativo: boolean; dezenas: number; num_apostas: number; taxa_admin: number
+  total_cotas: number; ativo: boolean; dezenas: number; num_apostas: number
+  taxa_admin: number; encerrado: boolean
 }
 interface HistoricoItem {
   concurso: number; bolao_slug: string | null; bolao_nome: string
@@ -56,6 +58,11 @@ export default function AdminPage() {
   const [loadingParts, setLoadingParts]       = useState(false)
   const [confirmandoTodos, setConfirmandoTodos] = useState(false)
   const [lembreteMsg, setLembreteMsg]         = useState('')
+
+  // Encerramento
+  const [showEncerrar, setShowEncerrar]   = useState(false)
+  const [encerrando, setEncerrando]       = useState(false)
+  const [encerrarOk, setEncerrarOk]       = useState<{acrescimo: number, participantes: number} | null>(null)
 
   // Configurador
   const [showConfig, setShowConfig]   = useState(false)
@@ -146,6 +153,37 @@ export default function AdminPage() {
   function fecharBolao() {
     setBolaoAtual(null); setPartsBolao([])
     setShowConfig(false); setConfigSalva(false)
+    setShowEncerrar(false); setEncerrarOk(null)
+  }
+
+  async function encerrarBolao() {
+    if (!bolaoAtual) return
+    setEncerrando(true)
+    const res = await fetch('/api/admin/encerrar-bolao', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bolao_id:   bolaoAtual.id,
+        bolao_slug: bolaoAtual.slug,
+        concurso:   parseInt(concursoAtivo),
+      }),
+    }).then(r => r.json())
+    setEncerrando(false)
+    if (res.ok) {
+      setShowEncerrar(false)
+      setEncerrarOk({ acrescimo: res.acrescimo, participantes: res.participantes })
+      await carregarBoloes()
+      await carregarPartsBolao(bolaoAtual.slug, concursoAtivo)
+    } else {
+      alert('Erro: ' + res.error)
+    }
+  }
+
+  async function confirmarAcrescimo(id: string) {
+    await fetch(`/api/participantes/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acrescimo_pago: true }),
+    })
+    if (bolaoAtual && concursoAtivo) carregarPartsBolao(bolaoAtual.slug, concursoAtivo)
   }
 
   function copiarLink(slug: string) {
@@ -457,7 +495,70 @@ export default function AdminPage() {
                     📱 Lembrete
                   </button>
                 </div>
+                {!bolaoAtual.encerrado && cotasLivres > 0 && pagosLista.length > 0 && (
+                  <button type="button" className={styles.btnEncerrar}
+                    onClick={() => { setShowEncerrar(!showEncerrar); setEncerrarOk(null) }}>
+                    ⛔ Encerrar Bolão
+                  </button>
+                )}
                 {lembreteMsg && <div className={styles.lembreteMsg}>{lembreteMsg}</div>}
+
+                {/* Banner encerrado */}
+                {bolaoAtual.encerrado && (
+                  <div className={styles.encerradoBanner}>
+                    ⛔ Bolão encerrado — complemento de pagamento enviado via WhatsApp
+                  </div>
+                )}
+
+                {/* Encerramento confirmado */}
+                {encerrarOk && (
+                  <div className={styles.encerrarSucesso}>
+                    ✅ Encerrado com sucesso!&nbsp;
+                    Acréscimo de <strong>R$ {encerrarOk.acrescimo.toFixed(2).replace('.',',')}</strong>&nbsp;
+                    enviado para {encerrarOk.participantes} participante(s) via WhatsApp.
+                  </div>
+                )}
+
+                {/* Painel de confirmação de encerramento */}
+                {showEncerrar && !bolaoAtual.encerrado && (
+                  <div className={styles.encerrarPanel}>
+                    <div className={styles.encerrarTitle}>⚠️ Encerrar Bolão com Rateio</div>
+                    <div className={styles.encerrarCalc}>
+                      <div className={styles.encerrarRow}>
+                        <span>Cotas não vendidas</span>
+                        <span>{cotasLivres} de {bolaoAtual.total_cotas || 20}</span>
+                      </div>
+                      <div className={styles.encerrarRow}>
+                        <span>Valor das cotas restantes</span>
+                        <span>R$ {(cotasLivres * Number(bolaoAtual.valor_cota)).toFixed(2).replace('.',',')}</span>
+                      </div>
+                      <div className={styles.encerrarRow}>
+                        <span>Participantes pagos</span>
+                        <span>{pagosLista.length}</span>
+                      </div>
+                      <div className={`${styles.encerrarRow} ${styles.encerrarDestaque}`}>
+                        <span>Acréscimo por participante</span>
+                        <span>R$ {pagosLista.length > 0
+                          ? ((cotasLivres * Number(bolaoAtual.valor_cota)) / pagosLista.length).toFixed(2).replace('.',',')
+                          : '0,00'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={styles.encerrarInfo}>
+                      ✅ Cada participante receberá um PIX com o complemento via WhatsApp.<br/>
+                      ✅ O bolão será marcado como encerrado.<br/>
+                      ⛔ Novos cadastros serão bloqueados.
+                    </div>
+                    <div className={styles.encerrarActions}>
+                      <button type="button" className={styles.btnEncerrarConfirm}
+                        onClick={encerrarBolao} disabled={encerrando}>
+                        {encerrando ? '⟳ Processando...' : '⛔ Confirmar Encerramento'}
+                      </button>
+                      <button type="button" className={styles.btnLoad}
+                        onClick={() => setShowEncerrar(false)}>Cancelar</button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Lista de participantes */}
                 <div className={styles.partSectionTitle}>
@@ -483,18 +584,35 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <div className={styles.partCardRight}>
-                      {p.status === 'pago'
-                        ? <span className={styles.statusPago}>✅ Pago</span>
-                        : p.status === 'cancelado'
-                          ? <span className={styles.statusCancel}>✕ Excluído</span>
-                          : <>
-                              <span className={styles.statusPend}>⏳ Pendente</span>
-                              <button type="button" className={styles.btnConfirm}
-                                onClick={() => confirmarPagamento(p.id)}>
-                                ✔ Pago
-                              </button>
-                            </>
-                      }
+                      <div className={styles.partCardStatusCol}>
+                        {/* Status principal */}
+                        {p.status === 'pago'
+                          ? <span className={styles.statusPago}>✅ Pago</span>
+                          : p.status === 'cancelado'
+                            ? <span className={styles.statusCancel}>✕ Excluído</span>
+                            : <>
+                                <span className={styles.statusPend}>⏳ Pendente</span>
+                                <button type="button" className={styles.btnConfirm}
+                                  onClick={() => confirmarPagamento(p.id)}>✔ Pago</button>
+                              </>
+                        }
+                        {/* Acréscimo */}
+                        {p.acrescimo != null && (
+                          <div className={styles.acrescimoRow}>
+                            <span className={styles.acrescimoLbl}>
+                              +R$ {Number(p.acrescimo).toFixed(2).replace('.',',')} complemento
+                            </span>
+                            {p.acrescimo_pago
+                              ? <span className={styles.statusPago}>✅ Pago</span>
+                              : <>
+                                  <span className={styles.statusPend}>⏳</span>
+                                  <button type="button" className={styles.btnConfirm}
+                                    onClick={() => confirmarAcrescimo(p.id)}>✔ Confirmar</button>
+                                </>
+                            }
+                          </div>
+                        )}
+                      </div>
                       {p.status !== 'cancelado' && (
                         <button type="button" className={styles.btnExcluir}
                           onClick={() => excluir(p.id, p.nome)}>✕</button>

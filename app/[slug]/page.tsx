@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props) {
 export default async function BolaoPage({ params }: Props) {
   const { data: bolao } = await supabase
     .from('boloes')
-    .select('id, nome, slug, valor_cota, total_cotas, dezenas, num_apostas, taxa_admin')
+    .select('id, nome, slug, valor_cota, total_cotas, dezenas, num_apostas, taxa_admin, encerrado')
     .eq('slug', params.slug)
     .eq('ativo', true)
     .single()
@@ -32,6 +32,7 @@ export default async function BolaoPage({ params }: Props) {
       dezenas={Number(bolao.dezenas) || 6}
       numApostas={Number(bolao.num_apostas) || 1}
       taxaAdmin={Number(bolao.taxa_admin) || 0}
+      encerrado={bolao.encerrado || false}
     />
   )
 }

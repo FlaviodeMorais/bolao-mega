@@ -29,9 +29,10 @@ interface Props {
   dezenas: number
   numApostas: number
   taxaAdmin: number
+  encerrado: boolean
 }
 
-export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas, dezenas, numApostas, taxaAdmin }: Props) {
+export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas, dezenas, numApostas, taxaAdmin, encerrado }: Props) {
   const VALOR_COTA  = Number(valorCota)  || 30
   const TOTAL_COTAS = Number(totalCotas) || 20
 
@@ -192,7 +193,22 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas,
           </div>
         )}
 
-        <div className="card">
+        {encerrado && (
+          <div className="card">
+            <div className="form-body">
+              <div className="bolao-encerrado-banner">
+                <div className="enc-icon">⛔</div>
+                <div className="enc-title">Bolão Encerrado</div>
+                <div className="enc-sub">
+                  Este bolão foi encerrado pelo administrador.<br/>
+                  Se você é participante, verifique seu <strong>WhatsApp</strong> para o PIX de complemento de pagamento.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!encerrado && <div className="card">
           <div className="form-body">
             <div className="field">
               <label className="field-label">Nome completo *</label>
@@ -262,7 +278,7 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas,
             )}
             <div className="footer"><strong>Boa sorte! 🍀</strong><br />Dúvidas? Fale com o administrador.</div>
           </div>
-        </div>
+        </div>}
       </div>
 
       {pix && (
