@@ -17,6 +17,13 @@ function mascaraNome(nome: string): string {
 
 const APPS_URL = process.env.NEXT_PUBLIC_APPS_URL || ''
 
+const REGRAS = [
+  { icon: '🎰', titulo: 'Como funciona', texto: 'Cada cota representa uma fração igual das apostas feitas na Mega-Sena. Quanto mais cotas você adquirir, maior sua participação no prêmio.' },
+  { icon: '💳', titulo: 'Pagamento', texto: 'Após selecionar suas cotas, gere o código PIX e efetue o pagamento. Sua inscrição é confirmada após a validação pelo administrador.' },
+  { icon: '⚠️', titulo: 'Cotas não vendidas', texto: 'Se o bolão encerrar com cotas disponíveis, o valor das cotas restantes será dividido igualmente entre os participantes. Você receberá um PIX complementar via WhatsApp.' },
+  { icon: '🏆', titulo: 'Prêmio', texto: 'Em caso de acerto, o prêmio é dividido proporcionalmente ao número de cotas de cada participante, após a dedução da taxa de administração.' },
+]
+
 interface Participante { id: string; nome: string; cotas: string[]; total: number; status: string }
 interface ConcursoAtivo { concurso: string; data: string; premio: string }
 interface PixData { pixCode: string; qrCodeBase64: string; paymentId: string; fonte: string; nome: string; cotas: string[]; total: number }
@@ -44,6 +51,8 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas,
   const [concursoAtivo, setConcursoAtivo] = useState<ConcursoAtivo | null>(null)
   const [pix, setPix]                     = useState<PixData | null>(null)
   const [enviando, setEnviando]           = useState(false)
+  const [showTermos, setShowTermos]       = useState(false)
+  const [aceitouTermos, setAceitouTermos] = useState(false)
   const [relogio, setRelogio]             = useState('')
   const [countdown, setCountdown]         = useState('')
   const [payTimer, setPayTimer]           = useState('')
@@ -258,8 +267,10 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas,
               <div><div className="t-label">Total a pagar</div><div className="t-cotas">{selecionadas.length} cota{selecionadas.length !== 1 ? 's' : ''}</div></div>
               <div className="t-value">R$ {total.toFixed(2).replace('.', ',')}</div>
             </div>
-            <button type="button" className="btn" onClick={confirmar} disabled={enviando}>
-              {enviando ? '⏳ Gerando pagamento...' : 'Ir para Pagamento'}
+            <button type="button" className="btn"
+              onClick={() => { if (!selecionadas.length) { alert('⚠️ Selecione ao menos uma cota!'); return } setAceitouTermos(false); setShowTermos(true) }}
+              disabled={enviando || !selecionadas.length}>
+              Ir para Pagamento
             </button>
             {participantes.length > 0 && (
               <>
@@ -280,6 +291,49 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas,
           </div>
         </div>}
       </div>
+
+      {/* Modal de Termos */}
+      {showTermos && !pix && (
+        <div className="pay-overlay">
+          <div className="pay-box termos-box">
+            <div className="termos-header">
+              <div className="termos-titulo">📋 Termos de Participação</div>
+              <div className="termos-bolao">{bolaoNome}</div>
+            </div>
+
+            <div className="termos-resumo">
+              <div className="termos-linha"><span className="termos-ic">🎟️</span><span>Cotas selecionadas: <strong>{selecionadas.sort().join(', ')}</strong></span></div>
+              <div className="termos-linha"><span className="termos-ic">💰</span><span>Total a pagar: <strong>R$ {total.toFixed(2).replace('.', ',')}</strong></span></div>
+              <div className="termos-linha"><span className="termos-ic">🎲</span><span>Apostas: <strong>{numApostas}</strong> de <strong>{dezenas}</strong> dezenas</span></div>
+            </div>
+
+            <div className="termos-lista">
+              {REGRAS.map((r, i) => (
+                <div key={i} className="termos-regra">
+                  <div className="termos-regra-titulo">{r.icon} {r.titulo}</div>
+                  <div className="termos-regra-desc">{r.texto}</div>
+                </div>
+              ))}
+            </div>
+
+            <label className="termos-check-label">
+              <input type="checkbox" className="termos-check"
+                checked={aceitouTermos}
+                onChange={e => setAceitouTermos(e.target.checked)} />
+              <span>Li e concordo com as regras de participação deste bolão</span>
+            </label>
+
+            <button type="button" className={`btn ${!aceitouTermos ? 'btn-disabled' : ''}`}
+              onClick={() => { if (aceitouTermos) { setShowTermos(false); confirmar() } }}
+              disabled={!aceitouTermos || enviando}>
+              {enviando ? '⏳ Gerando PIX...' : '✅ Confirmar e Gerar PIX'}
+            </button>
+            <button type="button" className="pay-fechar" onClick={() => setShowTermos(false)}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       {pix && (
         <div className="pay-overlay">
@@ -322,6 +376,14 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas,
                 <div className="pay-confirmed-sub">{pix.nome} · Cotas: {pix.cotas.join(', ')} · R$ {pix.total.toFixed(2).replace('.', ',')}</div>
               </div>
             )}
+            <div className="recibo-termos">
+              <div className="recibo-termos-titulo">📋 Termos aceitos</div>
+              {REGRAS.map((r, i) => (
+                <div key={i} className="recibo-termos-item">
+                  <span>{r.icon}</span><span><strong>{r.titulo}:</strong> {r.texto}</span>
+                </div>
+              ))}
+            </div>
             <button type="button" className="pay-fechar" onClick={() => { setPix(null); if(timerRef.current) clearInterval(timerRef.current); if(statusRef.current) clearInterval(statusRef.current) }}>Fechar</button>
           </div>
         </div>

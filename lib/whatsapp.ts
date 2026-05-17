@@ -82,6 +82,41 @@ export async function notificarLembrete(concurso: number, pendentes: number) {
   )
 }
 
+export async function notificarPremioIndividual(
+  telefone: string, nome: string, cotas: string[],
+  valorPremio: number, bolaoNome: string, concurso: number
+) {
+  const valor = valorPremio.toFixed(2).replace('.', ',')
+  await toNumber(telefone,
+    `🏆 *PARABÉNS! VOCÊ GANHOU!*\n\n` +
+    `*${nome}*, o bolão *${bolaoNome}* ganhou no concurso #${concurso}!\n\n` +
+    `🎟️ Suas cotas: ${cotas.join(', ')}\n` +
+    `💰 *Seu prêmio: R$ ${valor}*\n\n` +
+    `_O administrador entrará em contato para efetuar o pagamento. Parabéns! 🍀🎉_`
+  )
+}
+
+export async function notificarResultadoGrupo(
+  bolaoNome: string, concurso: number, ganhou: boolean,
+  premioTotal?: number, valorPorCota?: number
+) {
+  if (ganhou && premioTotal != null) {
+    await toGroup(
+      `🏆 *GANHAMOS! MEGA-SENA #${concurso}*\n\n` +
+      `O bolão *${bolaoNome}* acertou! 🎉\n\n` +
+      `💰 Prêmio total: *R$ ${premioTotal.toFixed(2).replace('.', ',')}*\n` +
+      `🎟️ Valor por cota: *R$ ${(valorPorCota || 0).toFixed(2).replace('.', ',')}*\n\n` +
+      `_Cada participante será notificado individualmente. Parabéns a todos! 🍀_`
+    )
+  } else {
+    await toGroup(
+      `🎲 *RESULTADO — Concurso #${concurso}*\n\n` +
+      `*${bolaoNome}* não acertou desta vez.\n\n` +
+      `_Mas a sorte está chegando! Vamos pro próximo! 💪🍀_`
+    )
+  }
+}
+
 export async function notificarAcrescimo(
   telefone: string, nome: string, cotas: string[],
   acrescimo: number, pixCode: string, bolaoNome: string

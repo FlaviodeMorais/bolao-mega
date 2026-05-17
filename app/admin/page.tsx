@@ -66,6 +66,13 @@ export default function AdminPage() {
   const [encerrando, setEncerrando]       = useState(false)
   const [encerrarOk, setEncerrarOk]       = useState<{acrescimo: number, participantes: number} | null>(null)
 
+  // Resultado do sorteio
+  const [showResultado, setShowResultado]       = useState(false)
+  const [resultadoGanhou, setResultadoGanhou]   = useState<boolean | null>(null)
+  const [premioTotal, setPremioTotal]           = useState('')
+  const [registrandoRes, setRegistrandoRes]     = useState(false)
+  const [resultadoMsg, setResultadoMsg]         = useState('')
+
   // Configurador
   const [showConfig, setShowConfig]   = useState(false)
   const [editDezenas, setEditDezenas] = useState(6)
@@ -177,6 +184,32 @@ export default function AdminPage() {
       await carregarPartsBolao(bolaoAtual.slug, concursoAtivo)
     } else {
       alert('Erro: ' + res.error)
+    }
+  }
+
+  async function registrarResultado() {
+    if (!bolaoAtual || resultadoGanhou === null) return
+    if (resultadoGanhou && !premioTotal) { setResultadoMsg('❌ Informe o valor do prêmio.'); return }
+    setRegistrandoRes(true); setResultadoMsg('')
+    const res = await fetch('/api/admin/resultado-bolao', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bolao_id:    bolaoAtual.id,
+        bolao_slug:  bolaoAtual.slug,
+        concurso:    parseInt(concursoAtivo),
+        ganhou:      resultadoGanhou,
+        premio_total: resultadoGanhou ? parseFloat(premioTotal.replace(',', '.')) : 0,
+      }),
+    }).then(r => r.json())
+    setRegistrandoRes(false)
+    if (res.ok) {
+      const msg = res.ganhou
+        ? `✅ Prêmio notificado! R$ ${res.valor_por_cota?.toFixed(2).replace('.',',')} por cota para ${res.participantes} participantes.`
+        : '✅ Grupo notificado — resultado registrado.'
+      setResultadoMsg(msg)
+      setTimeout(() => { setResultadoMsg(''); setShowResultado(false); setResultadoGanhou(null); setPremioTotal('') }, 5000)
+    } else {
+      setResultadoMsg('❌ ' + res.error)
     }
   }
 
@@ -572,7 +605,70 @@ export default function AdminPage() {
                   <button type="button" className={styles.btnWhatsapp} onClick={enviarLembrete}>
                     📱 Lembrete
                   </button>
+                  <button type="button" className={styles.btnResultado}
+                    onClick={() => { setShowResultado(!showResultado); setResultadoMsg(''); setResultadoGanhou(null); setPremioTotal('') }}>
+                    🏆 Resultado
+                  </button>
                 </div>
+
+                {/* Painel de resultado */}
+                {showResultado && (
+                  <div className={styles.resultadoPanel}>
+                    <div className={styles.resultadoTitle}>🏆 Registrar Resultado — #{concursoAtivo}</div>
+                    <div className={styles.resultadoBtns}>
+                      <button type="button"
+                        className={`${styles.btnGanhou} ${resultadoGanhou === true ? styles.btnGanhouAtivo : ''}`}
+                        onClick={() => setResultadoGanhou(true)}>
+                        🎉 Ganhamos!
+                      </button>
+                      <button type="button"
+                        className={`${styles.btnNaoGanhou} ${resultadoGanhou === false ? styles.btnNaoGanhouAtivo : ''}`}
+                        onClick={() => setResultadoGanhou(false)}>
+                        😔 Não foi dessa vez
+                      </button>
+                    </div>
+                    {resultadoGanhou === true && (
+                      <div className={styles.premioInput}>
+                        <label className={styles.configLabel}>Prêmio total recebido (R$)</label>
+                        <input type="number" min={0} step={0.01}
+                          className={styles.configInput}
+                          title="Valor total do prêmio recebido"
+                          placeholder="Ex: 15000,00"
+                          value={premioTotal}
+                          onChange={e => setPremioTotal(e.target.value)} />
+                        {premioTotal && pagosLista.length > 0 && (
+                          <div className={styles.premioCalc}>
+                            {(() => {
+                              const total = parseFloat(premioTotal.replace(',','.')) || 0
+                              const taxa  = Number(bolaoAtual.taxa_admin) || 0
+                              const liq   = total - taxa
+                              const cotas = pagosLista.reduce((s,p) => s + (Array.isArray(p.cotas) ? p.cotas.length : 0), 0)
+                              const pCota = cotas > 0 ? liq / cotas : 0
+                              return <>
+                                <div className={styles.premioCalcRow}><span>Taxa admin</span><span>- R$ {taxa.toFixed(2).replace('.',',')}</span></div>
+                                <div className={styles.premioCalcRow}><span>Prêmio líquido</span><span>R$ {liq.toFixed(2).replace('.',',')}</span></div>
+                                <div className={styles.premioCalcRow}><span>Total de cotas pagas</span><span>{cotas} cotas</span></div>
+                                <div className={`${styles.premioCalcRow} ${styles.premioCalcDestaque}`}><span>Valor por cota</span><span>R$ {pCota.toFixed(2).replace('.',',')}</span></div>
+                              </>
+                            })()}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {resultadoGanhou === false && (
+                      <div className={styles.resultadoInfo}>
+                        Será enviada uma mensagem ao grupo informando que o bolão não acertou desta vez.
+                      </div>
+                    )}
+                    {resultadoMsg && <div className={styles.resultadoMsgBox}>{resultadoMsg}</div>}
+                    {resultadoGanhou !== null && !resultadoMsg && (
+                      <button type="button" className={styles.btnResultadoConfirm}
+                        onClick={registrarResultado} disabled={registrandoRes}>
+                        {registrandoRes ? '⟳ Enviando...' : '📲 Notificar via WhatsApp'}
+                      </button>
+                    )}
+                  </div>
+                )}
                 {!bolaoAtual.encerrado && cotasLivres > 0 && pagosLista.length > 0 && (
                   <button type="button" className={styles.btnEncerrar}
                     onClick={() => { setShowEncerrar(!showEncerrar); setEncerrarOk(null) }}>
