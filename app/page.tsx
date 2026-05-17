@@ -1,427 +1,90 @@
 'use client'
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState } from 'react'
 
-const TOTAL_COTAS = 20
-const VALOR_COTA  = 30
-
-interface Participante {
-  id: string; nome: string; cotas: string[]; total: number; status: string
-}
+interface Bolao { id: string; nome: string; slug: string; ativo: boolean }
 interface ConcursoAtivo { concurso: string; data: string; premio: string }
-interface PixData { pixCode: string; qrCodeBase64: string; paymentId: string; fonte: string; nome: string; cotas: string[]; total: number }
 
 export default function Home() {
-  const [nome, setNome]           = useState('')
-  const [telefone, setTelefone]   = useState('')
-  const [cotasOcupadas, setCotasOcupadas]  = useState<string[]>([])
-  const [selecionadas, setSelecionadas]    = useState<string[]>([])
-  const [participantes, setParticipantes]  = useState<Participante[]>([])
-  const [concursoAtivo, setConcursoAtivo]  = useState<ConcursoAtivo | null>(null)
-  const [pix, setPix]             = useState<PixData | null>(null)
-  const [enviando, setEnviando]   = useState(false)
-  const [relogio, setRelogio]     = useState('')
-  const [countdown, setCountdown] = useState('')
-  const [payTimer, setPayTimer]     = useState('')
-  const [payStep, setPayStep]       = useState(0)
-  const [payStatus, setPayStatus]   = useState<'aguardando'|'pago'|'unknown'>('aguardando')
-  const [payCreated, setPayCreated] = useState('')
-  const pollRef    = useRef<ReturnType<typeof setInterval> | null>(null)
-  const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null)
-  const statusRef  = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [boloes, setBoloes]               = useState<Bolao[]>([])
+  const [concursoAtivo, setConcursoAtivo] = useState<ConcursoAtivo | null>(null)
+  const [loading, setLoading]             = useState(true)
 
-  const concurso = concursoAtivo?.concurso
-
-  // Relógio
   useEffect(() => {
-    const tick = () => {
-      const d = new Date()
-      const p = (n: number) => String(n).padStart(2, '0')
-      setRelogio(`📅 ${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}  ·  ⏱ ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`)
-    }
-    tick()
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
+    Promise.all([
+      fetch('/api/boloes').then(r => r.json()),
+      fetch('/api/concurso-ativo').then(r => r.json()),
+    ]).then(([b, c]) => {
+      setBoloes(b.boloes || [])
+      setConcursoAtivo(c)
+      setLoading(false)
+    })
   }, [])
-
-  // Carrega concurso ativo
-  useEffect(() => {
-    fetch('/api/concurso-ativo').then(r => r.json()).then(setConcursoAtivo)
-  }, [])
-
-  // Countdown até o sorteio
-  useEffect(() => {
-    if (!concursoAtivo?.data) return
-    const datePart = concursoAtivo.data.split(' ·')[0]
-    const [dd, mm] = datePart.split('/').map(Number)
-    const year = new Date().getFullYear()
-    const draw = new Date(year, mm - 1, dd, 21, 0, 0)
-    const tick = () => {
-      const diff = draw.getTime() - Date.now()
-      if (diff <= 0) { setCountdown('Apostas encerradas'); return }
-      const h = Math.floor(diff / 3600000)
-      const m = Math.floor((diff % 3600000) / 60000)
-      setCountdown(`${h}h ${m}min`)
-    }
-    tick()
-    const id = setInterval(tick, 30000)
-    return () => clearInterval(id)
-  }, [concursoAtivo?.data])
-
-  // Poll de cotas e participantes a cada 10s
-  const recarregar = useCallback(async () => {
-    if (!concurso) return
-    const [c, p] = await Promise.all([
-      fetch(`/api/cotas?concurso=${concurso}`).then(r => r.json()),
-      fetch(`/api/participantes?concurso=${concurso}`).then(r => r.json()),
-    ])
-    setCotasOcupadas(c.cotas || [])
-    setParticipantes(p.participantes || [])
-    setSelecionadas(prev => prev.filter(s => !(c.cotas || []).includes(s)))
-  }, [concurso])
-
-  useEffect(() => {
-    recarregar()
-    if (pollRef.current) clearInterval(pollRef.current)
-    pollRef.current = setInterval(recarregar, 10000)
-    return () => { if (pollRef.current) clearInterval(pollRef.current) }
-  }, [recarregar])
-
-  function toggleCota(num: string) {
-    if (cotasOcupadas.includes(num)) return
-    setSelecionadas(prev =>
-      prev.includes(num) ? prev.filter(c => c !== num) : [...prev, num]
-    )
-  }
-
-  async function confirmar() {
-    if (!nome.trim())            { alert('⚠️ Informe seu nome!'); return }
-    if (!telefone.trim() || telefone.replace(/\D/g, '').length < 11) { alert('⚠️ Informe seu WhatsApp com DDD!'); return }
-    if (!concurso)               { alert('⚠️ Nenhum concurso ativo. Aguarde o admin.'); return }
-    if (!selecionadas.length)    { alert('⚠️ Selecione ao menos uma cota!'); return }
-
-    setEnviando(true)
-    try {
-      const total = selecionadas.length * VALOR_COTA
-
-      // Gera PIX
-      const pixRes = await fetch('/api/pix', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ concurso: parseInt(concurso), nome: nome.trim(), cotas: selecionadas.sort(), total }),
-      }).then(r => r.json())
-
-      // Registra participante
-      const reg = await fetch('/api/participantes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          concurso: parseInt(concurso),
-          nome: nome.trim(),
-          telefone: '55' + telefone.replace(/\D/g, ''),
-          cotas: selecionadas.sort(),
-          total,
-          mp_payment_id: pixRes.paymentId,
-          pix_code: pixRes.pixCode,
-        }),
-      }).then(r => r.json())
-
-      if (reg.error) { alert('⚠️ ' + reg.error); return }
-
-      const cotasSalvas = [...selecionadas].sort()
-      const nomeSalvo   = nome.trim()
-      const totalSalvo  = cotasSalvas.length * VALOR_COTA
-      setPix({ ...pixRes, nome: nomeSalvo, cotas: cotasSalvas, total: totalSalvo })
-      setNome(''); setTelefone('')
-      setSelecionadas([])
-      recarregar()
-      // Inicia timer de 30 min
-      let secs = 30 * 60
-      if (timerRef.current) clearInterval(timerRef.current)
-      timerRef.current = setInterval(() => {
-        secs--
-        const m = String(Math.floor(secs / 60)).padStart(2, '0')
-        const s = String(secs % 60).padStart(2, '0')
-        setPayTimer(`${m}:${s}`)
-        if (secs <= 0) clearInterval(timerRef.current!)
-      }, 1000)
-      setPayTimer('30:00')
-      setPayStep(0)
-      setPayStatus('aguardando')
-      setPayCreated(new Date().toLocaleString('pt-BR'))
-      // Poll status a cada 5s
-      if (statusRef.current) clearInterval(statusRef.current)
-      const pid = pixRes.paymentId
-      statusRef.current = setInterval(async () => {
-        const r = await fetch(`/api/status?paymentId=${pid}`)
-        const d = await r.json()
-        if (d.status === 'pago') {
-          setPayStatus('pago')
-          setPayStep(2)
-          clearInterval(statusRef.current!)
-          clearInterval(timerRef.current!)
-          recarregar()
-        }
-      }, 5000)
-    } finally {
-      setEnviando(false)
-    }
-  }
-
-  async function copiarPix() {
-    if (!pix) return
-    await navigator.clipboard.writeText(pix.pixCode)
-    alert('✅ Código PIX copiado!')
-  }
-
-  const total = selecionadas.length * VALOR_COTA
-  const disp  = TOTAL_COTAS - cotasOcupadas.length
 
   return (
-    <>
-      <div className="page-wrap">
-        <div className="site-header">
-          <span className="logo">🍀</span>
-          <div className="header-brand">
-            <span className="brand">MEGA-SENA</span>
-          </div>
-          <a href="/admin" className="header-link">
-            <span className="material-icons-round">settings</span>
-          </a>
+    <div className="page-wrap">
+      {/* Header */}
+      <div className="site-header">
+        <span className="logo">🍀</span>
+        <div className="header-brand">
+          <span className="brand">MEGA-SENA</span>
         </div>
-
-        <div className="rules-box rules-box-page">
-          <div className="rules-title">📋 Regras do Grupo</div>
-          <div className="rule"><span className="ico">🎯</span><span><strong>100 apostas</strong> por concurso · <strong>20 cotas</strong> de <strong>R$ 30,00</strong> cada.</span></div>
-          <div className="rule"><span className="ico">📅</span><span><strong>3 sorteios por semana.</strong> Grupo fechado para membros confirmados.</span></div>
-          <div className="rule"><span className="ico">⏰</span><span>Pagamento até as <strong>12:00 da data do concurso.</strong></span></div>
-          <div className="rule"><span className="ico">🔄</span><span>Cotas não pagas serão redistribuídas ou adquiridas por outro membro.</span></div>
-        </div>
-
-        {concursoAtivo?.concurso && (
-          <div className="mega-card">
-            <div className="mega-header">
-              <span className="mega-clover">🍀</span>
-              <span className="mega-title">MEGA-SENA</span>
-              <span className="mega-concurso">Concurso #{concursoAtivo.concurso}</span>
-            </div>
-            <div className="mega-body">
-              {concursoAtivo.premio
-                ? <div className="mega-prize">{concursoAtivo.premio}</div>
-                : <div className="mega-prize">—</div>
-              }
-              <div className="mega-prize-label">Prêmio estimado do concurso #{concursoAtivo.concurso}</div>
-              {concursoAtivo.data && (
-                <>
-                  <div className="mega-draw-label">Sorteio</div>
-                  <div className="mega-draw-date">{concursoAtivo.data} às 21h00</div>
-                </>
-              )}
-              {countdown && (
-                <div className="mega-countdown">
-                  Apostas se encerram em <span>{countdown}</span>
-                </div>
-              )}
-              <div className="mega-divider" />
-              <div className="mega-stats">
-                <div className="mega-stat">
-                  <div className="mega-stat-val">{disp}/20</div>
-                  <div className="mega-stat-lbl">Cotas Livres</div>
-                </div>
-                <div className="mega-stat-sep" />
-                <div className="mega-stat">
-                  <div className="mega-stat-val">{participantes.length}</div>
-                  <div className="mega-stat-lbl">Participantes</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="card">
-        <div className="form-body">
-
-
-          <div className="field">
-            <label className="field-label">// Nome completo *</label>
-            <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome completo" />
-          </div>
-
-          <div className="field">
-            <label className="field-label">WhatsApp (com DDD) *</label>
-            <input
-              type="tel"
-              value={telefone}
-              onChange={e => {
-                const v = e.target.value.replace(/\D/g, '').slice(0, 11)
-                const f = v.length <= 2 ? v
-                  : v.length <= 7  ? `(${v.slice(0,2)}) ${v.slice(2)}`
-                  : `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`
-                setTelefone(f)
-              }}
-              placeholder="(19) 99999-9999"
-              inputMode="numeric"
-            />
-          </div>
-
-          <div className="field">
-            <label className="field-label">// Data / Hora do registro</label>
-            <div className="datetime-box">{relogio}</div>
-          </div>
-
-          <hr />
-          <div className="sec-title">🎟️ SELECIONAR COTAS</div>
-          <div className="disponivel-bar">DISPONÍVEIS: <span>{disp}</span>/20</div>
-
-          <div className="cotas-grid">
-            {Array.from({ length: TOTAL_COTAS }, (_, i) => {
-              const num = String(i + 1).padStart(2, '0')
-              const ocupada   = cotasOcupadas.includes(num)
-              const ativa     = selecionadas.includes(num)
-              return (
-                <div
-                  key={num}
-                  className={`cota${ativa ? ' ativo' : ''}${ocupada ? ' ocupada' : ''}`}
-                  onClick={() => toggleCota(num)}
-                >
-                  <span className="c-num">{num}</span>
-                  <span className="c-lbl">{ocupada ? 'OCUPADA' : 'COTA'}</span>
-                </div>
-              )
-            })}
-          </div>
-
-          <div className="total-bar">
-            <div>
-              <div className="t-label">// Total a pagar</div>
-              <div className="t-cotas">{selecionadas.length} cota{selecionadas.length !== 1 ? 's' : ''} selecionada{selecionadas.length !== 1 ? 's' : ''}</div>
-            </div>
-            <div className="t-value">R$ {total.toFixed(2).replace('.', ',')}</div>
-          </div>
-
-          <button type="button" className="btn" onClick={confirmar} disabled={enviando}>
-            {enviando ? '⏳ Gerando pagamento...' : 'Ir para Pagamento'}
-          </button>
-
-          {participantes.length > 0 && (
-            <>
-              <hr />
-              <div className="sec-title">👥 PARTICIPANTES</div>
-              <div className="p-box">
-                {participantes.map(p => (
-                  <div className="p-row" key={p.id}>
-                    <span className="p-nome">{p.nome}</span>
-                    <span className="p-cotas">{Array.isArray(p.cotas) ? p.cotas.join(', ') : p.cotas}</span>
-                    <span className={p.status === 'pago' ? 'p-pago' : 'p-pending'}>
-                      {p.status === 'pago' ? '✅ PAGO' : '⏳'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          <div className="footer">
-            <strong>Boa sorte a todos! 🍀</strong><br />
-            Dúvidas? Fale com o administrador do grupo.
-          </div>
-        </div>
-        </div>
+        <a href="/admin" className="header-link">
+          <span className="material-icons-round">settings</span>
+        </a>
       </div>
 
-      {pix && (
-        <div className="pay-overlay">
-          <div className="pay-box">
-
-            {/* Stepper */}
-            <div className="pay-stepper">
-              {[
-                'Aguardando\nPagamento Pix',
-                'Em\nProcessamento',
-                'Pagamento\nConfirmado',
-              ].map((label, i) => (
-                <div key={i} className="pay-step-wrap">
-                  {i > 0 && <div className={`pay-line${payStep >= i ? ' done' : ''}`} />}
-                  <div className="pay-step-item" key={`item-${i}`}>
-                    <div className={`pay-dot${payStep >= i ? ' active' : ''}${payStep === i ? ' current' : ''}`}>
-                      {payStep > i ? '✓' : payStep === i ? '◆' : ''}
-                    </div>
-                    {(payStep === i || i === 0) && (
-                      <div className="pay-step-label">{label.split('\n').map((l,k) => <span key={k}>{l}<br/></span>)}</div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Recibo */}
-            <div className="receipt-card">
-              <div className="receipt-pix-row">
-                <span className="receipt-meio">Meio de pagamento:</span>
-                <span className="pix-logo">◈ pix</span>
-              </div>
-              <div className="receipt-grid">
-                <div>
-                  <span className="receipt-lbl">Número da Compra: </span>
-                  <span className="receipt-val">{pix.paymentId.substring(0,10)}</span>
-                </div>
-                <div>
-                  <span className="receipt-lbl">ID: </span>
-                  <span className="receipt-val">{pix.paymentId}</span>
-                </div>
-                <div>
-                  <span className="receipt-lbl">Situação da Compra: </span>
-                  <span className={`receipt-situacao${payStatus === 'pago' ? ' pago' : ''}`}>
-                    {payStatus === 'pago' ? 'Pagamento Confirmado' : 'Em Processamento'}
-                  </span>
-                </div>
-                <div>
-                  <span className="receipt-lbl">Data da Compra: </span>
-                  <span className="receipt-val">{payCreated}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* QR Code — só mostra se aguardando */}
-            {payStatus !== 'pago' && (
-              <>
-                <div className="pay-scan-title">Escaneie o código a seguir</div>
-                <img className="pay-qr" src={`data:image/png;base64,${pix.qrCodeBase64}`} alt="QR Code PIX" />
-                <div className="pay-copy-title">Ou copie este código para efetuar o pagamento</div>
-                <div className="pay-instruction">
-                  No seu internet Banking ou app escolha pagamento via pix.
-                  Depois copie e cole o seguinte código
-                </div>
-                <div className="pay-code-row">
-                  <div className="pay-code">{pix.pixCode}</div>
-                  <button type="button" className="pay-copy-btn" onClick={copiarPix}>📋 Copiar código</button>
-                </div>
-                {payTimer && (
-                  <div className="pay-timer">⊙ Você tem <strong>{payTimer} minutos</strong> para efetuar o pagamento</div>
-                )}
-              </>
+      {/* Hero */}
+      {concursoAtivo?.concurso && (
+        <div className="mega-card">
+          <div className="mega-header">
+            <span className="mega-clover">🍀</span>
+            <span className="mega-title">MEGA-SENA</span>
+            <span className="mega-concurso">Concurso #{concursoAtivo.concurso}</span>
+          </div>
+          <div className="mega-body">
+            {concursoAtivo.premio && concursoAtivo.premio !== 'Acumulando'
+              ? <div className="mega-prize">{concursoAtivo.premio}</div>
+              : <div className="mega-prize mega-prize-acc">Acumulando</div>
+            }
+            <div className="mega-prize-label">Prêmio estimado do concurso #{concursoAtivo.concurso}</div>
+            {concursoAtivo.data && (
+              <><div className="mega-draw-label">Sorteio</div>
+              <div className="mega-draw-date">{concursoAtivo.data} às 21h00</div></>
             )}
-
-            {/* Confirmado */}
-            {payStatus === 'pago' && (
-              <div className="pay-confirmed">
-                <div className="pay-confirmed-icon">✅</div>
-                <div className="pay-confirmed-title">Pagamento Confirmado!</div>
-                <div className="pay-confirmed-sub">
-                  {pix.nome} · Cotas: {pix.cotas.join(', ')} · R$ {pix.total.toFixed(2).replace('.', ',')}
-                </div>
-              </div>
-            )}
-
-            <button type="button" className="pay-fechar" onClick={() => {
-              setPix(null)
-              if (timerRef.current) clearInterval(timerRef.current)
-              if (statusRef.current) clearInterval(statusRef.current)
-            }}>
-              Fechar
-            </button>
           </div>
         </div>
       )}
-    </>
+
+      {/* Bolões */}
+      <div className="card">
+        <div className="form-body">
+          <div className="sec-title">🎰 Escolha seu Bolão</div>
+
+          {loading && <div className="p-empty">Carregando...</div>}
+
+          {!loading && boloes.length === 0 && (
+            <div className="p-empty">
+              Nenhum bolão disponível no momento.<br/>
+              Aguarde o administrador criar um.
+            </div>
+          )}
+
+          {boloes.filter(b => b.ativo).map(b => (
+            <a key={b.id} href={`/${b.slug}`} className="bolao-link-card">
+              <div className="blc-info">
+                <div className="blc-nome">{b.nome}</div>
+                <div className="blc-slug">bolao-mega-zeta.vercel.app/{b.slug}</div>
+              </div>
+              <span className="material-icons-round blc-arrow">arrow_forward_ios</span>
+            </a>
+          ))}
+
+          <div className="footer footer-index">
+            <strong>Boa sorte a todos! 🍀</strong><br/>
+            Dúvidas? Fale com o administrador do grupo.
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
