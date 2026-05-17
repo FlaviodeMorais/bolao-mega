@@ -3,15 +3,15 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 
 function mascaraNome(nome: string): string {
   const words = nome.trim().split(/\s+/)
-  if (words.length === 1) {
-    const w = words[0]
-    if (w.length <= 4) return w
-    return w.slice(0, 2) + '*'.repeat(w.length - 4) + w.slice(-2)
+  const maskWord = (w: string, pos: 'first' | 'last' | 'single') => {
+    if (w.length <= 2) return w.slice(0, 2).padEnd(w.length, '*')
+    if (pos === 'first' || pos === 'single')
+      return w.slice(0, 2) + '*'.repeat(Math.max(1, w.length - 2))
+    return '*'.repeat(Math.max(1, w.length - 2)) + w.slice(-2)
   }
-  const first = words[0]
-  const last  = words[words.length - 1]
-  const fm = first.slice(0, 2) + '*'.repeat(Math.max(0, first.length - 2))
-  const lm = '*'.repeat(Math.max(0, last.length - 2)) + last.slice(-2)
+  if (words.length === 1) return maskWord(words[0], 'single')
+  const fm = maskWord(words[0], 'first')
+  const lm = maskWord(words[words.length - 1], 'last')
   return `${fm} ${lm}`
 }
 
