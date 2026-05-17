@@ -155,6 +155,16 @@
   color: rgba(255,255,255,.30); text-transform: uppercase;
 }
 
+/* ── WHATSAPP STATUS ── */
+.waOk {
+  font-size: 11px; font-weight: 700; color: #25D366;
+  letter-spacing: .3px;
+}
+.waErro {
+  font-size: 11px; font-weight: 700; color: #EF4444;
+  letter-spacing: .3px;
+}
+
 /* ── BOLÃO META (info extra no card) ── */
 .bolaoMeta {
   font-size: 10px; color: rgba(255,255,255,.28);

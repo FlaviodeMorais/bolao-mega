@@ -37,6 +37,62 @@ async function toNumber(telefone: string, text: string): Promise<{ ok: boolean; 
   return send('messages/text', { to, body: text })
 }
 
+export async function verificarNumeroWhatsApp(telefone: string): Promise<boolean> {
+  if (!WHAPI_TOKEN) return true
+  try {
+    const number = telefone.replace(/\D/g, '')
+    const full   = number.startsWith('55') ? number : `55${number}`
+    const res = await fetch(`${WHAPI_URL}/contacts`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${WHAPI_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ blocking: 'wait', phones: [full] }),
+    })
+    if (!res.ok) return true // se falhar, não bloqueia o cadastro
+    const data = await res.json()
+    const contato = Array.isArray(data) ? data[0] : data?.contacts?.[0]
+    return contato?.exists !== false
+  } catch {
+    return true
+  }
+}
+
+export async function enviarQRCodePIX(
+  telefone: string,
+  qrBase64: string,
+  valor: number,
+  pixCode: string,
+  bolaoNome: string
+) {
+  if (!WHAPI_TOKEN || !telefone) return
+  const number = telefone.replace(/\D/g, '')
+  const to     = number.startsWith('55') ? `${number}@s.whatsapp.net` : `55${number}@s.whatsapp.net`
+  const valorStr = valor.toFixed(2).replace('.', ',')
+
+  // Envia QR Code como imagem
+  await fetch(`${WHAPI_URL}/messages/image`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${WHAPI_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to,
+      image: `data:image/png;base64,${qrBase64}`,
+      caption:
+        `📲 *PIX para pagamento*\n` +
+        `🎰 ${bolaoNome}\n\n` +
+        `💰 *R$ ${valorStr}*\n\n` +
+        `_Escaneie o QR Code ou use o código abaixo._`,
+    }),
+  }).catch(() => {})
+
+  // Envia código PIX em texto para copiar
+  await send('messages/text', {
+    to,
+    body:
+      `📋 *Código PIX — Copia e Cola:*\n\n` +
+      `${pixCode}\n\n` +
+      `_Abra seu banco, escolha PIX, cole o código e pague._`,
+  })
+}
+
 export async function notificarInscricao(nome: string, cotas: string[], concurso: number, total: number) {
   await toGroup(
     `✅ *NOVA INSCRIÇÃO*\n\n` +

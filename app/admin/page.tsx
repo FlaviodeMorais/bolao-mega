@@ -66,6 +66,9 @@ export default function AdminPage() {
   const [encerrando, setEncerrando]       = useState(false)
   const [encerrarOk, setEncerrarOk]       = useState<{acrescimo: number, participantes: number} | null>(null)
 
+  // WhatsApp health
+  const [waStatus, setWaStatus] = useState<'ok'|'erro'|''>('')
+
   // Comprovante
   const [enviandoComp, setEnviandoComp]         = useState<string | null>(null)
   const [compMsg, setCompMsg]                   = useState('')
@@ -142,6 +145,15 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => { if (logado) carregarInicio() }, [logado, carregarInicio])
+
+  useEffect(() => {
+    if (!logado) return
+    const checarWA = () => fetch('/api/whatsapp/health').then(r => r.json())
+      .then(d => setWaStatus(d.connected ? 'ok' : 'erro')).catch(() => setWaStatus('erro'))
+    checarWA()
+    const id = setInterval(checarWA, 30000)
+    return () => clearInterval(id)
+  }, [logado])
 
   async function carregarPartsBolao(slug: string, concurso: string) {
     setLoadingParts(true)
@@ -420,6 +432,12 @@ export default function AdminPage() {
         <h1 className={styles.title}>⚙️ Painel Admin — Grupo Mega 💯</h1>
         <div className={styles.headerRight}>
           <span className={styles.headerConcurso}>{concursoAtivo ? `Concurso #${concursoAtivo}` : '—'}</span>
+          {waStatus && (
+            <span className={waStatus === 'ok' ? styles.waOk : styles.waErro}
+              title={waStatus === 'ok' ? 'WhatsApp conectado' : 'WhatsApp desconectado'}>
+              {waStatus === 'ok' ? '📱 WA ●' : '📵 WA ●'}
+            </span>
+          )}
           <a href="/" className={styles.linkForm}>← Formulário</a>
         </div>
       </div>

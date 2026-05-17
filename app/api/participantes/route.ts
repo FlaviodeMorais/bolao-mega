@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { notificarInscricao } from '@/lib/whatsapp'
+import QRCode from 'qrcode'
+import { notificarInscricao, verificarNumeroWhatsApp, enviarQRCodePIX } from '@/lib/whatsapp'
 
 export async function GET(req: NextRequest) {
   const concurso = req.nextUrl.searchParams.get('concurso')
@@ -49,6 +50,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Verifica se o telefone é válido no WhatsApp
+    if (telefone) {
+      const existe = await verificarNumeroWhatsApp(telefone)
+      if (!existe) {
+        return NextResponse.json(
+          { error: 'Número de celular não encontrado no WhatsApp. Verifique o número informado.' },
+          { status: 409 }
+        )
+      }
+    }
+
     const totalEsperado = parseFloat((cotas.length * Number(bolao.valor_cota)).toFixed(2))
     const totalEnviado  = parseFloat(Number(total).toFixed(2))
     if (Math.abs(totalEsperado - totalEnviado) > 0.01) {
@@ -87,6 +99,21 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // Notifica grupo e envia QR Code PIX para o participante
   await notificarInscricao(nome, cotas, concurso, total)
+
+  if (telefone && pix_code) {
+    const { data: bolaoInfo } = await supabase
+      .from('boloes').select('nome, num_apostas, dezenas').eq('slug', bolao_slug || '').single()
+    const qrDataUrl = await QRCode.toDataURL(pix_code, { width: 400, margin: 2 }).catch(() => '')
+    const qrBase64 = qrDataUrl.replace('data:image/png;base64,', '')
+    if (qrBase64) {
+      await enviarQRCodePIX(
+        telefone, qrBase64, total, pix_code,
+        bolaoInfo?.nome || 'Bolão Mega-Sena'
+      )
+    }
+  }
+
   return NextResponse.json({ participante: data })
 }
