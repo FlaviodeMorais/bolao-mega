@@ -220,10 +220,6 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas,
             </div>
             <hr />
             <div className="sec-title">🎟️ Selecionar Cotas</div>
-            <div className="cota-preco-info">
-              <span className="cota-preco-label">Valor por cota</span>
-              <span className="cota-preco-val">R$ {VALOR_COTA.toFixed(2).replace('.', ',')}</span>
-            </div>
             <div className="disponivel-bar">Disponíveis: <span>{disp}/{TOTAL_COTAS}</span></div>
             <div className="cotas-grid">
               {Array.from({ length: TOTAL_COTAS }, (_, i) => {
