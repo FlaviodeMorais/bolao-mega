@@ -125,7 +125,9 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas 
     <>
       <div className="page-wrap">
         <div className="site-header">
-          <span className="logo">🍀</span>
+          <a href="/" className="header-link" title="Voltar">
+            <span className="material-icons-round">arrow_back</span>
+          </a>
           <div className="header-brand">
             <span className="brand">MEGA-SENA</span>
           </div>
