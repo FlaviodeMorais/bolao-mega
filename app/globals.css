@@ -335,7 +335,7 @@ body::before {
   color: rgba(255,255,255,.45); margin-bottom: var(--s2);
   letter-spacing: .2px; text-transform: uppercase;
 }
-input[type="text"], input[type="password"], input[type="tel"] {
+.field input {
   width: 100%; padding: 13px var(--s4);
   background: rgba(255,255,255,.07);
   border: 1.5px solid rgba(255,255,255,.11);
@@ -343,14 +343,17 @@ input[type="text"], input[type="password"], input[type="tel"] {
   font-family: var(--f-sans);
   font-size: 15px; font-weight: 500; color: var(--white);
   outline: none; transition: all .18s ease;
+  -webkit-appearance: none; appearance: none;
+  box-sizing: border-box;
 }
-input::placeholder { color: rgba(255,255,255,.22); font-weight: 400; }
-.input-upper { text-transform: uppercase; }
-input:focus {
+.field input::placeholder { color: rgba(255,255,255,.22); font-weight: 400; }
+.field input:focus {
   border-color: var(--green);
   background: rgba(255,255,255,.10);
   box-shadow: 0 0 0 4px rgba(0,166,81,.15);
 }
+input[type="text"], input[type="password"], input[type="tel"] { -webkit-appearance: none; appearance: none; }
+.input-upper { text-transform: uppercase; }
 
 .datetime-box {
   width: 100%; padding: 13px var(--s4);
