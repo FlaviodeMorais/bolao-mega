@@ -4,8 +4,14 @@ import styles from './admin.module.css'
 
 interface Participante { id: string; nome: string; cotas: string[]; total: number; status: string }
 interface Concurso    { num: number; data: string; premio: string }
-interface Bolao       { id: string; nome: string; slug: string; valor_cota: number; total_cotas: number; ativo: boolean }
+interface Bolao       { id: string; nome: string; slug: string; valor_cota: number; total_cotas: number; ativo: boolean; dezenas: number; num_apostas: number; taxa_admin: number }
 interface HistoricoItem { concurso: number; bolao_slug: string | null; total: number; arrecadado: number; pagos: number; cancelados: number }
+
+const CAIXA_PRECOS: Record<number, number> = {
+  6: 6, 7: 42, 8: 168, 9: 504, 10: 1260,
+  11: 2772, 12: 5544, 13: 10296, 14: 18018, 15: 30030,
+  16: 48048, 17: 74256, 18: 111384, 19: 162792, 20: 232560,
+}
 
 export default function AdminPage() {
   const [logado, setLogado]               = useState(false)
@@ -38,6 +44,14 @@ export default function AdminPage() {
   const [novoSlug, setNovoSlug]           = useState('')
   const [criando, setCriando]             = useState(false)
   const [linkCopiado, setLinkCopiado]     = useState(false)
+
+  // Configurador de bolão
+  const [editDezenas, setEditDezenas]     = useState(6)
+  const [editApostas, setEditApostas]     = useState(1)
+  const [editCotas, setEditCotas]         = useState(20)
+  const [editTaxa, setEditTaxa]           = useState(0)
+  const [salvando, setSalvando]           = useState(false)
+  const [configSalva, setConfigSalva]     = useState(false)
 
   async function login() {
     const res = await fetch('/api/auth', {
@@ -92,6 +106,39 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => { if (logado) carregarDados() }, [logado, carregarDados])
+
+  function selecionarBolao(b: Bolao) {
+    setBolaoAtual(b)
+    setEditDezenas(b.dezenas || 6)
+    setEditApostas(b.num_apostas || 1)
+    setEditCotas(b.total_cotas || 20)
+    setEditTaxa(Number(b.taxa_admin) || 0)
+    setConfigSalva(false)
+  }
+
+  async function salvarConfig() {
+    if (!bolaoAtual) return
+    setSalvando(true)
+    const preco = CAIXA_PRECOS[editDezenas] ?? 5
+    const custo = editApostas * preco
+    const valor = editCotas > 0 ? parseFloat(((custo + editTaxa) / editCotas).toFixed(2)) : 0
+    await fetch('/api/boloes', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: bolaoAtual.id,
+        dezenas: editDezenas,
+        num_apostas: editApostas,
+        total_cotas: editCotas,
+        taxa_admin: editTaxa,
+        valor_cota: valor,
+      }),
+    })
+    await carregarBoloes()
+    setSalvando(false)
+    setConfigSalva(true)
+    setTimeout(() => setConfigSalva(false), 3000)
+  }
 
   async function criarBolao() {
     if (!novoNome || !novoSlug) return
@@ -221,23 +268,104 @@ export default function AdminPage() {
                   Nenhum bolão criado. Clique em &quot;+ Novo Bolão&quot; para começar.
                 </div>
               )}
-              {boloes.map(b => (
-                <div key={b.id} className={`${styles.bolaoCard} ${bolaoAtual?.id === b.id ? styles.selected : ''}`}
-                  onClick={() => setBolaoAtual(b)}>
-                  <div className={styles.bolaoInfo}>
-                    <div className={styles.bolaoNome}>{b.nome}</div>
-                    <div className={styles.bolaoUrl}>
-                      {typeof window !== 'undefined' ? `${window.location.origin}/${b.slug}` : `.../${b.slug}`}
+              {boloes.map(b => {
+                const isSelected = bolaoAtual?.id === b.id
+                const precoCaixa   = CAIXA_PRECOS[isSelected ? editDezenas : (b.dezenas || 6)] ?? 5
+                const custoApostas = (isSelected ? editApostas : (b.num_apostas || 1)) * precoCaixa
+                const taxaVal      = isSelected ? editTaxa : (Number(b.taxa_admin) || 0)
+                const totalBolao   = custoApostas + taxaVal
+                const cotasNum     = isSelected ? editCotas : (b.total_cotas || 20)
+                const valorPorCota = cotasNum > 0 ? totalBolao / cotasNum : 0
+                return (
+                  <div key={b.id}>
+                    <div className={`${styles.bolaoCard} ${isSelected ? styles.selected : ''}`}
+                      onClick={() => selecionarBolao(b)}>
+                      <div className={styles.bolaoInfo}>
+                        <div className={styles.bolaoNome}>{b.nome}</div>
+                        <div className={styles.bolaoUrl}>
+                          {typeof window !== 'undefined' ? `${window.location.origin}/${b.slug}` : `.../${b.slug}`}
+                        </div>
+                      </div>
+                      <div className={styles.bolaoActions}>
+                        {b.ativo && <span className={styles.bolaoAtivo}>ATIVO</span>}
+                        <button type="button" className={styles.btnSel} onClick={e => { e.stopPropagation(); copiarLink(b.slug) }}>
+                          {linkCopiado ? '✓ Copiado' : '🔗 Copiar'}
+                        </button>
+                      </div>
                     </div>
+
+                    {isSelected && (
+                      <div className={styles.configurador}>
+                        <div className={styles.configTitle}>⚙️ Configurar: {b.nome}</div>
+
+                        <div className={styles.configGrid3}>
+                          <div className={styles.configField}>
+                            <label className={styles.configLabel}>Dezenas / Aposta</label>
+                            <select className={styles.configSelect} value={editDezenas}
+                              title="Número de dezenas por aposta conforme tabela Caixa"
+                              onChange={e => setEditDezenas(Number(e.target.value))}>
+                              {Object.entries(CAIXA_PRECOS).map(([d, p]) => (
+                                <option key={d} value={d}>{d} dez — R$ {p.toLocaleString('pt-BR')},00</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className={styles.configField}>
+                            <label className={styles.configLabel}>Apostas no Bolão</label>
+                            <input type="number" min={1} max={999} className={styles.configInput}
+                              title="Número de apostas no bolão" placeholder="Ex: 100"
+                              value={editApostas} onChange={e => setEditApostas(Math.max(1, Number(e.target.value)))} />
+                          </div>
+                          <div className={styles.configField}>
+                            <label className={styles.configLabel}>Total de Cotas</label>
+                            <input type="number" min={1} max={200} className={styles.configInput}
+                              title="Número total de cotas disponíveis" placeholder="Ex: 20"
+                              value={editCotas} onChange={e => setEditCotas(Math.max(1, Number(e.target.value)))} />
+                          </div>
+                        </div>
+
+                        <div className={styles.configFieldNarrow}>
+                          <label className={styles.configLabel}>Taxa de Administração (R$)</label>
+                          <input type="number" min={0} step={0.01} className={styles.configInput}
+                            title="Taxa de administração em reais" placeholder="0,00"
+                            value={editTaxa} onChange={e => setEditTaxa(Math.max(0, Number(e.target.value)))} />
+                        </div>
+
+                        <div className={styles.configCalc}>
+                          <div className={styles.calcRow}>
+                            <span>Preço Caixa — {editDezenas} dezenas</span>
+                            <span>R$ {precoCaixa.toLocaleString('pt-BR')},00 / aposta</span>
+                          </div>
+                          <div className={styles.calcRow}>
+                            <span>{editApostas} aposta{editApostas !== 1 ? 's' : ''} × R$ {precoCaixa.toLocaleString('pt-BR')},00</span>
+                            <span>R$ {custoApostas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
+                          </div>
+                          {taxaVal > 0 && (
+                            <div className={styles.calcRow}>
+                              <span>Taxa de administração</span>
+                              <span>+ R$ {taxaVal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
+                            </div>
+                          )}
+                          <div className={`${styles.calcRow} ${styles.calcSeparator}`}>
+                            <span>Total do bolão</span>
+                            <span>R$ {totalBolao.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
+                          </div>
+                          <div className={`${styles.calcRow} ${styles.calcDestaque}`}>
+                            <span>Valor por cota ({cotasNum} cotas)</span>
+                            <span>R$ {valorPorCota.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
+                          </div>
+                        </div>
+
+                        {configSalva && (
+                          <div className={styles.configOk}>✅ Configuração salva com sucesso!</div>
+                        )}
+                        <button type="button" className={styles.btnCreate} onClick={salvarConfig} disabled={salvando}>
+                          {salvando ? 'Salvando...' : '💾 Salvar Configuração'}
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <div className={styles.bolaoActions}>
-                    {b.ativo && <span className={styles.bolaoAtivo}>ATIVO</span>}
-                    <button type="button" className={styles.btnSel} onClick={e => { e.stopPropagation(); copiarLink(b.slug) }}>
-                      {linkCopiado ? '✓ Copiado' : '🔗 Copiar'}
-                    </button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
 
               {!showCreate
                 ? <button type="button" className={styles.btnLoad} onClick={() => setShowCreate(true)}>+ Novo Bolão</button>

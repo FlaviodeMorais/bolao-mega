@@ -289,6 +289,88 @@
 .histTable td:first-child { font-weight: 700; color: #00A651; font-family: 'JetBrains Mono', monospace; }
 .histTable tr:last-child td { border-bottom: none; }
 
+/* ── CONFIGURADOR DE BOLÃO ── */
+.configurador {
+  background: rgba(0,166,81,.06);
+  border: 1px solid rgba(0,166,81,.22);
+  border-top: none;
+  border-radius: 0 0 14px 14px;
+  padding: 20px 18px 18px;
+  margin-bottom: 10px;
+}
+.configTitle {
+  font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase; color: #00A651;
+  margin-bottom: 16px;
+}
+.configGrid3 {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 10px;
+}
+.configField {
+  display: flex; flex-direction: column; gap: 5px;
+}
+.configFieldNarrow {
+  display: flex; flex-direction: column; gap: 5px;
+  max-width: 220px; margin-bottom: 14px;
+}
+.configLabel {
+  font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: rgba(255,255,255,.35);
+}
+.configSelect {
+  width: 100%; padding: 10px 12px;
+  background: rgba(255,255,255,.07);
+  border: 1.5px solid rgba(255,255,255,.10);
+  border-radius: 10px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 600; color: #fff; outline: none;
+  transition: border-color .2s; cursor: pointer;
+  -webkit-appearance: none; appearance: none;
+}
+.configSelect:focus { border-color: #00A651; }
+.configSelect option { background: #0D1B2A; color: #fff; }
+.configInput {
+  width: 100%; padding: 10px 12px;
+  background: rgba(255,255,255,.07);
+  border: 1.5px solid rgba(255,255,255,.10);
+  border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px; font-weight: 700; color: #fff; outline: none;
+  transition: border-color .2s;
+}
+.configInput:focus { border-color: #00A651; }
+.configInput::placeholder { color: rgba(255,255,255,.20); }
+
+.configCalc {
+  background: rgba(0,0,0,.25);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;
+}
+.calcRow {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12px; color: rgba(255,255,255,.45);
+  padding: 4px 0;
+}
+.calcRow span:last-child { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+.calcSeparator {
+  border-top: 1px solid rgba(255,255,255,.10);
+  margin-top: 6px; padding-top: 10px;
+  color: rgba(255,255,255,.65);
+}
+.calcDestaque {
+  color: #00A651; font-weight: 700; font-size: 14px;
+  padding-top: 8px;
+}
+.calcDestaque span:last-child {
+  font-size: 18px; font-weight: 800; letter-spacing: -.3px;
+}
+
+.configOk {
+  font-size: 13px; font-weight: 700; color: #00A651;
+  background: rgba(0,166,81,.12); border: 1px solid rgba(0,166,81,.25);
+  border-radius: 8px; padding: 8px 14px; margin-bottom: 10px;
+}
+
 @media (max-width: 900px) {
   .statsGrid { grid-template-columns: repeat(2,1fr); }
   .grid2     { grid-template-columns: 1fr; }
@@ -298,6 +380,8 @@
   .statsGrid { grid-template-columns: repeat(2,1fr); gap: 10px; }
   .statCard  { padding: 14px 12px; }
   .loginBox  { padding: 36px 24px; }
+  .configGrid3 { grid-template-columns: 1fr 1fr; }
+  .configFieldNarrow { max-width: 100%; }
 }
 @media (max-width: 380px) {
   .statsGrid { grid-template-columns: 1fr 1fr; }
