@@ -39,9 +39,12 @@ interface Props {
   encerrado: boolean
 }
 
-export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas, dezenas, numApostas, taxaAdmin, encerrado }: Props) {
-  const VALOR_COTA  = Number(valorCota)  || 30
-  const TOTAL_COTAS = Number(totalCotas) || 20
+export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas, dezenas: dezenasProp, numApostas: numApostasProp, taxaAdmin: taxaAdminProp, encerrado }: Props) {
+  // Valores vindos do servidor (SSR) como ponto de partida
+  const [VALOR_COTA, setValorCota]   = useState(Number(valorCota)  || 0)
+  const [TOTAL_COTAS, setTotalCotas] = useState(Number(totalCotas) || 20)
+  const [dezenas, setDezenas]        = useState(Number(dezenasProp)   || 6)
+  const [numApostas, setNumApostas]  = useState(Number(numApostasProp) || 1)
 
   const [nome, setNome]                   = useState('')
   const [telefone, setTelefone]           = useState('')
@@ -77,22 +80,40 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas,
   // Concurso ativo
   useEffect(() => { fetch('/api/concurso-ativo').then(r => r.json()).then(setConcursoAtivo) }, [])
 
-  // Revalida valor da cota quando usuário volta para a aba (evita valor desatualizado)
+  // Busca config do bolão direto da API (ignora cache SSR do servidor)
+  useEffect(() => {
+    fetch('/api/boloes')
+      .then(r => r.json())
+      .then(d => {
+        const b = (d.boloes || []).find((x: { slug: string }) => x.slug === bolaoSlug)
+        if (!b) return
+        const vc = Number(b.valor_cota)
+        const tc = Number(b.total_cotas)
+        if (vc > 0) setValorCota(vc)
+        if (tc > 0) setTotalCotas(tc)
+        if (b.dezenas)    setDezenas(Number(b.dezenas))
+        if (b.num_apostas) setNumApostas(Number(b.num_apostas))
+      })
+      .catch(() => {})
+  }, [bolaoSlug])
+
+  // Revalida ao voltar para a aba
   useEffect(() => {
     const onFocus = () => {
-      fetch(`/api/boloes`)
+      fetch('/api/boloes')
         .then(r => r.json())
         .then(d => {
-          const b = (d.boloes || []).find((x: {slug: string}) => x.slug === bolaoSlug)
-          if (b && Math.abs(Number(b.valor_cota) - VALOR_COTA) > 0.01) {
-            window.location.reload()
+          const b = (d.boloes || []).find((x: { slug: string }) => x.slug === bolaoSlug)
+          if (b && Number(b.valor_cota) > 0) {
+            setValorCota(Number(b.valor_cota))
+            setTotalCotas(Number(b.total_cotas))
           }
         })
         .catch(() => {})
     }
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)
-  }, [bolaoSlug, VALOR_COTA])
+  }, [bolaoSlug])
 
   // Countdown — usa hora do campo data se vier no formato "DD/MM · Dia · HHhMM", senão 20h00
   useEffect(() => {
