@@ -370,20 +370,65 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas,
               {payTimer && <div className="pay-timer">⊙ Você tem <strong>{payTimer} minutos</strong> para efetuar o pagamento</div>}
             </>)}
             {payStatus === 'pago' && (
-              <div className="pay-confirmed">
-                <div className="pay-confirmed-icon">✅</div>
-                <div className="pay-confirmed-title">Pagamento Confirmado!</div>
-                <div className="pay-confirmed-sub">{pix.nome} · Cotas: {pix.cotas.join(', ')} · R$ {pix.total.toFixed(2).replace('.', ',')}</div>
+              <div className="comprovante">
+                {/* Header */}
+                <div className="comp-header">
+                  <span className="comp-check-icon">✅</span>
+                  <div className="comp-titulo">Comprovante de Participação</div>
+                  <div className="comp-data">{payCreated}</div>
+                </div>
+
+                {/* Valor */}
+                <div className="comp-valor">R$ {pix.total.toFixed(2).replace('.', ',')}</div>
+
+                {/* Timeline De → Para */}
+                <div className="comp-timeline">
+                  <div className="comp-timeline-col">
+                    <div className="comp-dot comp-dot-blue" />
+                    <div className="comp-vline" />
+                    <div className="comp-dot comp-dot-blue" />
+                  </div>
+                  <div className="comp-timeline-info">
+                    <div className="comp-party">
+                      <div className="comp-party-label">De</div>
+                      <div className="comp-party-nome">{pix.nome}</div>
+                      <div className="comp-party-detalhe">Cotas adquiridas: {pix.cotas.join(', ')}</div>
+                    </div>
+                    <div className="comp-party comp-party-second">
+                      <div className="comp-party-label">Para</div>
+                      <div className="comp-party-nome">{bolaoNome}</div>
+                      <div className="comp-party-detalhe">Administrador do Bolão</div>
+                      <div className="comp-party-detalhe">{numApostas} apostas · {dezenas} dezenas</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* IDs da transação */}
+                <div className="comp-ids">
+                  <div className="comp-id-row">
+                    <span className="comp-id-lbl">ID da transação</span>
+                    <span className="comp-id-val">{pix.paymentId}</span>
+                  </div>
+                  {pix.fonte === 'mp' && (
+                    <div className="comp-id-row">
+                      <span className="comp-id-lbl">Mercado Pago</span>
+                      <span className="comp-id-val">{pix.paymentId}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Termos aceitos */}
+                <div className="comp-termos-aceitos">
+                  <div className="comp-termos-titulo">📋 Termos de Participação Aceitos</div>
+                  {REGRAS.map((r, i) => (
+                    <div key={i} className="comp-termos-item">
+                      <span>{r.icon}</span>
+                      <span><strong>{r.titulo}:</strong> {r.texto}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-            <div className="recibo-termos">
-              <div className="recibo-termos-titulo">📋 Termos aceitos</div>
-              {REGRAS.map((r, i) => (
-                <div key={i} className="recibo-termos-item">
-                  <span>{r.icon}</span><span><strong>{r.titulo}:</strong> {r.texto}</span>
-                </div>
-              ))}
-            </div>
             <button type="button" className="pay-fechar" onClick={() => { setPix(null); if(timerRef.current) clearInterval(timerRef.current); if(statusRef.current) clearInterval(statusRef.current) }}>Fechar</button>
           </div>
         </div>

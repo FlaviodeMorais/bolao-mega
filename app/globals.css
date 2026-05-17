@@ -480,6 +480,98 @@ hr { border: none; border-top: 1px solid var(--glass-bd); margin: var(--s5) 0; }
 .footer { text-align: center; font-size: 12px; color: rgba(255,255,255,.28); margin-top: var(--s5); line-height: 2; }
 .footer strong { color: rgba(255,255,255,.50); font-weight: 600; }
 
+/* ── COMPROVANTE DE PARTICIPAÇÃO ── */
+.comprovante {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 16px; padding: 20px;
+  margin-bottom: 16px;
+}
+.comp-header {
+  text-align: center; padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  margin-bottom: 16px;
+}
+.comp-check-icon { font-size: 32px; display: block; margin-bottom: 8px; }
+.comp-titulo {
+  font-size: 16px; font-weight: 800;
+  color: rgba(255,255,255,.90); letter-spacing: -.2px;
+}
+.comp-data { font-size: 12px; color: rgba(255,255,255,.35); margin-top: 4px; }
+
+.comp-valor {
+  font-size: 36px; font-weight: 800;
+  color: #00A651; font-family: var(--f-mono);
+  letter-spacing: -1px; margin-bottom: 20px;
+}
+
+/* Timeline De → Para */
+.comp-timeline {
+  display: flex; gap: 14px; align-items: stretch;
+  margin-bottom: 18px;
+}
+.comp-timeline-col {
+  display: flex; flex-direction: column; align-items: center;
+  padding-top: 4px; gap: 0;
+}
+.comp-dot {
+  width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+}
+.comp-dot-blue { background: #3B82F6; box-shadow: 0 0 0 3px rgba(59,130,246,.20); }
+.comp-vline { flex: 1; width: 2px; background: rgba(255,255,255,.10); margin: 4px 0; min-height: 32px; }
+.comp-timeline-info { flex: 1; min-width: 0; }
+.comp-party { }
+.comp-party-second { margin-top: 18px; }
+.comp-party-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: rgba(255,255,255,.28); margin-bottom: 3px;
+}
+.comp-party-nome {
+  font-size: 15px; font-weight: 800;
+  color: rgba(255,255,255,.88); letter-spacing: -.1px;
+}
+.comp-party-detalhe {
+  font-size: 11px; color: rgba(255,255,255,.35);
+  margin-top: 2px; font-family: var(--f-mono);
+}
+
+/* IDs da transação */
+.comp-ids {
+  background: rgba(0,0,0,.20);
+  border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
+}
+.comp-id-row {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.comp-id-row:last-child { border-bottom: none; padding-bottom: 0; }
+.comp-id-lbl {
+  font-size: 10px; font-weight: 600; letter-spacing: .8px;
+  text-transform: uppercase; color: rgba(255,255,255,.28);
+}
+.comp-id-val {
+  font-size: 11px; font-family: var(--f-mono);
+  color: rgba(255,255,255,.60); word-break: break-all;
+}
+
+/* Termos no comprovante */
+.comp-termos-aceitos {
+  background: rgba(0,166,81,.06);
+  border: 1px solid rgba(0,166,81,.18);
+  border-radius: 10px; padding: 12px 14px;
+}
+.comp-termos-titulo {
+  font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: rgba(0,166,81,.70);
+  margin-bottom: 8px;
+}
+.comp-termos-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 11px; color: rgba(255,255,255,.35);
+  line-height: 1.6; padding: 3px 0;
+}
+.comp-termos-item strong { color: rgba(255,255,255,.55); font-weight: 600; }
+
 /* ── BOLÃO ENCERRADO BANNER ── */
 .bolao-encerrado-banner {
   text-align: center; padding: 32px 16px;
