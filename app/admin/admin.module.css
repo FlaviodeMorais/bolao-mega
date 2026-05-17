@@ -123,6 +123,153 @@
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .leftCol { display: flex; flex-direction: column; gap: 16px; }
 
+/* ── ADMIN GRID (master-detail) ── */
+.adminGrid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 16px;
+}
+.leftPanel  { display: flex; flex-direction: column; gap: 16px; }
+.rightPanel { display: flex; flex-direction: column; gap: 16px; }
+
+/* ── STAT VARIANTS ── */
+.statValSm   { font-size: 15px; font-weight: 800; color: #00A651; letter-spacing: -.2px; }
+.statValHint { font-size: 13px; color: rgba(255,255,255,.30); font-weight: 500; }
+.statWarn    { border-color: rgba(245,158,11,.30) !important; background: rgba(245,158,11,.06) !important; }
+.statWarn .statVal { color: #F59E0B; }
+
+/* ── HEADER RIGHT ── */
+.headerRight { display: flex; align-items: center; gap: 12px; }
+.headerConcurso {
+  font-size: 11px; font-weight: 700; letter-spacing: .8px;
+  color: rgba(255,255,255,.30); text-transform: uppercase;
+}
+
+/* ── BOLÃO META (info extra no card) ── */
+.bolaoMeta {
+  font-size: 10px; color: rgba(255,255,255,.28);
+  margin-top: 3px; font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── DETALHE DO BOLÃO ── */
+.detHeader {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 16px; gap: 12px;
+}
+.detNome { font-size: 18px; font-weight: 800; color: rgba(255,255,255,.92); }
+.detSub  {
+  font-size: 11px; color: #00A651; margin-top: 3px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.btnFechar {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(239,68,68,.08); color: rgba(239,68,68,.55);
+  border: 1px solid rgba(239,68,68,.18);
+  font-size: 13px; cursor: pointer; transition: all .2s;
+}
+.btnFechar:hover { background: rgba(239,68,68,.18); color: #EF4444; }
+
+.detStatsRow {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 8px;
+  margin-bottom: 14px;
+}
+.detStat {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px; padding: 12px 10px; text-align: center;
+}
+.detStatVal {
+  font-size: 20px; font-weight: 800; color: #00A651;
+  font-family: 'JetBrains Mono', monospace; letter-spacing: -.5px;
+}
+.detStatLbl {
+  font-size: 9px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: rgba(255,255,255,.28);
+  margin-top: 4px; display: block;
+}
+.detStatWarn { border-color: rgba(245,158,11,.30); background: rgba(245,158,11,.06); }
+.detStatWarn .detStatVal { color: #F59E0B; }
+
+.detActions {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+}
+.btnConfirmAll {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 100px;
+  background: rgba(0,166,81,.15); color: #00A651;
+  border: 1px solid rgba(0,166,81,.35);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: all .2s;
+}
+.btnConfirmAll:hover:not(:disabled) { background: rgba(0,166,81,.28); }
+.btnConfirmAll:disabled { opacity: .4; cursor: not-allowed; }
+.btnWhatsapp {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 100px;
+  background: rgba(37,211,102,.10); color: #25D366;
+  border: 1px solid rgba(37,211,102,.25);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: all .2s;
+}
+.btnWhatsapp:hover { background: rgba(37,211,102,.20); }
+.lembreteMsg {
+  font-size: 12px; font-weight: 600;
+  color: #00A651; padding: 6px 0; margin-bottom: 4px;
+}
+
+/* ── PARTICIPANTES (detalhe) ── */
+.partSectionTitle {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: rgba(255,255,255,.28);
+  margin: 16px 0 10px; display: flex; align-items: center; gap: 8px;
+}
+.partSectionTitle::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,.06); }
+
+.partCard {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 14px; padding: 14px 16px; margin-bottom: 8px;
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  transition: border-color .2s;
+}
+.partCard:hover { border-color: rgba(255,255,255,.11); }
+.partCardPago   { border-color: rgba(0,166,81,.18); background: rgba(0,166,81,.04); }
+.partCardCancel { opacity: .45; }
+.partCardLeft   { flex: 1; min-width: 0; }
+.partCardNome   { font-size: 15px; font-weight: 700; color: rgba(255,255,255,.90); }
+.partCardTel    { font-size: 12px; color: rgba(255,255,255,.35); margin-top: 2px; }
+.partCardInfo   { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.partCardCotas  {
+  font-size: 11px; color: rgba(255,255,255,.35);
+  font-family: 'JetBrains Mono', monospace;
+}
+.partCardTotal  {
+  font-size: 13px; font-weight: 700; color: #00A651;
+  font-family: 'JetBrains Mono', monospace;
+}
+.partCardRight  { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+.statusCancel   { font-size: 11px; color: rgba(239,68,68,.55); font-weight: 600; }
+
+/* ── CONFIGURADOR TOGGLE ── */
+.configToggle {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px; margin-top: 16px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 10px; cursor: pointer;
+  font-size: 12px; font-weight: 700; color: rgba(255,255,255,.45);
+  letter-spacing: .3px; transition: all .2s;
+}
+.configToggle:hover { border-color: rgba(0,166,81,.25); color: #00A651; }
+
+/* ── CREATE FORM BUTTONS ── */
+.createBtns { display: flex; gap: 8px; }
+
 /* ── PANEL ── */
 .panel {
   background: rgba(255,255,255,.04);
@@ -371,9 +518,13 @@
   border-radius: 8px; padding: 8px 14px; margin-bottom: 10px;
 }
 
+@media (max-width: 1024px) {
+  .adminGrid { grid-template-columns: 1fr; }
+}
 @media (max-width: 900px) {
-  .statsGrid { grid-template-columns: repeat(2,1fr); }
-  .grid2     { grid-template-columns: 1fr; }
+  .statsGrid  { grid-template-columns: repeat(2,1fr); }
+  .grid2      { grid-template-columns: 1fr; }
+  .detStatsRow { grid-template-columns: repeat(2,1fr); }
 }
 @media (max-width: 600px) {
   .content   { padding: 16px; }
