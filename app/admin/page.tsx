@@ -238,8 +238,9 @@ export default function AdminPage() {
                   </div>
                   <button type="button"
                     className={`${styles.btnSel} ${String(c.num) === concursoAtivo ? styles.btnSelAtivo : ''}`}
-                    onClick={() => selecionarConcurso(c)}>
-                    {String(c.num) === concursoAtivo ? '✔ Ativo' : 'Selecionar'}
+                    onClick={() => selecionarConcurso(c)}
+                    title={String(c.num) === concursoAtivo ? 'Clique para atualizar dados' : 'Selecionar'}>
+                    {String(c.num) === concursoAtivo ? '✔ Atualizar' : 'Selecionar'}
                   </button>
                 </div>
               ))}
