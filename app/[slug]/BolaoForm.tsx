@@ -77,6 +77,23 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas,
   // Concurso ativo
   useEffect(() => { fetch('/api/concurso-ativo').then(r => r.json()).then(setConcursoAtivo) }, [])
 
+  // Revalida valor da cota quando usuário volta para a aba (evita valor desatualizado)
+  useEffect(() => {
+    const onFocus = () => {
+      fetch(`/api/boloes`)
+        .then(r => r.json())
+        .then(d => {
+          const b = (d.boloes || []).find((x: {slug: string}) => x.slug === bolaoSlug)
+          if (b && Math.abs(Number(b.valor_cota) - VALOR_COTA) > 0.01) {
+            window.location.reload()
+          }
+        })
+        .catch(() => {})
+    }
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [bolaoSlug, VALOR_COTA])
+
   // Countdown — usa hora do campo data se vier no formato "DD/MM · Dia · HHhMM", senão 20h00
   useEffect(() => {
     if (!concursoAtivo?.data) return
