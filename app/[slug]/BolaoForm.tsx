@@ -21,9 +21,17 @@ interface Participante { id: string; nome: string; cotas: string[]; total: numbe
 interface ConcursoAtivo { concurso: string; data: string; premio: string }
 interface PixData { pixCode: string; qrCodeBase64: string; paymentId: string; fonte: string; nome: string; cotas: string[]; total: number }
 
-interface Props { bolaoNome: string; bolaoSlug: string; valorCota: number; totalCotas: number }
+interface Props {
+  bolaoNome: string
+  bolaoSlug: string
+  valorCota: number
+  totalCotas: number
+  dezenas: number
+  numApostas: number
+  taxaAdmin: number
+}
 
-export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas }: Props) {
+export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas, dezenas, numApostas, taxaAdmin }: Props) {
   const VALOR_COTA  = Number(valorCota)  || 30
   const TOTAL_COTAS = Number(totalCotas) || 20
 
@@ -213,7 +221,13 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas 
             <hr />
             <div className="sec-title">🎟️ Selecionar Cotas</div>
             <div className="cota-preco-info">
-              <span className="cota-preco-label">Valor por cota</span>
+              <div className="cota-preco-detalhe">
+                <span className="cota-preco-label">Valor por cota</span>
+                <span className="cota-preco-config">
+                  {numApostas} aposta{numApostas !== 1 ? 's' : ''} · {dezenas} dezenas
+                  {taxaAdmin > 0 ? ` · taxa R$ ${taxaAdmin.toFixed(2).replace('.', ',')}` : ''}
+                </span>
+              </div>
               <span className="cota-preco-val">R$ {VALOR_COTA.toFixed(2).replace('.', ',')}</span>
             </div>
             <div className="disponivel-bar">Disponíveis: <span>{disp}/{TOTAL_COTAS}</span></div>
