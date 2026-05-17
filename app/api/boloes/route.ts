@@ -53,6 +53,7 @@ export async function PATCH(req: NextRequest) {
   if ('total_cotas' in body) fields.total_cotas = body.total_cotas
   if ('valor_cota'  in body) fields.valor_cota  = body.valor_cota
   if ('ativo'       in body) fields.ativo       = body.ativo
+  if ('nome'        in body) fields.nome        = body.nome
 
   const { error } = await supabase.from('boloes').update(fields).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

@@ -40,8 +40,10 @@ export default function AdminPage() {
   // Bolões
   const [boloes, setBoloes]         = useState<Bolao[]>([])
   const [bolaoAtual, setBolaoAtual] = useState<Bolao | null>(null)
-  const [linkCopiado, setLinkCopiado] = useState(false)
-  const [showCreate, setShowCreate] = useState(false)
+  const [linkCopiado, setLinkCopiado]   = useState(false)
+  const [renamingId, setRenamingId]     = useState<string | null>(null)
+  const [renameVal, setRenameVal]       = useState('')
+  const [showCreate, setShowCreate]     = useState(false)
   const [novoNome, setNovoNome]     = useState('')
   const [novoSlug, setNovoSlug]     = useState('')
   const [criando, setCriando]       = useState(false)
@@ -189,6 +191,17 @@ export default function AdminPage() {
   function copiarLink(slug: string) {
     navigator.clipboard.writeText(`${window.location.origin}/${slug}`)
       .then(() => { setLinkCopiado(true); setTimeout(() => setLinkCopiado(false), 2000) })
+  }
+
+  async function renomearBolao(id: string) {
+    const nome = renameVal.trim()
+    if (!nome) return
+    await fetch('/api/boloes', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, nome }),
+    })
+    setRenamingId(null)
+    await carregarBoloes()
   }
 
   async function cancelarBolao(b: Bolao) {
@@ -422,7 +435,31 @@ export default function AdminPage() {
                   className={`${styles.bolaoCard} ${bolaoAtual?.id === b.id ? styles.selected : ''} ${!b.ativo ? styles.bolaoInativo : ''}`}
                   onClick={() => b.ativo && selecionarBolao(b)}>
                   <div className={styles.bolaoInfo}>
-                    <div className={styles.bolaoNome}>{b.nome}</div>
+                    {renamingId === b.id ? (
+                      <div className={styles.renameRow} onClick={e => e.stopPropagation()}>
+                        <input
+                          className={styles.renameInput}
+                          value={renameVal}
+                          title="Novo nome do bolão"
+                          placeholder="Nome do bolão"
+                          onChange={e => setRenameVal(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') renomearBolao(b.id)
+                            if (e.key === 'Escape') setRenamingId(null)
+                          }}
+                          autoFocus
+                        />
+                        <button type="button" className={styles.btnRenomearOk} onClick={() => renomearBolao(b.id)}>✓</button>
+                        <button type="button" className={styles.btnRenomearCancel} onClick={() => setRenamingId(null)}>✕</button>
+                      </div>
+                    ) : (
+                      <div className={styles.bolaoNomeRow}>
+                        <div className={styles.bolaoNome}>{b.nome}</div>
+                        <button type="button" className={styles.btnRenomear}
+                          onClick={e => { e.stopPropagation(); setRenamingId(b.id); setRenameVal(b.nome) }}
+                          title="Renomear">✎</button>
+                      </div>
+                    )}
                     <div className={styles.bolaoUrl}>/{b.slug}</div>
                     <div className={styles.bolaoMeta}>
                       {b.num_apostas || 1} apostas · {b.dezenas || 6} dez · R$ {Number(b.valor_cota).toFixed(2).replace('.',',')}/cota
