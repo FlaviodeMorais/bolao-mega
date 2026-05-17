@@ -187,7 +187,7 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas 
               />
             </div>
             <div className="field">
-              <label className="field-label">WhatsApp (com DDD) * — receberá o recibo de pagamento</label>
+              <label className="field-label">Celular com DDD (WhatsApp) *</label>
               <input
                 type="tel"
                 value={telefone}
