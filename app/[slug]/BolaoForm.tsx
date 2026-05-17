@@ -28,6 +28,7 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas 
   const TOTAL_COTAS = totalCotas || 20
 
   const [nome, setNome]                   = useState('')
+  const [telefone, setTelefone]           = useState('')
   const [cotasOcupadas, setCotasOcupadas] = useState<string[]>([])
   const [selecionadas, setSelecionadas]   = useState<string[]>([])
   const [participantes, setParticipantes] = useState<Participante[]>([])
@@ -95,24 +96,25 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas 
   }
 
   async function confirmar() {
-    if (!nome.trim())         { alert('⚠️ Informe seu nome!'); return }
-    if (!concurso)            { alert('⚠️ Nenhum concurso ativo.'); return }
-    if (!selecionadas.length) { alert('⚠️ Selecione ao menos uma cota!'); return }
+    if (!nome.trim())            { alert('⚠️ Informe seu nome completo!'); return }
+    if (telefone.replace(/\D/g,'').length < 11) { alert('⚠️ Informe seu WhatsApp com DDD (ex: 19 99999-9999)!'); return }
+    if (!concurso)               { alert('⚠️ Nenhum concurso ativo.'); return }
+    if (!selecionadas.length)    { alert('⚠️ Selecione ao menos uma cota!'); return }
     setEnviando(true)
     try {
       const total = selecionadas.length * VALOR_COTA
       const pixRes = await fetch('/api/pix', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ concurso: parseInt(concurso), nome: nome.trim(), cotas: selecionadas.sort(), total }),
+        body: JSON.stringify({ concurso: parseInt(concurso), nome: nome.trim().toUpperCase(), cotas: selecionadas.sort(), total }),
       }).then(r => r.json())
       const reg = await fetch('/api/participantes', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ concurso: parseInt(concurso), nome: nome.trim(), cotas: selecionadas.sort(), total, mp_payment_id: pixRes.paymentId, pix_code: pixRes.pixCode, bolao_slug: bolaoSlug }),
+        body: JSON.stringify({ concurso: parseInt(concurso), nome: nome.trim().toUpperCase(), telefone: '55' + telefone.replace(/\D/g,''), cotas: selecionadas.sort(), total, mp_payment_id: pixRes.paymentId, pix_code: pixRes.pixCode, bolao_slug: bolaoSlug }),
       }).then(r => r.json())
       if (reg.error) { alert('⚠️ ' + reg.error); return }
       const cotasSalvas = [...selecionadas].sort()
-      setPix({ ...pixRes, nome: nome.trim(), cotas: cotasSalvas, total: cotasSalvas.length * VALOR_COTA })
-      setNome(''); setSelecionadas([]); recarregar()
+      setPix({ ...pixRes, nome: nome.trim().toUpperCase(), cotas: cotasSalvas, total: cotasSalvas.length * VALOR_COTA })
+      setNome(''); setTelefone(''); setSelecionadas([]); recarregar()
       let secs = 30 * 60
       if (timerRef.current) clearInterval(timerRef.current)
       timerRef.current = setInterval(() => { secs--; const m = String(Math.floor(secs/60)).padStart(2,'0'); const s = String(secs%60).padStart(2,'0'); setPayTimer(`${m}:${s}`); if (secs<=0) clearInterval(timerRef.current!) }, 1000)
@@ -176,7 +178,29 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas 
           <div className="form-body">
             <div className="field">
               <label className="field-label">Nome completo *</label>
-              <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Seu nome completo" />
+              <input
+                type="text"
+                value={nome}
+                onChange={e => setNome(e.target.value.toUpperCase())}
+                placeholder="SEU NOME COMPLETO"
+                className="input-upper"
+              />
+            </div>
+            <div className="field">
+              <label className="field-label">WhatsApp (com DDD) * — receberá o recibo de pagamento</label>
+              <input
+                type="tel"
+                value={telefone}
+                onChange={e => {
+                  const v = e.target.value.replace(/\D/g,'').slice(0,11)
+                  const f = v.length <= 2 ? v
+                    : v.length <= 7  ? `(${v.slice(0,2)}) ${v.slice(2)}`
+                    : `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`
+                  setTelefone(f)
+                }}
+                placeholder="(19) 99999-9999"
+                inputMode="numeric"
+              />
             </div>
             <div className="field">
               <label className="field-label">Data / Hora do registro</label>

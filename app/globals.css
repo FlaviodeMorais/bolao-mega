@@ -345,6 +345,7 @@ input[type="text"], input[type="password"] {
   outline: none; transition: all .18s ease;
 }
 input::placeholder { color: rgba(255,255,255,.22); font-weight: 400; }
+.input-upper { text-transform: uppercase; }
 input:focus {
   border-color: var(--green);
   background: rgba(255,255,255,.10);
