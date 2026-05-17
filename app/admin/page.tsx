@@ -66,6 +66,10 @@ export default function AdminPage() {
   const [encerrando, setEncerrando]       = useState(false)
   const [encerrarOk, setEncerrarOk]       = useState<{acrescimo: number, participantes: number} | null>(null)
 
+  // Comprovante
+  const [enviandoComp, setEnviandoComp]         = useState<string | null>(null)
+  const [compMsg, setCompMsg]                   = useState('')
+
   // Resultado do sorteio
   const [showResultado, setShowResultado]       = useState(false)
   const [resultadoGanhou, setResultadoGanhou]   = useState<boolean | null>(null)
@@ -211,6 +215,18 @@ export default function AdminPage() {
     } else {
       setResultadoMsg('❌ ' + res.error)
     }
+  }
+
+  async function enviarComprovante(id: string) {
+    if (!bolaoAtual) return
+    setEnviandoComp(id); setCompMsg('')
+    const res = await fetch('/api/admin/comprovante', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ participante_id: id, bolao_slug: bolaoAtual.slug }),
+    }).then(r => r.json())
+    setEnviandoComp(null)
+    setCompMsg(res.ok ? '✅ Comprovante enviado!' : '❌ ' + (res.error || 'Erro ao enviar'))
+    setTimeout(() => setCompMsg(''), 4000)
   }
 
   async function confirmarAcrescimo(id: string) {
@@ -676,6 +692,7 @@ export default function AdminPage() {
                   </button>
                 )}
                 {lembreteMsg && <div className={styles.lembreteMsg}>{lembreteMsg}</div>}
+                {compMsg && <div className={styles.lembreteMsg}>{compMsg}</div>}
 
                 {/* Banner encerrado */}
                 {bolaoAtual.encerrado && (
@@ -759,6 +776,15 @@ export default function AdminPage() {
                     </div>
                     <div className={styles.partCardRight}>
                       <div className={styles.partCardStatusCol}>
+                        {/* Comprovante */}
+                        {p.status === 'pago' && p.telefone && (
+                          <button type="button" className={styles.btnComprovante}
+                            onClick={() => enviarComprovante(p.id)}
+                            disabled={enviandoComp === p.id}
+                            title="Enviar comprovante via WhatsApp">
+                            {enviandoComp === p.id ? '⟳' : '📋'}
+                          </button>
+                        )}
                         {/* Status principal */}
                         {p.status === 'pago'
                           ? <span className={styles.statusPago}>✅ Pago</span>

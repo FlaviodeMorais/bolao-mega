@@ -41,6 +41,46 @@ export async function notificarInscricao(nome: string, cotas: string[], concurso
   )
 }
 
+export async function enviarComprovante(
+  telefone: string,
+  nome: string,
+  cotas: string[],
+  total: number,
+  concurso: number,
+  bolaoNome: string,
+  numApostas: number,
+  dezenas: number,
+  paymentId?: string,
+  dataHora?: string
+) {
+  const valor   = total.toFixed(2).replace('.', ',')
+  const horario = dataHora || new Date().toLocaleString('pt-BR')
+  const idFull  = paymentId || '—'
+
+  await toNumber(telefone,
+    `✅ *COMPROVANTE DE PARTICIPAÇÃO*\n` +
+    `${horario}\n\n` +
+    `💰 *R$ ${valor}*\n\n` +
+    `● *De*\n` +
+    `  *${nome}*\n` +
+    `  🎟️ Cotas adquiridas: *${cotas.join(', ')}*\n\n` +
+    `● *Para*\n` +
+    `  *${bolaoNome}*\n` +
+    `  Administrador do Bolão\n` +
+    `  ${numApostas} apostas · ${dezenas} dezenas\n\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `🔑 *ID da transação*\n` +
+    `${idFull}\n\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `📋 *Termos de Participação Aceitos*\n` +
+    `🎰 Cada cota representa uma fração igual das apostas.\n` +
+    `💳 Pagamento confirmado pelo administrador.\n` +
+    `⚠️ Se sobrar cotas, o saldo é rateado entre os participantes.\n` +
+    `🏆 Prêmio dividido proporcionalmente ao número de cotas.\n\n` +
+    `_Guarde este comprovante. Boa sorte! 🍀_`
+  )
+}
+
 export async function notificarPagamento(nome: string, cotas: string[], concurso: number, total: number, telefone?: string) {
   const msg =
     `💚 *PAGAMENTO CONFIRMADO*\n\n` +
