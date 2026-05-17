@@ -24,8 +24,8 @@ interface PixData { pixCode: string; qrCodeBase64: string; paymentId: string; fo
 interface Props { bolaoNome: string; bolaoSlug: string; valorCota: number; totalCotas: number }
 
 export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas }: Props) {
-  const VALOR_COTA  = valorCota  || 30
-  const TOTAL_COTAS = totalCotas || 20
+  const VALOR_COTA  = Number(valorCota)  || 30
+  const TOTAL_COTAS = Number(totalCotas) || 20
 
   const [nome, setNome]                   = useState('')
   const [telefone, setTelefone]           = useState('')
@@ -212,6 +212,10 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas 
             </div>
             <hr />
             <div className="sec-title">🎟️ Selecionar Cotas</div>
+            <div className="cota-preco-info">
+              <span className="cota-preco-label">Valor por cota</span>
+              <span className="cota-preco-val">R$ {VALOR_COTA.toFixed(2).replace('.', ',')}</span>
+            </div>
             <div className="disponivel-bar">Disponíveis: <span>{disp}/{TOTAL_COTAS}</span></div>
             <div className="cotas-grid">
               {Array.from({ length: TOTAL_COTAS }, (_, i) => {

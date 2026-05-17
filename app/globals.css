@@ -405,6 +405,22 @@ input[type="text"], input[type="password"], input[type="tel"] { -webkit-appearan
 }
 .cota.ativo .c-lbl { color: rgba(255,255,255,.65); }
 
+.cota-preco-info {
+  display: flex; justify-content: space-between; align-items: center;
+  background: rgba(0,166,81,.08);
+  border: 1px solid rgba(0,166,81,.20);
+  border-radius: 10px; padding: 10px 14px; margin-bottom: 10px;
+}
+.cota-preco-label {
+  font-size: 11px; font-weight: 600; letter-spacing: .8px;
+  text-transform: uppercase; color: rgba(255,255,255,.45);
+}
+.cota-preco-val {
+  font-size: 18px; font-weight: 800;
+  color: var(--green); font-family: var(--f-mono);
+  letter-spacing: -.3px;
+}
+
 .disponivel-bar {
   font-size: 12px; font-weight: 500;
   color: rgba(255,255,255,.35); text-align: right; margin-bottom: var(--s3);

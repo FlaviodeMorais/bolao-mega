@@ -19,5 +19,5 @@ export default async function BolaoPage({ params }: Props) {
 
   if (!bolao) notFound()
 
-  return <BolaoForm bolaoNome={bolao.nome} bolaoSlug={bolao.slug} valorCota={bolao.valor_cota} totalCotas={bolao.total_cotas} />
+  return <BolaoForm bolaoNome={bolao.nome} bolaoSlug={bolao.slug} valorCota={Number(bolao.valor_cota)} totalCotas={Number(bolao.total_cotas)} />
 }
