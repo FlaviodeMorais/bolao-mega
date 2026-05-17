@@ -191,6 +191,28 @@ export default function AdminPage() {
       .then(() => { setLinkCopiado(true); setTimeout(() => setLinkCopiado(false), 2000) })
   }
 
+  async function cancelarBolao(b: Bolao) {
+    const acao = b.ativo ? 'cancelar' : 'reativar'
+    if (!confirm(`Deseja ${acao} o bolão "${b.nome}"?`)) return
+    await fetch('/api/boloes', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: b.id, ativo: !b.ativo }),
+    })
+    await carregarBoloes()
+    if (bolaoAtual?.id === b.id) fecharBolao()
+  }
+
+  async function excluirBolao(b: Bolao) {
+    if (!confirm(`Excluir permanentemente "${b.nome}"?\n\nEsta ação não pode ser desfeita.`)) return
+    const res = await fetch('/api/boloes', {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: b.id, slug: b.slug }),
+    }).then(r => r.json())
+    if (res.error) { alert('❌ ' + res.error); return }
+    await carregarBoloes()
+    if (bolaoAtual?.id === b.id) fecharBolao()
+  }
+
   async function criarBolao() {
     if (!novoNome || !novoSlug) return
     setCriando(true)
@@ -397,8 +419,8 @@ export default function AdminPage() {
 
               {boloes.map(b => (
                 <div key={b.id}
-                  className={`${styles.bolaoCard} ${bolaoAtual?.id === b.id ? styles.selected : ''}`}
-                  onClick={() => selecionarBolao(b)}>
+                  className={`${styles.bolaoCard} ${bolaoAtual?.id === b.id ? styles.selected : ''} ${!b.ativo ? styles.bolaoInativo : ''}`}
+                  onClick={() => b.ativo && selecionarBolao(b)}>
                   <div className={styles.bolaoInfo}>
                     <div className={styles.bolaoNome}>{b.nome}</div>
                     <div className={styles.bolaoUrl}>/{b.slug}</div>
@@ -407,11 +429,30 @@ export default function AdminPage() {
                     </div>
                   </div>
                   <div className={styles.bolaoActions}>
-                    {b.ativo && <span className={styles.bolaoAtivo}>ATIVO</span>}
-                    <button type="button" className={styles.btnSel}
-                      onClick={e => { e.stopPropagation(); copiarLink(b.slug) }}>
-                      {linkCopiado ? '✓' : '🔗'}
+                    {b.ativo
+                      ? <span className={styles.bolaoAtivo}>ATIVO</span>
+                      : <span className={styles.bolaoCancelado}>CANCELADO</span>
+                    }
+                    {b.ativo && (
+                      <button type="button" className={styles.btnSel}
+                        onClick={e => { e.stopPropagation(); copiarLink(b.slug) }}
+                        title="Copiar link">
+                        {linkCopiado ? '✓' : '🔗'}
+                      </button>
+                    )}
+                    <button type="button"
+                      className={b.ativo ? styles.btnCancelarBolao : styles.btnReativarBolao}
+                      onClick={e => { e.stopPropagation(); cancelarBolao(b) }}
+                      title={b.ativo ? 'Cancelar bolão' : 'Reativar bolão'}>
+                      {b.ativo ? '⊘' : '↺'}
                     </button>
+                    {!b.ativo && (
+                      <button type="button" className={styles.btnExcluirBolao}
+                        onClick={e => { e.stopPropagation(); excluirBolao(b) }}
+                        title="Excluir permanentemente">
+                        🗑
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

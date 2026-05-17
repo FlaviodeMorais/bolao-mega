@@ -42,14 +42,47 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const { id, dezenas, num_apostas, taxa_admin, total_cotas, valor_cota } = await req.json()
+  const body = await req.json()
+  const { id } = body
   if (!id) return NextResponse.json({ error: 'ID obrigatório' }, { status: 400 })
 
-  const { error } = await supabase
-    .from('boloes')
-    .update({ dezenas, num_apostas, taxa_admin, total_cotas, valor_cota })
-    .eq('id', id)
+  const fields: Record<string, unknown> = {}
+  if ('dezenas'     in body) fields.dezenas     = body.dezenas
+  if ('num_apostas' in body) fields.num_apostas = body.num_apostas
+  if ('taxa_admin'  in body) fields.taxa_admin  = body.taxa_admin
+  if ('total_cotas' in body) fields.total_cotas = body.total_cotas
+  if ('valor_cota'  in body) fields.valor_cota  = body.valor_cota
+  if ('ativo'       in body) fields.ativo       = body.ativo
 
+  const { error } = await supabase.from('boloes').update(fields).eq('id', id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}
+
+export async function DELETE(req: NextRequest) {
+  const token = req.cookies.get('admin_token')?.value
+  if (!token || !(await verificarToken(token))) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
+  const { id, slug } = await req.json()
+  if (!id) return NextResponse.json({ error: 'ID obrigatório' }, { status: 400 })
+
+  // Impede exclusão se houver participantes
+  const { count } = await supabase
+    .from('participantes')
+    .select('id', { count: 'exact', head: true })
+    .eq('bolao_slug', slug)
+    .neq('status', 'cancelado')
+
+  if (count && count > 0) {
+    return NextResponse.json(
+      { error: `Não é possível excluir: há ${count} participante(s) neste bolão. Cancele o bolão em vez de excluir.` },
+      { status: 409 }
+    )
+  }
+
+  const { error } = await supabase.from('boloes').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }
