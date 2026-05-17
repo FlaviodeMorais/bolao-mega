@@ -2,10 +2,10 @@ const WHAPI_URL   = 'https://gate.whapi.cloud'
 const WHAPI_TOKEN = process.env.WHAPI_TOKEN || ''
 const GROUP_ID    = process.env.WHAPI_GROUP_ID || ''
 
-async function send(endpoint: string, body: object) {
-  if (!WHAPI_TOKEN) return
+async function send(endpoint: string, body: object): Promise<{ ok: boolean; erro?: string }> {
+  if (!WHAPI_TOKEN) return { ok: false, erro: 'WHAPI_TOKEN não configurado' }
   try {
-    await fetch(`${WHAPI_URL}/${endpoint}`, {
+    const res = await fetch(`${WHAPI_URL}/${endpoint}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${WHAPI_TOKEN}`,
@@ -13,8 +13,15 @@ async function send(endpoint: string, body: object) {
       },
       body: JSON.stringify(body),
     })
+    if (!res.ok) {
+      const txt = await res.text().catch(() => res.status.toString())
+      console.error(`[WhatsApp] Erro ${res.status}:`, txt)
+      return { ok: false, erro: `Whapi ${res.status}: ${txt.substring(0, 100)}` }
+    }
+    return { ok: true }
   } catch (err) {
-    console.error('[WhatsApp] Erro ao enviar:', err)
+    console.error('[WhatsApp] Erro de rede:', err)
+    return { ok: false, erro: String(err) }
   }
 }
 
@@ -23,8 +30,8 @@ function toGroup(text: string) {
   return send('messages/text', { to: GROUP_ID, body: text })
 }
 
-function toNumber(telefone: string, text: string) {
-  if (!telefone) return
+async function toNumber(telefone: string, text: string): Promise<{ ok: boolean; erro?: string }> {
+  if (!telefone) return { ok: false, erro: 'Telefone não informado' }
   const number = telefone.replace(/\D/g, '')
   const to = number.startsWith('55') ? `${number}@s.whatsapp.net` : `55${number}@s.whatsapp.net`
   return send('messages/text', { to, body: text })
@@ -57,7 +64,7 @@ export async function enviarComprovante(
   const horario = dataHora || new Date().toLocaleString('pt-BR')
   const idFull  = paymentId || '—'
 
-  await toNumber(telefone,
+  return toNumber(telefone,
     `✅ *COMPROVANTE DE PARTICIPAÇÃO*\n` +
     `${horario}\n\n` +
     `💰 *R$ ${valor}*\n\n` +

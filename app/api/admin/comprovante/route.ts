@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   const dezenas     = bolao?.dezenas    || 6
   const dataHora    = new Date(part.created_at).toLocaleString('pt-BR')
 
-  await enviarComprovante(
+  const resultado = await enviarComprovante(
     part.telefone,
     part.nome,
     part.cotas,
@@ -46,6 +46,13 @@ export async function POST(req: NextRequest) {
     part.mp_payment_id,
     dataHora
   )
+
+  if (!resultado?.ok) {
+    return NextResponse.json(
+      { error: resultado?.erro || 'Falha ao enviar WhatsApp. Verifique a conexão no Whapi.cloud' },
+      { status: 500 }
+    )
+  }
 
   return NextResponse.json({ ok: true })
 }
