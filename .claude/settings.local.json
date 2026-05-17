@@ -44,7 +44,8 @@
       "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\MORAIS\\\\Documentos\\\\GitHub\\\\bolao-mega\\\\app\\\\api\\\\cron\")",
       "WebFetch(domain:gate.whapi.cloud)",
       "Bash(curl -s -H \"Authorization: Bearer jen4YFIf53CnhXTCME4YE4Rvj9HImc6P\" \"https://gate.whapi.cloud/groups?count=20\")",
-      "WebFetch(domain:bolao-mega-832bj69xw-flaviodemorais-projects.vercel.app)"
+      "WebFetch(domain:bolao-mega-832bj69xw-flaviodemorais-projects.vercel.app)",
+      "WebFetch(domain:servicebus2.caixa.gov.br)"
     ]
   }
 }

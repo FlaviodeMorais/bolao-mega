@@ -24,6 +24,14 @@ export default function AdminPage() {
   const [historico, setHistorico]         = useState<HistoricoItem[]>([])
   const [showHistorico, setShowHistorico] = useState(false)
 
+  // Senha
+  const [showSenha, setShowSenha]       = useState(false)
+  const [senhaAtual, setSenhaAtual]     = useState('')
+  const [novaSenha, setNovaSenha]       = useState('')
+  const [confirmSenha, setConfirmSenha] = useState('')
+  const [senhaMsg, setSenhaMsg]         = useState('')
+  const [salvandoSenha, setSalvandoSenha] = useState(false)
+
   // Criar bolão
   const [showCreate, setShowCreate]       = useState(false)
   const [novoNome, setNovoNome]           = useState('')
@@ -39,6 +47,25 @@ export default function AdminPage() {
     })
     if (res.ok) { setLogado(true); setErrLogin(''); carregarBoloes() }
     else setErrLogin('Senha incorreta.')
+  }
+
+  async function alterarSenha() {
+    if (novaSenha !== confirmSenha) { setSenhaMsg('❌ As senhas não coincidem.'); return }
+    if (novaSenha.length < 6)       { setSenhaMsg('❌ Mínimo de 6 caracteres.'); return }
+    setSalvandoSenha(true); setSenhaMsg('')
+    const res = await fetch('/api/admin/senha', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ senhaAtual, novaSenha }),
+    }).then(r => r.json())
+    setSalvandoSenha(false)
+    if (res.ok) {
+      setSenhaMsg('✅ Senha alterada com sucesso!')
+      setSenhaAtual(''); setNovaSenha(''); setConfirmSenha('')
+      setTimeout(() => { setSenhaMsg(''); setShowSenha(false) }, 3000)
+    } else {
+      setSenhaMsg('❌ ' + res.error)
+    }
   }
 
   async function carregarHistorico() {
@@ -184,6 +211,11 @@ export default function AdminPage() {
             {/* BOLÕES */}
             <div className={styles.panel}>
               <div className={styles.panelTitle}>🎰 Bolões</div>
+              <div className={styles.helpBox}>
+                <p>Cada bolão é um grupo independente com seu próprio link.</p>
+                <p>👉 Crie um bolão → copie o link → compartilhe com o grupo do WhatsApp.</p>
+                <p>Participantes acessam o link e se inscrevem naquele bolão específico.</p>
+              </div>
               {boloes.length === 0 && !showCreate && (
                 <div className={styles.empty}>
                   Nenhum bolão criado. Clique em &quot;+ Novo Bolão&quot; para começar.
@@ -245,6 +277,28 @@ export default function AdminPage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* SENHA */}
+          <div className={`${styles.panel} ${styles.panelFull}`}>
+            <div className={styles.panelTitle}>🔐 Segurança</div>
+            {!showSenha
+              ? <button type="button" className={styles.btnLoad} onClick={() => setShowSenha(true)}>🔑 Alterar senha do admin</button>
+              : (
+                <div className={styles.senhaForm}>
+                  <input type="password" className={styles.createInput} placeholder="Senha atual" value={senhaAtual} onChange={e => setSenhaAtual(e.target.value)} />
+                  <input type="password" className={styles.createInput} placeholder="Nova senha (mín. 6 caracteres)" value={novaSenha} onChange={e => setNovaSenha(e.target.value)} />
+                  <input type="password" className={styles.createInput} placeholder="Confirmar nova senha" value={confirmSenha} onChange={e => setConfirmSenha(e.target.value)} />
+                  {senhaMsg && <div className={styles.senhaMsg}>{senhaMsg}</div>}
+                  <div className={styles.senhaActions}>
+                    <button type="button" className={styles.btnCreate} onClick={alterarSenha} disabled={salvandoSenha}>
+                      {salvandoSenha ? 'Salvando...' : 'Salvar nova senha'}
+                    </button>
+                    <button type="button" className={styles.btnLoad} onClick={() => { setShowSenha(false); setSenhaMsg('') }}>Cancelar</button>
+                  </div>
+                </div>
+              )
+            }
           </div>
 
           {/* HISTÓRICO */}

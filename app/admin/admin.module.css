@@ -270,6 +270,18 @@
 /* ── RESPONSIVE ── */
 .panelFull { grid-column: 1 / -1; }
 
+.helpBox {
+  background: rgba(0,166,81,.07);
+  border: 1px solid rgba(0,166,81,.20);
+  border-radius: 10px; padding: 12px 16px; margin-bottom: 14px;
+}
+.helpBox p { font-size: 12px; color: rgba(255,255,255,.55); line-height: 1.8; }
+.helpBox p:first-child { color: rgba(255,255,255,.75); font-weight: 600; }
+
+.senhaForm { display: flex; flex-direction: column; gap: 8px; max-width: 360px; }
+.senhaMsg  { font-size: 13px; font-weight: 600; padding: 4px 0; }
+.senhaActions { display: flex; gap: 10px; margin-top: 4px; }
+
 .histTable { width: 100%; border-collapse: collapse; font-size: 13px; }
 .histTable th { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(255,255,255,.28); padding: 8px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,.07); }
 .histTable td { padding: 12px; color: rgba(255,255,255,.75); border-bottom: 1px solid rgba(255,255,255,.05); cursor: pointer; transition: background .15s; }

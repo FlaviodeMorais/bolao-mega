@@ -1,15 +1,29 @@
 import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
+import { supabase } from './supabase'
 
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'bolao-mega-secret-2026')
 
+async function getSenhaConfig(): Promise<string> {
+  const { data } = await supabase.from('config').select('value').eq('key', 'admin_password').single()
+  return data?.value || process.env.ADMIN_PASSWORD_HASH || 'MEGA2026'
+}
+
 export async function verificarSenha(senha: string): Promise<boolean> {
-  const hash = process.env.ADMIN_PASSWORD_HASH
-  if (!hash) return senha === 'MEGA2026'
-  if (hash.startsWith('$2b$') || hash.startsWith('$2a$')) {
-    return bcrypt.compare(senha, hash)
+  const stored = await getSenhaConfig()
+  if (stored.startsWith('$2b$') || stored.startsWith('$2a$')) {
+    return bcrypt.compare(senha, stored)
   }
-  return senha === hash
+  return senha === stored
+}
+
+export async function alterarSenha(senhaAtual: string, novaSenha: string): Promise<{ ok: boolean; error?: string }> {
+  const ok = await verificarSenha(senhaAtual)
+  if (!ok) return { ok: false, error: 'Senha atual incorreta.' }
+  if (novaSenha.length < 6) return { ok: false, error: 'Nova senha deve ter ao menos 6 caracteres.' }
+  const hash = await bcrypt.hash(novaSenha, 10)
+  await supabase.from('config').upsert({ key: 'admin_password', value: hash, updated_at: new Date().toISOString() })
+  return { ok: true }
 }
 
 export async function gerarToken(): Promise<string> {
