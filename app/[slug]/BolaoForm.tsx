@@ -1,6 +1,20 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
 
+function mascaraNome(nome: string): string {
+  const words = nome.trim().split(/\s+/)
+  if (words.length === 1) {
+    const w = words[0]
+    if (w.length <= 4) return w
+    return w.slice(0, 2) + '*'.repeat(w.length - 4) + w.slice(-2)
+  }
+  const first = words[0]
+  const last  = words[words.length - 1]
+  const fm = first.slice(0, 2) + '*'.repeat(Math.max(0, first.length - 2))
+  const lm = '*'.repeat(Math.max(0, last.length - 2)) + last.slice(-2)
+  return `${fm} ${lm}`
+}
+
 const APPS_URL = process.env.NEXT_PUBLIC_APPS_URL || ''
 
 interface Participante { id: string; nome: string; cotas: string[]; total: number; status: string }
@@ -196,7 +210,7 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas 
                 <div className="p-box">
                   {participantes.map(p => (
                     <div className="p-row" key={p.id}>
-                      <span className="p-nome">{p.nome}</span>
+                      <span className="p-nome">{mascaraNome(p.nome)}</span>
                       <span className="p-cotas">{Array.isArray(p.cotas) ? p.cotas.join(', ') : p.cotas}</span>
                       <span className={p.status === 'pago' ? 'p-pago' : 'p-pending'}>{p.status === 'pago' ? '✅ PAGO' : '⏳'}</span>
                     </div>
