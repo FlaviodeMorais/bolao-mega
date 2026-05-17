@@ -807,7 +807,7 @@ export default function AdminPage() {
           {showHistorico && (
             historico.length === 0
               ? <div className={styles.empty}>Nenhum histórico encontrado</div>
-              : <table className={styles.histTable}>
+              : <div className={styles.histTableWrap}><table className={styles.histTable}>
                   <thead>
                     <tr>
                       <th>Concurso</th>
@@ -842,7 +842,7 @@ export default function AdminPage() {
                       )
                     })}
                   </tbody>
-                </table>
+                </table></div>
           )}
         </div>
 

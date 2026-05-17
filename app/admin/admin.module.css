@@ -78,7 +78,10 @@
 .header {
   position: sticky; top: 0; z-index: 100;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 24px; height: 58px;
+  padding: 0 24px;
+  padding-left: max(24px, env(safe-area-inset-left));
+  padding-right: max(24px, env(safe-area-inset-right));
+  height: 58px;
   background: rgba(13,27,42,.85);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   backdrop-filter: blur(24px) saturate(180%);
@@ -96,7 +99,12 @@
 }
 .linkForm:hover { background: rgba(255,255,255,.07); color: rgba(255,255,255,.70); }
 
-.content { padding: 24px; }
+.content {
+  padding: 24px;
+  padding-left: max(24px, env(safe-area-inset-left));
+  padding-right: max(24px, env(safe-area-inset-right));
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+}
 
 /* ── STATS ── */
 .statsGrid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
@@ -538,20 +546,20 @@
 }
 .statusPend { font-size: 11px; font-weight: 600; color: #F59E0B; }
 .btnConfirm {
-  padding: 5px 12px;
+  padding: 8px 16px; min-height: 36px;
   background: rgba(0,166,81,.10); color: #00A651;
   border: 1px solid rgba(0,166,81,.28); border-radius: 100px;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap;
-  transition: all .2s;
+  font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
+  transition: all .2s; display: inline-flex; align-items: center;
 }
 .btnConfirm:hover { background: rgba(0,166,81,.25); }
 .btnExcluir {
-  width: 30px; height: 30px; border-radius: 50%;
+  width: 36px; height: 36px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   background: transparent; color: rgba(239,68,68,.55);
   border: 1px solid rgba(239,68,68,.20);
-  font-size: 12px; cursor: pointer; transition: all .2s; flex-shrink: 0;
+  font-size: 13px; cursor: pointer; transition: all .2s; flex-shrink: 0;
 }
 .btnExcluir:hover { background: rgba(239,68,68,.12); color: #EF4444; border-color: rgba(239,68,68,.40); }
 
@@ -570,6 +578,7 @@
 .senhaMsg  { font-size: 13px; font-weight: 600; padding: 4px 0; }
 .senhaActions { display: flex; gap: 10px; margin-top: 4px; }
 
+.histTableWrap { overflow-x: auto; border-radius: 10px; }
 .histTable { width: 100%; border-collapse: collapse; font-size: 13px; }
 .histTable th {
   font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
@@ -674,22 +683,223 @@
   border-radius: 8px; padding: 8px 14px; margin-bottom: 10px;
 }
 
+/* ═══════════════════════════════
+   RESPONSIVE — Mobile-first Admin
+═══════════════════════════════ */
+
+/* Tablet largo */
+@media (max-width: 1200px) {
+  .adminGrid { grid-template-columns: 300px 1fr; }
+}
+
+/* Tablet retrato — empilha colunas */
 @media (max-width: 1024px) {
-  .adminGrid { grid-template-columns: 1fr; }
+  .adminGrid { grid-template-columns: 1fr; gap: 12px; }
 }
-@media (max-width: 900px) {
-  .statsGrid  { grid-template-columns: repeat(2,1fr); }
-  .grid2      { grid-template-columns: 1fr; }
-  .detStatsRow { grid-template-columns: repeat(2,1fr); }
-}
-@media (max-width: 600px) {
-  .content   { padding: 16px; }
-  .statsGrid { grid-template-columns: repeat(2,1fr); gap: 10px; }
-  .statCard  { padding: 14px 12px; }
-  .loginBox  { padding: 36px 24px; }
+
+/* Celular grande / tablet pequeno */
+@media (max-width: 768px) {
+  /* Header compacto */
+  .header { padding: 0 14px; height: 50px; }
+  .title  { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55vw; }
+  .headerConcurso { display: none; }
+  .linkForm { padding: 6px 10px; font-size: 11px; }
+
+  /* Conteúdo */
+  .content { padding: 12px; }
+
+  /* Stats 2x2 */
+  .statsGrid  { grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 12px; }
+  .statCard   { padding: 14px 12px; border-radius: 14px; }
+  .statVal    { font-size: clamp(18px,5vw,24px); }
+
+  /* Panel */
+  .panel { padding: 14px; border-radius: 16px; }
+  .adminGrid { gap: 10px; margin-bottom: 12px; }
+
+  /* Detalhe do bolão */
+  .detStatsRow { grid-template-columns: repeat(2,1fr); gap: 8px; }
+  .detStatVal  { font-size: 18px; }
+
+  /* Ações — grid 2 colunas, botão encerrar ocupa linha inteira */
+  .detActions  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .btnEncerrar { grid-column: 1 / -1; justify-content: center; }
+  .btnConfirmAll, .btnWhatsapp, .btnLoad {
+    justify-content: center; min-height: 40px;
+    padding: 9px 12px; font-size: 12px;
+  }
+
+  /* Cards de participante — empilha */
+  .partCard {
+    flex-direction: column; align-items: stretch; gap: 10px;
+  }
+  .partCardRight {
+    justify-content: flex-start;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,.06);
+    flex-wrap: wrap; gap: 8px;
+  }
+  .partCardStatusCol { flex-direction: row; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .acrescimoRow { justify-content: flex-start; }
+
+  /* Botões de ação maiores para touch */
+  .btnConfirm {
+    padding: 8px 16px; font-size: 12px; min-height: 36px;
+  }
+  .btnExcluir {
+    width: 36px; height: 36px; font-size: 13px;
+  }
+  .btnCancelarBolao, .btnReativarBolao, .btnExcluirBolao {
+    width: 34px; height: 34px;
+  }
+
+  /* Bolão card */
+  .bolaoCard { padding: 12px 14px; }
+  .bolaoNome { font-size: 14px; }
+
+  /* Histórico — scroll horizontal */
+  .histTableWrap { overflow-x: auto; border-radius: 10px; }
+  .histTable { min-width: 520px; font-size: 12px; }
+
+  /* Configurador */
   .configGrid3 { grid-template-columns: 1fr 1fr; }
   .configFieldNarrow { max-width: 100%; }
+  .configInput { font-size: 14px; }
+
+  /* Encerramento */
+  .encerrarActions { flex-direction: column; }
+  .btnEncerrarConfirm { width: 100%; justify-content: center; }
+
+  /* Segurança */
+  .senhaForm { max-width: 100%; }
+  .senhaActions { flex-direction: column; }
+  .senhaActions button { width: 100%; }
+
+  /* Concurso card */
+  .ccNum { font-size: 18px; }
 }
-@media (max-width: 380px) {
-  .statsGrid { grid-template-columns: 1fr 1fr; }
+
+/* iPhone 14 / telas 390px */
+@media (max-width: 430px) {
+  .content { padding: 10px; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+  .header  { height: 48px; }
+
+  /* Stats: 2 colunas compactas */
+  .statsGrid  { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .statCard   { padding: 10px; border-radius: 12px; }
+  .statLabel  { font-size: 9px; margin-bottom: 4px; }
+  .statVal    { font-size: 16px; }
+  .statValSm  { font-size: 13px; }
+
+  /* Painel compacto */
+  .panel      { padding: 12px; border-radius: 14px; }
+  .panelTitle { font-size: 9px; letter-spacing: 1.5px; margin-bottom: 12px; }
+
+  /* Bolão cards — touch friendly */
+  .bolaoCard  { padding: 12px; min-height: 44px; border-radius: 12px; }
+  .bolaoNome  { font-size: 13px; }
+  .bolaoMeta  { font-size: 9px; }
+  .bolaoAtivo, .bolaoCancelado { font-size: 9px; padding: 2px 8px; }
+  .btnCancelarBolao, .btnReativarBolao, .btnExcluirBolao { width: 36px; height: 36px; font-size: 14px; }
+  .btnRenomear { font-size: 14px; padding: 4px 6px; }
+
+  /* Detalhe do bolão */
+  .detNome    { font-size: 15px; }
+  .detSub     { font-size: 10px; }
+  .detStatsRow { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .detStat    { padding: 10px 8px; border-radius: 10px; }
+  .detStatVal { font-size: 15px; }
+  .detStatLbl { font-size: 8px; }
+
+  /* Ações — coluna única no iPhone */
+  .detActions { grid-template-columns: 1fr; gap: 6px; }
+  .btnConfirmAll, .btnWhatsapp, .btnLoad, .btnEncerrar {
+    width: 100%; justify-content: center;
+    min-height: 44px; font-size: 13px; border-radius: 12px;
+  }
+
+  /* Participante card */
+  .partCard       { padding: 12px; border-radius: 12px; margin-bottom: 6px; }
+  .partCardNome   { font-size: 14px; }
+  .partCardTel    { font-size: 11px; }
+  .partCardCotas  { font-size: 11px; }
+  .partCardTotal  { font-size: 12px; }
+  .btnConfirm     { min-height: 40px; padding: 8px 18px; font-size: 13px; border-radius: 10px; }
+  .btnExcluir     { width: 40px; height: 40px; font-size: 14px; }
+
+  /* Seção título */
+  .partSectionTitle { font-size: 9px; margin: 12px 0 8px; }
+
+  /* Config toggle */
+  .configToggle { min-height: 44px; padding: 10px 14px; font-size: 12px; margin-top: 12px; }
+
+  /* Concurso card */
+  .concursoCard { padding: 12px 14px; }
+  .ccNum        { font-size: 17px; }
+  .btnSel       { padding: 8px 14px; min-height: 36px; font-size: 11px; }
+
+  /* Encerramento */
+  .btnEncerrarConfirm { min-height: 44px; font-size: 13px; border-radius: 12px; }
+  .encerrarPanel { padding: 14px; }
+
+  /* Histórico */
+  .histTable  { min-width: 440px; font-size: 11px; }
+  .histTable th, .histTable td { padding: 8px; }
+
+  /* Configurador */
+  .configGrid3 { grid-template-columns: 1fr; gap: 8px; }
+  .configInput { font-size: 15px; min-height: 44px; }
+  .configSelect { min-height: 44px; font-size: 13px; }
+  .configFieldNarrow { max-width: 100%; }
+
+  /* Login */
+  .loginBox   { padding: 32px 20px; border-radius: 20px; }
+  .loginInput { min-height: 50px; font-size: 16px; }
+  .loginBtn   { min-height: 50px; font-size: 15px; }
+
+  /* Criar bolão */
+  .createInput { min-height: 44px; font-size: 14px; }
+  .createBtns  { flex-direction: column; gap: 8px; }
+  .createBtns button { width: 100%; min-height: 44px; }
+  .btnCreate   { min-height: 44px; font-size: 14px; }
+}
+
+/* Celular pequeno */
+@media (max-width: 480px) {
+  .content { padding: 10px; }
+  .header  { padding: 0 12px; }
+  .title   { font-size: 12px; }
+
+  .statsGrid   { gap: 6px; margin-bottom: 10px; }
+  .statCard    { padding: 12px 10px; border-radius: 12px; }
+  .statLabel   { font-size: 9px; letter-spacing: 1px; }
+  .statVal     { font-size: 18px; }
+
+  .panel { padding: 12px; border-radius: 14px; }
+
+  .detStatsRow { gap: 6px; }
+  .detStat     { padding: 10px 8px; border-radius: 10px; }
+  .detStatVal  { font-size: 16px; }
+  .detStatLbl  { font-size: 8px; }
+
+  .detActions  { grid-template-columns: 1fr; }
+  .btnEncerrar { grid-column: 1; }
+
+  .partCard    { padding: 12px; border-radius: 12px; }
+  .partCardNome { font-size: 14px; }
+  .partCardTel  { font-size: 11px; }
+
+  .configGrid3  { grid-template-columns: 1fr; }
+  .configToggle { padding: 10px 12px; font-size: 11px; }
+
+  .bolaoCard { padding: 10px 12px; border-radius: 12px; }
+  .bolaoMeta { font-size: 9px; }
+
+  .loginBox  { padding: 32px 20px; }
+  .loginTitle { font-size: 24px; }
+
+  .createBtns { flex-direction: column; }
+  .createBtns button { width: 100%; }
+
+  .histTable { min-width: 460px; font-size: 11px; }
 }
