@@ -49,7 +49,7 @@ export default function Home() {
             <div className="mega-prize-label">Prêmio estimado do concurso #{concursoAtivo.concurso}</div>
             {concursoAtivo.data && (
               <><div className="mega-draw-label">Sorteio</div>
-              <div className="mega-draw-date">{concursoAtivo.data} às 21h00</div></>
+              <div className="mega-draw-date">{concursoAtivo.data}</div></>
             )}
           </div>
         </div>
