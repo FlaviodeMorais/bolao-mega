@@ -78,7 +78,7 @@ export async function notificarLembrete(concurso: number, pendentes: number) {
     `🎯 Concurso: #${concurso}\n` +
     `⚠️ ${pendentes} pagamento(s) ainda pendente(s)\n\n` +
     `💳 Prazo: *12:00 do dia do sorteio*\n` +
-    `_Chave PIX: 272.105.928-90_`
+    `_Fale com o administrador para informações de pagamento._`
   )
 }
 

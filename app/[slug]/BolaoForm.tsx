@@ -59,11 +59,15 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas 
   // Concurso ativo
   useEffect(() => { fetch('/api/concurso-ativo').then(r => r.json()).then(setConcursoAtivo) }, [])
 
-  // Countdown
+  // Countdown — usa hora do campo data se vier no formato "DD/MM · Dia · HHhMM", senão 20h00
   useEffect(() => {
     if (!concursoAtivo?.data) return
-    const [dd, mm] = concursoAtivo.data.split(' ·')[0].split('/').map(Number)
-    const draw = new Date(new Date().getFullYear(), mm - 1, dd, 21, 0, 0)
+    const dataPart = concursoAtivo.data.split(' · ')
+    const [dd, mm] = dataPart[0].split('/').map(Number)
+    const horaMatch = concursoAtivo.data.match(/(\d{1,2})h(\d{2})?/)
+    const hora = horaMatch ? parseInt(horaMatch[1]) : 20
+    const min  = horaMatch?.[2] ? parseInt(horaMatch[2]) : 0
+    const draw = new Date(new Date().getFullYear(), mm - 1, dd, hora, min, 0)
     const tick = () => {
       const diff = draw.getTime() - Date.now()
       if (diff <= 0) { setCountdown('Apostas encerradas'); return }

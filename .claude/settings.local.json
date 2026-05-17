@@ -45,7 +45,10 @@
       "WebFetch(domain:gate.whapi.cloud)",
       "Bash(curl -s -H \"Authorization: Bearer jen4YFIf53CnhXTCME4YE4Rvj9HImc6P\" \"https://gate.whapi.cloud/groups?count=20\")",
       "WebFetch(domain:bolao-mega-832bj69xw-flaviodemorais-projects.vercel.app)",
-      "WebFetch(domain:servicebus2.caixa.gov.br)"
+      "WebFetch(domain:servicebus2.caixa.gov.br)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
