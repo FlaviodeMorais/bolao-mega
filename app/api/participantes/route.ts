@@ -4,20 +4,25 @@ import { notificarInscricao } from '@/lib/whatsapp'
 
 export async function GET(req: NextRequest) {
   const concurso = req.nextUrl.searchParams.get('concurso')
+  const bolao    = req.nextUrl.searchParams.get('bolao') || null
   if (!concurso) return NextResponse.json({ participantes: [] })
 
-  const { data } = await supabase
+  let query = supabase
     .from('participantes')
     .select('id, nome, cotas, total, status, created_at')
     .eq('concurso', parseInt(concurso))
     .order('created_at', { ascending: true })
 
+  if (bolao) query = query.eq('bolao_slug', bolao)
+  else       query = query.is('bolao_slug', null)
+
+  const { data } = await query
   return NextResponse.json({ participantes: data || [] })
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { concurso, nome, telefone, cotas, total, mp_payment_id, pix_code } = body
+  const { concurso, nome, telefone, cotas, total, mp_payment_id, pix_code, bolao_slug } = body
 
   // Verifica conflitos
   const { data: existing } = await supabase
@@ -27,6 +32,7 @@ export async function POST(req: NextRequest) {
     .neq('status', 'cancelado')
 
   const taken = [...new Set((existing || []).flatMap(r => r.cotas as string[]))]
+  // Filtra por bolão se informado
   const conflitos = cotas.filter((c: string) => taken.includes(c))
 
   if (conflitos.length > 0) {
@@ -38,7 +44,7 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('participantes')
-    .insert({ concurso, nome, telefone, cotas, total, mp_payment_id, pix_code, status: 'aguardando' })
+    .insert({ concurso, nome, telefone, cotas, total, mp_payment_id, pix_code, bolao_slug: bolao_slug || null, status: 'aguardando' })
     .select()
     .single()
 

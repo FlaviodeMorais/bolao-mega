@@ -60,8 +60,8 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas 
   const recarregar = useCallback(async () => {
     if (!concurso) return
     const [c, p] = await Promise.all([
-      fetch(`/api/cotas?concurso=${concurso}`).then(r => r.json()),
-      fetch(`/api/participantes?concurso=${concurso}`).then(r => r.json()),
+      fetch(`/api/cotas?concurso=${concurso}&bolao=${bolaoSlug}`).then(r => r.json()),
+      fetch(`/api/participantes?concurso=${concurso}&bolao=${bolaoSlug}`).then(r => r.json()),
     ])
     setCotasOcupadas(c.cotas || [])
     setParticipantes(p.participantes || [])
@@ -93,7 +93,7 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas 
       }).then(r => r.json())
       const reg = await fetch('/api/participantes', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ concurso: parseInt(concurso), nome: nome.trim(), cotas: selecionadas.sort(), total, mp_payment_id: pixRes.paymentId, pix_code: pixRes.pixCode }),
+        body: JSON.stringify({ concurso: parseInt(concurso), nome: nome.trim(), cotas: selecionadas.sort(), total, mp_payment_id: pixRes.paymentId, pix_code: pixRes.pixCode, bolao_slug: bolaoSlug }),
       }).then(r => r.json())
       if (reg.error) { alert('⚠️ ' + reg.error); return }
       const cotasSalvas = [...selecionadas].sort()
