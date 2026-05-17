@@ -5,7 +5,7 @@ import styles from './admin.module.css'
 interface Participante { id: string; nome: string; cotas: string[]; total: number; status: string }
 interface Concurso    { num: number; data: string; premio: string }
 interface Bolao       { id: string; nome: string; slug: string; valor_cota: number; total_cotas: number; ativo: boolean }
-interface HistoricoItem { concurso: number; total: number; arrecadado: number; pagos: number }
+interface HistoricoItem { concurso: number; bolao_slug: string | null; total: number; arrecadado: number; pagos: number; cancelados: number }
 
 export default function AdminPage() {
   const [logado, setLogado]               = useState(false)
@@ -314,17 +314,21 @@ export default function AdminPage() {
                     <thead>
                       <tr>
                         <th>Concurso</th>
+                        <th>Bolão</th>
                         <th>Participantes</th>
                         <th>Pagos</th>
+                        <th>Cancelados</th>
                         <th>Arrecadado</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {historico.map(h => (
-                        <tr key={h.concurso} onClick={() => { setConcursoAtivo(String(h.concurso)); carregarDados() }}>
+                      {historico.map((h, i) => (
+                        <tr key={i} onClick={() => { setConcursoAtivo(String(h.concurso)); carregarDados() }}>
                           <td>#{h.concurso}</td>
+                          <td>{h.bolao_slug ? `/${h.bolao_slug}` : 'Principal'}</td>
                           <td>{h.total}</td>
                           <td>{h.pagos}</td>
+                          <td>{h.cancelados > 0 ? h.cancelados : '—'}</td>
                           <td>R$ {h.arrecadado.toFixed(2).replace('.', ',')}</td>
                         </tr>
                       ))}

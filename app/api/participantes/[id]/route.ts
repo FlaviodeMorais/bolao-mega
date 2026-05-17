@@ -20,10 +20,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   return NextResponse.json({ ok: true })
 }
 
+// Soft delete — preserva histórico alterando status para 'cancelado'
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   if (!(await isAdmin(req))) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const { error } = await supabase.from('participantes').delete().eq('id', params.id)
+  const { error } = await supabase
+    .from('participantes')
+    .update({ status: 'cancelado' })
+    .eq('id', params.id)
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }
