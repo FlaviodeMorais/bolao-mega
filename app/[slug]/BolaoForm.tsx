@@ -39,12 +39,14 @@ interface Props {
   encerrado: boolean
 }
 
-export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas, dezenas: dezenasProp, numApostas: numApostasProp, taxaAdmin: taxaAdminProp, encerrado }: Props) {
+export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCota, totalCotas, dezenas: dezenasProp, numApostas: numApostasProp, taxaAdmin: taxaAdminProp, encerrado: encerradoProp }: Props) {
   // Config do bolão — sempre confirmada pela API antes de liberar a seleção
   const [VALOR_COTA, setValorCota]     = useState(0)
   const [TOTAL_COTAS, setTotalCotas]   = useState(Number(totalCotas) || 20)
   const [dezenas, setDezenas]          = useState(Number(dezenasProp)    || 6)
   const [numApostas, setNumApostas]    = useState(Number(numApostasProp) || 1)
+  const [bolaoNome, setBolaoNome]      = useState(bolaoNomeProp)
+  const [encerrado, setEncerrado]      = useState(encerradoProp)
   const [configOk, setConfigOk]        = useState(false)
 
   const [nome, setNome]                   = useState('')
@@ -81,9 +83,9 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas,
   // Concurso ativo
   useEffect(() => { fetch('/api/concurso-ativo').then(r => r.json()).then(setConcursoAtivo) }, [])
 
-  // Busca config SEMPRE da API — nunca usa valor do cache SSR
-  useEffect(() => {
-    setConfigOk(false)
+  // Sincroniza config COMPLETA do bolão via API — único ponto de verdade
+  const sincronizarConfig = useCallback((forceReload = false) => {
+    if (forceReload) setConfigOk(false)
     fetch('/api/boloes')
       .then(r => r.json())
       .then(d => {
@@ -95,28 +97,26 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas,
         setTotalCotas(tc > 0 ? tc : 20)
         if (b.dezenas)     setDezenas(Number(b.dezenas))
         if (b.num_apostas) setNumApostas(Number(b.num_apostas))
+        if (b.nome)        setBolaoNome(b.nome)
+        setEncerrado(!!b.encerrado)
         setConfigOk(true)
       })
       .catch(() => setConfigOk(false))
   }, [bolaoSlug])
 
-  // Revalida ao voltar para a aba
+  // Busca config ao montar
+  useEffect(() => { sincronizarConfig(true) }, [sincronizarConfig])
+
+  // Revalida ao voltar para a aba e a cada 60s (detecta mudanças do admin)
   useEffect(() => {
-    const onFocus = () => {
-      fetch('/api/boloes')
-        .then(r => r.json())
-        .then(d => {
-          const b = (d.boloes || []).find((x: { slug: string }) => x.slug === bolaoSlug)
-          if (b && Number(b.valor_cota) > 0) {
-            setValorCota(Number(b.valor_cota))
-            setTotalCotas(Number(b.total_cotas))
-          }
-        })
-        .catch(() => {})
-    }
+    const onFocus = () => sincronizarConfig(false)
     window.addEventListener('focus', onFocus)
-    return () => window.removeEventListener('focus', onFocus)
-  }, [bolaoSlug])
+    const intervalo = setInterval(() => sincronizarConfig(false), 60000)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      clearInterval(intervalo)
+    }
+  }, [sincronizarConfig])
 
   // Countdown — usa hora do campo data se vier no formato "DD/MM · Dia · HHhMM", senão 20h00
   useEffect(() => {
