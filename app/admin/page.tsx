@@ -12,8 +12,8 @@ interface Bolao       {
   total_cotas: number; ativo: boolean; dezenas: number; num_apostas: number; taxa_admin: number
 }
 interface HistoricoItem {
-  concurso: number; bolao_slug: string | null; total: number
-  arrecadado: number; pagos: number; cancelados: number
+  concurso: number; bolao_slug: string | null; bolao_nome: string
+  total: number; pagos: number; pendentes: number; cancelados: number; arrecadado: number
 }
 
 const CAIXA_PRECOS: Record<number, number> = {
@@ -612,21 +612,39 @@ export default function AdminPage() {
             historico.length === 0
               ? <div className={styles.empty}>Nenhum histórico encontrado</div>
               : <table className={styles.histTable}>
-                  <thead><tr>
-                    <th>Concurso</th><th>Bolão</th><th>Participantes</th>
-                    <th>Pagos</th><th>Cancelados</th><th>Arrecadado</th>
-                  </tr></thead>
+                  <thead>
+                    <tr>
+                      <th>Concurso</th>
+                      <th>Bolão</th>
+                      <th>✅ Pagos</th>
+                      <th>⏳ Pendentes</th>
+                      <th>✕ Cancelados</th>
+                      <th>Arrecadado</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    {historico.map((h, i) => (
-                      <tr key={i}>
-                        <td>#{h.concurso}</td>
-                        <td>{h.bolao_slug ? `/${h.bolao_slug}` : 'Principal'}</td>
-                        <td>{h.total}</td>
-                        <td>{h.pagos}</td>
-                        <td>{h.cancelados > 0 ? h.cancelados : '—'}</td>
-                        <td>R$ {h.arrecadado.toFixed(2).replace('.',',')}</td>
-                      </tr>
-                    ))}
+                    {historico.map((h, i) => {
+                      const concursoAnterior = i > 0 ? historico[i - 1].concurso : null
+                      const novoConcurso = h.concurso !== concursoAnterior
+                      return (
+                        <>
+                          {novoConcurso && i > 0 && (
+                            <tr key={`sep-${i}`} className={styles.histSep}><td colSpan={6} /></tr>
+                          )}
+                          <tr key={i} className={novoConcurso ? styles.histRowFirst : styles.histRowSub}>
+                            <td>{novoConcurso ? `#${h.concurso}` : ''}</td>
+                            <td>
+                              <div className={styles.histBolaoNome}>{h.bolao_nome}</div>
+                              {h.bolao_slug && <div className={styles.histBolaoSlug}>/{h.bolao_slug}</div>}
+                            </td>
+                            <td className={styles.histPago}>{h.pagos}</td>
+                            <td className={h.pendentes > 0 ? styles.histPend : ''}>{h.pendentes || '—'}</td>
+                            <td className={h.cancelados > 0 ? styles.histCancel : ''}>{h.cancelados || '—'}</td>
+                            <td className={styles.histValor}>R$ {h.arrecadado.toFixed(2).replace('.', ',')}</td>
+                          </tr>
+                        </>
+                      )
+                    })}
                   </tbody>
                 </table>
           )}

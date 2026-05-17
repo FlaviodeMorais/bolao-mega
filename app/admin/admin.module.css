@@ -430,11 +430,26 @@
 .senhaActions { display: flex; gap: 10px; margin-top: 4px; }
 
 .histTable { width: 100%; border-collapse: collapse; font-size: 13px; }
-.histTable th { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(255,255,255,.28); padding: 8px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,.07); }
-.histTable td { padding: 12px; color: rgba(255,255,255,.75); border-bottom: 1px solid rgba(255,255,255,.05); cursor: pointer; transition: background .15s; }
-.histTable tr:hover td { background: rgba(0,166,81,.07); }
-.histTable td:first-child { font-weight: 700; color: #00A651; font-family: 'JetBrains Mono', monospace; }
+.histTable th {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase; color: rgba(255,255,255,.28);
+  padding: 8px 12px; text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.histTable td { padding: 10px 12px; color: rgba(255,255,255,.70); border-bottom: 1px solid rgba(255,255,255,.04); }
+.histTable tr:hover td { background: rgba(0,166,81,.05); }
 .histTable tr:last-child td { border-bottom: none; }
+
+.histRowFirst td:first-child { font-weight: 800; color: #00A651; font-family: 'JetBrains Mono', monospace; font-size: 15px; }
+.histRowSub  td:first-child  { color: transparent; }
+.histSep td { padding: 4px 0; background: transparent; border: none; }
+
+.histBolaoNome  { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.85); }
+.histBolaoSlug  { font-size: 10px; color: rgba(255,255,255,.28); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+.histPago       { color: #00A651 !important; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+.histPend       { color: #F59E0B !important; font-weight: 700; }
+.histCancel     { color: rgba(239,68,68,.65) !important; }
+.histValor      { font-weight: 700; color: #00A651 !important; font-family: 'JetBrains Mono', monospace; }
 
 /* ── CONFIGURADOR DE BOLÃO ── */
 .configurador {
