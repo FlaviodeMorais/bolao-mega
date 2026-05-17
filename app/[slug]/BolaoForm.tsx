@@ -182,6 +182,12 @@ export default function BolaoForm({ bolaoNome, bolaoSlug, valorCota, totalCotas,
                 <div className="mega-stat-sep" />
                 <div className="mega-stat"><div className="mega-stat-val">{participantes.length}</div><div className="mega-stat-lbl">Participantes</div></div>
               </div>
+              <div className="mega-divider" />
+              <div className="mega-stats">
+                <div className="mega-stat"><div className="mega-stat-val">{numApostas}</div><div className="mega-stat-lbl">Apostas</div></div>
+                <div className="mega-stat-sep" />
+                <div className="mega-stat"><div className="mega-stat-val">{dezenas}</div><div className="mega-stat-lbl">Dezenas / Aposta</div></div>
+              </div>
             </div>
           </div>
         )}
