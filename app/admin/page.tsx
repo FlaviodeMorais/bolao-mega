@@ -68,6 +68,7 @@ export default function AdminPage() {
 
   // WhatsApp health
   const [waStatus, setWaStatus] = useState<'ok'|'erro'|''>('')
+  const [waMsg, setWaMsg]       = useState('')
 
   // Comprovante
   const [enviandoComp, setEnviandoComp]         = useState<string | null>(null)
@@ -149,7 +150,8 @@ export default function AdminPage() {
   useEffect(() => {
     if (!logado) return
     const checarWA = () => fetch('/api/whatsapp/health').then(r => r.json())
-      .then(d => setWaStatus(d.connected ? 'ok' : 'erro')).catch(() => setWaStatus('erro'))
+      .then(d => { setWaStatus(d.connected ? 'ok' : 'erro'); setWaMsg(d.msg || '') })
+      .catch(() => { setWaStatus('erro'); setWaMsg('Sem resposta do Whapi') })
     checarWA()
     const id = setInterval(checarWA, 30000)
     return () => clearInterval(id)
@@ -433,8 +435,7 @@ export default function AdminPage() {
         <div className={styles.headerRight}>
           <span className={styles.headerConcurso}>{concursoAtivo ? `Concurso #${concursoAtivo}` : '—'}</span>
           {waStatus && (
-            <span className={waStatus === 'ok' ? styles.waOk : styles.waErro}
-              title={waStatus === 'ok' ? 'WhatsApp conectado' : 'WhatsApp desconectado'}>
+            <span className={waStatus === 'ok' ? styles.waOk : styles.waErro} title={waMsg}>
               {waStatus === 'ok' ? '📱 WA ●' : '📵 WA ●'}
             </span>
           )}
