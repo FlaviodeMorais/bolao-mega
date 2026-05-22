@@ -543,15 +543,11 @@
 
 /* ── Print ── */
 @media print {
-  /* Forçar impressão de cores de fundo (dark theme) */
-  * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
   .controls { display: none; }
 
   .page {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
     background: #0d1117 !important;
     padding: 6mm;
     min-height: 0;
