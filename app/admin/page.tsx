@@ -186,6 +186,7 @@ export default function AdminPage() {
   const [showConfig, setShowConfig]   = useState(false)
   const [editDezenas, setEditDezenas] = useState(6)
   const [editApostas, setEditApostas] = useState(1)
+  const [editDatas, setEditDatas]     = useState<Record<number, string>>({})
   const [editCotas, setEditCotas]     = useState(20)
   const [editTaxa, setEditTaxa]       = useState(0)
   const [salvando, setSalvando]       = useState(false)
@@ -1093,20 +1094,38 @@ export default function AdminPage() {
                 <button type="button" className={styles.btnLoad} onClick={buscarCaixa} disabled={loadingCaixa}>
                   {loadingCaixa ? '⟳ Carregando...' : '🔄 Buscar na Caixa'}
                 </button>
-                {proximos.map(c => (
-                  <div key={c.num} className={`${styles.concursoCard} ${String(c.num) === concursoAtivo ? styles.ativo : ''}`}>
-                    <div>
-                      <div className={styles.ccNum}>#{c.num}</div>
-                      <div className={styles.ccData}>{c.data}</div>
-                      <div className={styles.ccPremio}>{c.premio}</div>
+                {proximos.length > 0 && (
+                  <p className={styles.ccAvisoData}>
+                    ⚠️ Data calculada = encerramento das apostas. Edite para a data/hora real do sorteio antes de selecionar.
+                  </p>
+                )}
+                {proximos.map(c => {
+                  const dataEditada = editDatas[c.num] ?? c.data
+                  return (
+                    <div key={c.num} className={`${styles.concursoCard} ${String(c.num) === concursoAtivo ? styles.ativo : ''}`}>
+                      <div className={styles.ccBody}>
+                        <div className={styles.ccNum}>#{c.num}</div>
+                        <div className={styles.ccEncerramento}>
+                          Encerramento apostas: {c.data}
+                        </div>
+                        <div className={styles.ccSorteioLabel}>Data/hora do sorteio:</div>
+                        <input
+                          type="text"
+                          className={styles.ccSorteioInput}
+                          placeholder="Ex: 24/05 · Dom · 11h00"
+                          value={dataEditada}
+                          onChange={e => setEditDatas(prev => ({...prev, [c.num]: e.target.value}))}
+                        />
+                        <div className={styles.ccPremio}>{c.premio}</div>
+                      </div>
+                      <button type="button"
+                        className={`${styles.btnSel} ${String(c.num) === concursoAtivo ? styles.btnSelAtivo : ''}`}
+                        onClick={() => selecionarConcurso({ ...c, data: dataEditada })}>
+                        {String(c.num) === concursoAtivo ? '✔ Ativo' : 'Selecionar'}
+                      </button>
                     </div>
-                    <button type="button"
-                      className={`${styles.btnSel} ${String(c.num) === concursoAtivo ? styles.btnSelAtivo : ''}`}
-                      onClick={() => selecionarConcurso(c)}>
-                      {String(c.num) === concursoAtivo ? '✔ Ativo' : 'Selecionar'}
-                    </button>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
