@@ -81,25 +81,28 @@ export default function AdminPage() {
   const [uploadingApostas, setUploadingApostas] = useState(false)
   const [apostasMsg, setApostasMsg]             = useState('')
   const [apostasCarregadas, setApostasCarregadas] = useState(false)
+  const [showApostasModal, setShowApostasModal]   = useState(false)
+  const [apostasTexto, setApostasTexto]           = useState('')
 
-  async function uploadApostas(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file || !bolaoAtual) return
-    setUploadingApostas(true); setApostasMsg('Processando PDF...')
-    const form = new FormData()
-    form.append('file', file)
-    form.append('bolao_id', bolaoAtual.id)
-    const res = await fetch('/api/admin/apostas-upload', { method: 'POST', body: form })
+  async function salvarApostas() {
+    if (!bolaoAtual || !apostasTexto.trim()) return
+    setUploadingApostas(true); setApostasMsg('')
+    const res = await fetch('/api/admin/apostas-upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: apostasTexto, bolao_id: bolaoAtual.id }),
+    })
     const data = await res.json()
     setUploadingApostas(false)
     if (res.ok) {
       setApostasMsg(`✅ ${data.total_apostas} apostas carregadas!`)
       setApostasCarregadas(true)
+      setShowApostasModal(false)
+      setApostasTexto('')
     } else {
       setApostasMsg(`❌ ${data.error}`)
     }
-    setTimeout(() => setApostasMsg(''), 5000)
-    e.target.value = ''
+    setTimeout(() => setApostasMsg(''), 6000)
   }
 
   async function removerApostas() {
@@ -706,16 +709,49 @@ export default function AdminPage() {
                     onClick={() => { setShowResultado(!showResultado); setResultadoMsg(''); setResultadoGanhou(null); setPremioTotal('') }}>
                     🏆 Resultado
                   </button>
-                  {/* Upload apostas PDF */}
-                  <label className={styles.btnUploadApostas} title="Carregar apostas do PDF da Caixa">
-                    {uploadingApostas ? '⟳ Processando...' : apostasCarregadas ? '📊 Apostas ✅' : '📊 Carregar Apostas'}
-                    <input type="file" accept=".pdf" className={styles.inputHidden} onChange={uploadApostas} disabled={uploadingApostas} />
-                  </label>
+                  {/* Apostas */}
+                  <button type="button" className={styles.btnUploadApostas}
+                    onClick={() => setShowApostasModal(true)}
+                    title="Carregar apostas copiadas do PDF da Caixa">
+                    {apostasCarregadas ? '📊 Apostas ✅' : '📊 Carregar Apostas'}
+                  </button>
                   {apostasCarregadas && (
-                    <button type="button" className={styles.btnRemoverApostas} onClick={removerApostas} title="Remover dados das apostas">✕</button>
+                    <button type="button" className={styles.btnRemoverApostas} onClick={removerApostas} title="Remover apostas">✕</button>
                   )}
                 </div>
                 {apostasMsg && <div className={styles.lembreteMsg}>{apostasMsg}</div>}
+
+                {/* Modal apostas */}
+                {showApostasModal && (
+                  <div className={styles.apostasModal}>
+                    <div className={styles.apostasModalBox}>
+                      <div className={styles.apostasModalTitle}>📊 Carregar Apostas</div>
+                      <ol className={styles.apostasModalSteps}>
+                        <li>Abra o PDF no <strong>Chrome</strong></li>
+                        <li>Pressione <kbd>Ctrl+A</kbd> para selecionar tudo</li>
+                        <li>Pressione <kbd>Ctrl+C</kbd> para copiar</li>
+                        <li>Cole abaixo com <kbd>Ctrl+V</kbd></li>
+                      </ol>
+                      <textarea
+                        className={styles.apostasTextarea}
+                        placeholder="Cole aqui o texto copiado do PDF..."
+                        value={apostasTexto}
+                        onChange={e => setApostasTexto(e.target.value)}
+                        rows={8}
+                      />
+                      <div className={styles.apostasModalActions}>
+                        <button type="button" className={styles.btnLoad}
+                          onClick={() => { setShowApostasModal(false); setApostasTexto('') }}>
+                          Cancelar
+                        </button>
+                        <button type="button" className={styles.btnConfirmAll}
+                          onClick={salvarApostas} disabled={uploadingApostas || !apostasTexto.trim()}>
+                          {uploadingApostas ? '⟳ Processando...' : '✔ Confirmar'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Painel de resultado */}
                 {showResultado && (
