@@ -2,16 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verificarToken } from '@/lib/auth'
 
-// BRT = UTC - 3h
-function nowBRT(): Date {
-  return new Date(Date.now() - 3 * 60 * 60 * 1000)
-}
-
-// Compara datas como YYYYMMDD
-function toInt(d: Date) {
-  return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate()
-}
-
 // Classifica apostas contra dezenas sorteadas
 function classificar(bets: number[][], dezenas: number[]) {
   const set = new Set(dezenas)
@@ -121,51 +111,21 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  // ── Casos 2/3/4: Concurso ainda não apurado — verificar data/hora ────────
-  if (!dataProximo) {
-    return NextResponse.json({ error: 'Data do próximo sorteio não disponível na Caixa.' }, { status: 404 })
-  }
+  // ── Concurso ainda não apurado ──────────────────────────────────────────
+  // Nota: dataProximoConcurso da API Caixa é a data de ENCERRAMENTO DAS APOSTAS,
+  // que pode ser diferente da data real do sorteio (ex: Mega-Sena 30 Anos).
+  // Por isso NÃO usamos a data para inferir hora do sorteio — apenas guardamos
+  // como informação e retornamos "nao_apurado" até o resultado aparecer na API.
 
-  // dataProximo: "DD/MM/YYYY"
-  const [drawDay, drawMonth, drawYear] = dataProximo.split('/').map(Number)
-
-  const brt       = nowBRT()
-  const brtDate   = toInt(brt)
-  const drawDate  = drawYear * 10000 + drawMonth * 100 + drawDay
-  const brtHour   = brt.getUTCHours()   // hora em BRT (já ajustada)
-
-  if (brtDate < drawDate) {
-    // ── Antes da data do sorteio ────────────────────────────────────────────
-    const payload = { status: 'nao_apurado', data_sorteio: dataProximo }
-    await salvarStatus(bolaoId, payload)
-    return NextResponse.json({
-      ok: true,
-      status: 'nao_apurado',
-      data_sorteio: dataProximo,
-      message: `Sorteio não apurado. Data prevista: ${dataProximo}.`,
-    })
-  }
-
-  if (brtDate === drawDate && brtHour < 22) {
-    // ── Dia do sorteio, mas antes das 22h ────────────────────────────────────
-    const payload = { status: 'aguardando_apuracao', data_sorteio: dataProximo }
-    await salvarStatus(bolaoId, payload)
-    return NextResponse.json({
-      ok: true,
-      status: 'aguardando_apuracao',
-      data_sorteio: dataProximo,
-      message: `Aguardando apuração. Sorteio em ${dataProximo} — resultado disponível após 22h (BRT).`,
-    })
-  }
-
-  // ── Dia do sorteio após 22h, mas resultado ainda não publicado na Caixa ──
-  const payload = { status: 'apurando', data_sorteio: dataProximo }
+  const payload = { status: 'nao_apurado', data_encerramento: dataProximo || '' }
   await salvarStatus(bolaoId, payload)
   return NextResponse.json({
     ok: true,
-    status: 'apurando',
-    data_sorteio: dataProximo,
-    message: 'Apuração em andamento. Resultado ainda não publicado na Caixa — tente novamente em alguns minutos.',
+    status: 'nao_apurado',
+    data_encerramento: dataProximo,
+    message: dataProximo
+      ? `Sorteio do concurso #${concurso} ainda não apurado. Encerramento das apostas: ${dataProximo}. Tente novamente após o sorteio.`
+      : `Concurso #${concurso} ainda não apurado. Tente novamente após o sorteio.`,
   })
 }
 

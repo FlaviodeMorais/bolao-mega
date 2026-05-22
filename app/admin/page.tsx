@@ -163,11 +163,9 @@ export default function AdminPage() {
     if (res.error) { setConferirMsg(`❌ ${res.error}`); return }
     setConferirResult(res)
     const msgs: Record<string, string> = {
-      ganhamos:           `🏆 GANHAMOS! ${res.maior_premio} — ${res.total_premiadas} aposta(s) premiada(s)`,
-      nao_premiada:       `😔 Não premiada — nenhuma aposta com 4 ou mais acertos`,
-      nao_apurado:        `⏳ Sorteio não apurado. Data prevista: ${res.data_sorteio}`,
-      aguardando_apuracao:`🎲 Aguardando apuração — resultado disponível após 22h (BRT)`,
-      apurando:           `🔄 Apuração em andamento. Tente novamente em alguns minutos.`,
+      ganhamos:     `🏆 GANHAMOS! ${res.maior_premio} — ${res.total_premiadas} aposta(s) premiada(s)`,
+      nao_premiada: `😔 Não premiada — nenhuma aposta com 4 ou mais acertos`,
+      nao_apurado:  res.message || `⏳ Sorteio #${concursoAtivo} ainda não apurado.`,
     }
     setConferirMsg(msgs[res.status] || res.message || `Status: ${res.status}`)
   }
