@@ -648,28 +648,74 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
                 <hr className="comprov-divider" />
                 <div className="comprov-row"><span className="comprov-label">Valor pago</span><span className="comprov-total">R$ {Number(partVerificada.total).toFixed(2).replace('.',',')}</span></div>
 
-                {apostasData && (
+                {/* Conferência do sorteio */}
+                {resultadoConf && resultadoConf.status !== 'nao_apurado' && (
                   <>
                     <hr className="comprov-divider" />
-                    <div className="comprov-apostas-header">
-                      <span className="comprov-label">Apostas registradas — {apostasData.total_apostas} jogos</span>
-                      {apostasData.compra_id && <span className="comprov-compra-id">Compra #{apostasData.compra_id}</span>}
-                    </div>
-                    {apostasData.transacao_id && (
-                      <div className="comprov-transacao">
-                        ID: {apostasData.transacao_id} · {apostasData.data_compra} {apostasData.hora_compra}
-                      </div>
-                    )}
-                    <div className="comprov-bets-grid">
-                      {apostasData.bets.map((bet, bi) => (
-                        <div key={bi} className="comprov-bet">
-                          <span className="comprov-bet-num">{String(bi+1).padStart(2,'0')}.</span>
-                          {bet.map((n, ni) => <span key={ni} className="comprov-bet-dez">{String(n).padStart(2,'0')}</span>)}
+                    <div className="comprov-conferir-section">
+                      <div className="comprov-conferir-title">🔍 Conferência do Sorteio</div>
+                      <div className="comprov-dzs-row">
+                        <span className="comprov-label">Dezenas sorteadas</span>
+                        <div className="comprov-dzs-grid">
+                          {resultadoConf.dezenas_sorteadas.map(n => (
+                            <span key={n} className="comprov-dz-sorteada">{String(n).padStart(2,'0')}</span>
+                          ))}
                         </div>
-                      ))}
+                      </div>
+                      <div className={`comprov-status-result comprov-status-${resultadoConf.status}`}>
+                        {resultadoConf.status === 'nao_premiada' && '😔 Não premiada — nenhuma aposta com 4 ou mais acertos'}
+                        {resultadoConf.status === 'ganhamos' && `🏆 GANHAMOS! ${resultadoConf.maior_premio} — ${resultadoConf.apostas_premiadas.length} aposta(s) premiada(s)`}
+                      </div>
+                      {resultadoConf.apostas_premiadas.length > 0 && (
+                        <div className="comprov-premiadas-lista">
+                          {resultadoConf.apostas_premiadas.map(a => (
+                            <div key={a.idx} className="comprov-aposta-premiada">
+                              <span className="comprov-bet-num">#{a.idx}</span>
+                              <span className="comprov-bet-dez-winner">{a.dezenas.map(n => String(n).padStart(2,'0')).join(' ')}</span>
+                              <span className="comprov-premio-chip">{a.acertos}✓ {a.premio}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </>
                 )}
+
+                {apostasData && (() => {
+                  const ganhadoresIdx = new Set(resultadoConf?.apostas_premiadas.map(a => a.idx) ?? [])
+                  const sorteadasSet  = new Set(resultadoConf?.dezenas_sorteadas ?? [])
+                  return (
+                    <>
+                      <hr className="comprov-divider" />
+                      <div className="comprov-apostas-header">
+                        <span className="comprov-label">Apostas registradas — {apostasData.total_apostas} jogos</span>
+                        {apostasData.compra_id && <span className="comprov-compra-id">Compra #{apostasData.compra_id}</span>}
+                      </div>
+                      {apostasData.transacao_id && (
+                        <div className="comprov-transacao">
+                          ID: {apostasData.transacao_id} · {apostasData.data_compra} {apostasData.hora_compra}
+                        </div>
+                      )}
+                      <div className="comprov-bets-grid">
+                        {apostasData.bets.map((bet, bi) => {
+                          const isWinner = ganhadoresIdx.has(bi + 1)
+                          const premio = isWinner ? resultadoConf?.apostas_premiadas.find(a => a.idx === bi+1)?.premio : null
+                          return (
+                            <div key={bi} className={`comprov-bet${isWinner ? ' comprov-bet-winner' : ''}`}>
+                              <span className="comprov-bet-num">{String(bi+1).padStart(2,'0')}.</span>
+                              {bet.map((n, ni) => (
+                                <span key={ni} className={`comprov-bet-dez${sorteadasSet.size > 0 && sorteadasSet.has(n) ? ' comprov-dez-acerto' : ''}`}>
+                                  {String(n).padStart(2,'0')}
+                                </span>
+                              ))}
+                              {premio && <span className="comprov-winner-tag">{premio}</span>}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </>
+                  )
+                })()}
               </div>
             )}
           </div>

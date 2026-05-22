@@ -12,6 +12,8 @@ interface Bolao       {
   id: string; nome: string; slug: string; valor_cota: number
   total_cotas: number; ativo: boolean; dezenas: number; num_apostas: number
   taxa_admin: number; encerrado: boolean
+  apostas_data?: { bets: number[][]; total_apostas: number } | null
+  resultado_conferencia?: { status: string } | null
 }
 interface HistoricoItem {
   concurso: number; bolao_slug: string | null; bolao_nome: string
@@ -861,9 +863,15 @@ export default function AdminPage() {
                 {showConferir && (
                   <div className={styles.resultadoPanel}>
                     <div className={styles.resultadoTitle}>🔍 Conferir Resultado — #{concursoAtivo}</div>
-                    <p className={styles.resultadoInfo}>
-                      Digite as 6 dezenas sorteadas (separadas por espaço, vírgula ou enter):
-                    </p>
+                    {bolaoAtual.apostas_data ? (
+                      <p className={styles.resultadoInfo}>
+                        ✅ {bolaoAtual.apostas_data.total_apostas} apostas carregadas · Digite as 6 dezenas sorteadas:
+                      </p>
+                    ) : (
+                      <p className={styles.resultadoInfo}>
+                        ⚠️ Nenhuma aposta carregada. Clique em &quot;📊 Carregar Apostas&quot; primeiro.
+                      </p>
+                    )}
                     <input
                       type="text"
                       className={styles.dezenasInput}

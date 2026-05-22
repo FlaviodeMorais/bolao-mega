@@ -1183,6 +1183,115 @@ button.p-pago:hover { opacity: 0.75; }
   text-align: center;
 }
 
+/* Conferência do sorteio no comprovante do participante */
+.comprov-conferir-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 14px;
+}
+.comprov-conferir-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #8b949e;
+}
+.comprov-dzs-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.comprov-dzs-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.comprov-dz-sorteada {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #3fb950;
+  color: white;
+  border-radius: 50%;
+  font-family: var(--f-mono);
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+.comprov-status-result {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-align: center;
+}
+.comprov-status-nao_premiada {
+  background: rgba(239,68,68,0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239,68,68,0.2);
+}
+.comprov-status-ganhamos {
+  background: rgba(16,185,129,0.12);
+  color: #10b981;
+  border: 1px solid rgba(16,185,129,0.3);
+  font-size: 1rem;
+}
+.comprov-premiadas-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.comprov-aposta-premiada {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: rgba(63,185,80,0.08);
+  border: 1px solid rgba(63,185,80,0.2);
+  border-radius: 6px;
+  font-size: 0.78rem;
+}
+.comprov-bet-dez-winner {
+  font-family: var(--f-mono);
+  font-weight: 700;
+  color: #3fb950;
+  flex: 1;
+  letter-spacing: 1px;
+}
+.comprov-premio-chip {
+  background: #3fb950;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Destaque na grade de bets */
+.comprov-bet-winner {
+  background: rgba(63,185,80,0.1) !important;
+  border-radius: 4px;
+}
+.comprov-dez-acerto {
+  color: #3fb950 !important;
+  font-weight: 800 !important;
+}
+.comprov-winner-tag {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #3fb950;
+  white-space: nowrap;
+  padding: 1px 4px;
+  border: 1px solid rgba(63,185,80,0.4);
+  border-radius: 4px;
+}
+
 @media print {
   .comprov-controls { display: none; }
   .comprov-overlay { position: static; background: white; padding: 0; }
