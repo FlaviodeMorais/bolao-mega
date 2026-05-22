@@ -2,13 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verificarToken } from '@/lib/auth'
 
-// Classifica apostas contra dezenas sorteadas
-function classificar(bets: number[][], dezenas: number[]) {
-  const set = new Set(dezenas)
+// Classifica apostas contra as 6 dezenas sorteadas pela Mega-Sena.
+// Independe da quantidade de dezenas por aposta — a Mega-Sena sempre sorteia 6.
+// Premia apostas que acertam 4 (QUADRA), 5 (QUINA) ou 6 (SENA) das dezenas sorteadas.
+function classificar(bets: number[][], dezenasSorteadas: number[], dezenasPorAposta: number) {
+  const set = new Set(dezenasSorteadas)
   const premiadas: { idx: number; dezenas: number[]; acertos: number; premio: string }[] = []
   let senas = 0, quinas = 0, quadras = 0
+  let invalidas = 0
 
   for (let i = 0; i < bets.length; i++) {
+    // Valida que a aposta tem o número correto de dezenas
+    if (bets[i].length !== dezenasPorAposta) { invalidas++; continue }
     const acertos = bets[i].filter(n => set.has(n)).length
     if (acertos >= 4) {
       const premio = acertos === 6 ? 'SENA' : acertos === 5 ? 'QUINA' : 'QUADRA'
@@ -22,10 +27,11 @@ function classificar(bets: number[][], dezenas: number[]) {
   const ganhou = premiadas.length > 0
   const maior  = senas > 0 ? 'SENA' : quinas > 0 ? 'QUINA' : quadras > 0 ? 'QUADRA' : null
   return {
-    status:          ganhou ? 'ganhamos' : 'nao_premiada',
-    resumo:          { senas, quinas, quadras },
-    maior_premio:    maior,
+    status:            ganhou ? 'ganhamos' : 'nao_premiada',
+    resumo:            { senas, quinas, quadras },
+    maior_premio:      maior,
     apostas_premiadas: premiadas,
+    apostas_invalidas: invalidas,
   }
 }
 
@@ -50,7 +56,7 @@ export async function GET(req: NextRequest) {
 
   // Apostas carregadas
   const { data: bolao } = await supabase
-    .from('boloes').select('apostas_data').eq('id', bolaoId).single()
+    .from('boloes').select('apostas_data, dezenas').eq('id', bolaoId).single()
 
   if (!bolao?.apostas_data?.bets?.length) {
     return NextResponse.json({
@@ -99,13 +105,15 @@ export async function GET(req: NextRequest) {
       }, { status: 404 })
     }
 
-    const resultado = classificar(bolao.apostas_data.bets, dezenas)
-    const payload = { dezenas_sorteadas: dezenas, ...resultado }
+    const dezenasPorAposta = bolao.apostas_data.dezenas_por_aposta ?? bolao.dezenas ?? 6
+    const resultado = classificar(bolao.apostas_data.bets, dezenas, dezenasPorAposta)
+    const payload = { dezenas_sorteadas: dezenas, dezenas_por_aposta: dezenasPorAposta, ...resultado }
     await salvarStatus(bolaoId, payload)
 
     return NextResponse.json({
       ok: true,
       dezenas_sorteadas: dezenas,
+      dezenas_por_aposta: dezenasPorAposta,
       total_apostas: bolao.apostas_data.bets.length,
       ...resultado,
     })
@@ -146,13 +154,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Dezenas inválidas (1–60)' }, { status: 400 })
 
   const { data: bolao } = await supabase
-    .from('boloes').select('apostas_data').eq('id', bolao_id).single()
+    .from('boloes').select('apostas_data, dezenas').eq('id', bolao_id).single()
 
   if (!bolao?.apostas_data?.bets?.length)
     return NextResponse.json({ error: 'Nenhuma aposta carregada.' }, { status: 422 })
 
-  const resultado = classificar(bolao.apostas_data.bets, dezenas)
-  const payload   = { dezenas_sorteadas: dezenas, ...resultado }
+  const dezenasPorAposta = bolao.apostas_data.dezenas_por_aposta ?? bolao.dezenas ?? 6
+  const resultado = classificar(bolao.apostas_data.bets, dezenas, dezenasPorAposta)
+  const payload   = { dezenas_sorteadas: dezenas, dezenas_por_aposta: dezenasPorAposta, ...resultado }
   await supabase.from('boloes').update({ resultado_conferencia: payload }).eq('id', bolao_id)
 
   return NextResponse.json({

@@ -741,7 +741,8 @@ export default function AdminPage() {
                       <div className={styles.apostasModalTitle}>📊 Carregar Apostas</div>
                       <p className={styles.apostasModalDesc}>
                         Cole abaixo o texto com os números das apostas.<br />
-                        Formato aceito: <strong>6 números por linha</strong>, separados por espaço — ex: <code>02 16 27 31 47 60</code>
+                        Formato aceito: <strong>{bolaoAtual?.dezenas ?? 6} números por linha</strong>, separados por espaço — ex:{' '}
+                        <code>{Array.from({length: bolaoAtual?.dezenas ?? 6}, (_, i) => String(i + 1).padStart(2, '0')).join(' ')}</code>
                       </p>
                       <textarea
                         className={styles.apostasTextarea}
