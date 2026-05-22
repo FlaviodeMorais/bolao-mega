@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   let text = ''
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse = require('pdf-parse/lib/pdf-parse')
+    const pdfParse = require('pdf-parse')
     const data = await pdfParse(buffer)
     text = data.text
   } catch (err) {
