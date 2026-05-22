@@ -140,33 +140,25 @@ export default function AdminPage() {
   }
 
   // Resultado do sorteio
-  const [showResultado, setShowResultado]       = useState(false)
-  const [resultadoGanhou, setResultadoGanhou]   = useState<boolean | null>(null)
-  const [premioTotal, setPremioTotal]           = useState('')
-  const [registrandoRes, setRegistrandoRes]     = useState(false)
-  const [resultadoMsg, setResultadoMsg]         = useState('')
+
 
   // Conferência do sorteio
   const [showConferir, setShowConferir]         = useState(false)
-  const [dezenasInput, setDezenasInput]         = useState('')
   const [conferindoRes, setConferindoRes]       = useState(false)
   const [conferirMsg, setConferirMsg]           = useState('')
   const [conferirResult, setConferirResult]     = useState<{
-    status: string; resumo: { senas: number; quinas: number; quadras: number };
+    status: string; dezenas_sorteadas: number[];
+    resumo: { senas: number; quinas: number; quadras: number };
     maior_premio: string | null; total_premiadas: number;
     apostas_premiadas: { idx: number; dezenas: number[]; acertos: number; premio: string }[]
   } | null>(null)
 
   async function conferirSorteio() {
-    if (!bolaoAtual) return
-    const nums = dezenasInput.split(/[\s,;]+/).map(Number).filter(n => n >= 1 && n <= 60)
-    if (nums.length !== 6) { setConferirMsg('❌ Informe exatamente 6 dezenas (1–60).'); return }
+    if (!bolaoAtual || !concursoAtivo) return
     setConferindoRes(true); setConferirMsg('')
-    const res = await fetch('/api/admin/conferir-sorteio', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bolao_id: bolaoAtual.id, dezenas_sorteadas: nums }),
-    }).then(r => r.json())
+    const res = await fetch(
+      `/api/admin/conferir-sorteio?bolao_id=${bolaoAtual.id}&concurso=${concursoAtivo}`
+    ).then(r => r.json())
     setConferindoRes(false)
     if (res.error) { setConferirMsg(`❌ ${res.error}`); return }
     setConferirResult(res)
@@ -183,7 +175,6 @@ export default function AdminPage() {
       body: JSON.stringify({ bolao_id: bolaoAtual.id }),
     })
     setConferirResult(null)
-    setDezenasInput('')
     setConferirMsg('✅ Conferência resetada.')
     setTimeout(() => setConferirMsg(''), 3000)
   }
@@ -313,31 +304,6 @@ export default function AdminPage() {
     }
   }
 
-  async function registrarResultado() {
-    if (!bolaoAtual || resultadoGanhou === null) return
-    if (resultadoGanhou && !premioTotal) { setResultadoMsg('❌ Informe o valor do prêmio.'); return }
-    setRegistrandoRes(true); setResultadoMsg('')
-    const res = await fetch('/api/admin/resultado-bolao', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        bolao_id:    bolaoAtual.id,
-        bolao_slug:  bolaoAtual.slug,
-        concurso:    parseInt(concursoAtivo),
-        ganhou:      resultadoGanhou,
-        premio_total: resultadoGanhou ? parseFloat(premioTotal.replace(',', '.')) : 0,
-      }),
-    }).then(r => r.json())
-    setRegistrandoRes(false)
-    if (res.ok) {
-      const msg = res.ganhou
-        ? `✅ Prêmio notificado! R$ ${res.valor_por_cota?.toFixed(2).replace('.',',')} por cota para ${res.participantes} participantes.`
-        : '✅ Grupo notificado — resultado registrado.'
-      setResultadoMsg(msg)
-      setTimeout(() => { setResultadoMsg(''); setShowResultado(false); setResultadoGanhou(null); setPremioTotal('') }, 5000)
-    } else {
-      setResultadoMsg('❌ ' + res.error)
-    }
-  }
 
   async function enviarComprovante(id: string) {
     if (!bolaoAtual) return
@@ -749,10 +715,6 @@ export default function AdminPage() {
                   <button type="button" className={styles.btnWhatsapp} onClick={enviarLembrete}>
                     📱 Lembrete
                   </button>
-                  <button type="button" className={styles.btnResultado}
-                    onClick={() => { setShowResultado(!showResultado); setResultadoMsg(''); setResultadoGanhou(null); setPremioTotal('') }}>
-                    🏆 Resultado
-                  </button>
                   <button type="button" className={styles.btnConferir}
                     onClick={() => { setShowConferir(!showConferir); setConferirMsg('') }}>
                     🔍 Conferir
@@ -801,88 +763,24 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                {/* Painel de resultado */}
-                {showResultado && (
-                  <div className={styles.resultadoPanel}>
-                    <div className={styles.resultadoTitle}>🏆 Registrar Resultado — #{concursoAtivo}</div>
-                    <div className={styles.resultadoBtns}>
-                      <button type="button"
-                        className={`${styles.btnGanhou} ${resultadoGanhou === true ? styles.btnGanhouAtivo : ''}`}
-                        onClick={() => setResultadoGanhou(true)}>
-                        🎉 Ganhamos!
-                      </button>
-                      <button type="button"
-                        className={`${styles.btnNaoGanhou} ${resultadoGanhou === false ? styles.btnNaoGanhouAtivo : ''}`}
-                        onClick={() => setResultadoGanhou(false)}>
-                        😔 Não foi dessa vez
-                      </button>
-                    </div>
-                    {resultadoGanhou === true && (
-                      <div className={styles.premioInput}>
-                        <label className={styles.configLabel}>Prêmio total recebido (R$)</label>
-                        <input type="number" min={0} step={0.01}
-                          className={styles.configInput}
-                          title="Valor total do prêmio recebido"
-                          placeholder="Ex: 15000,00"
-                          value={premioTotal}
-                          onChange={e => setPremioTotal(e.target.value)} />
-                        {premioTotal && pagosLista.length > 0 && (
-                          <div className={styles.premioCalc}>
-                            {(() => {
-                              const total = parseFloat(premioTotal.replace(',','.')) || 0
-                              const taxa  = Number(bolaoAtual.taxa_admin) || 0
-                              const liq   = total - taxa
-                              const cotas = pagosLista.reduce((s,p) => s + (Array.isArray(p.cotas) ? p.cotas.length : 0), 0)
-                              const pCota = cotas > 0 ? liq / cotas : 0
-                              return <>
-                                <div className={styles.premioCalcRow}><span>Taxa admin</span><span>- R$ {taxa.toFixed(2).replace('.',',')}</span></div>
-                                <div className={styles.premioCalcRow}><span>Prêmio líquido</span><span>R$ {liq.toFixed(2).replace('.',',')}</span></div>
-                                <div className={styles.premioCalcRow}><span>Total de cotas pagas</span><span>{cotas} cotas</span></div>
-                                <div className={`${styles.premioCalcRow} ${styles.premioCalcDestaque}`}><span>Valor por cota</span><span>R$ {pCota.toFixed(2).replace('.',',')}</span></div>
-                              </>
-                            })()}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {resultadoGanhou === false && (
-                      <div className={styles.resultadoInfo}>
-                        Será enviada uma mensagem ao grupo informando que o bolão não acertou desta vez.
-                      </div>
-                    )}
-                    {resultadoMsg && <div className={styles.resultadoMsgBox}>{resultadoMsg}</div>}
-                    {resultadoGanhou !== null && !resultadoMsg && (
-                      <button type="button" className={styles.btnResultadoConfirm}
-                        onClick={registrarResultado} disabled={registrandoRes}>
-                        {registrandoRes ? '⟳ Enviando...' : '📲 Notificar via WhatsApp'}
-                      </button>
-                    )}
-                  </div>
-                )}
-                {/* Panel conferência do sorteio */}
+                {/* Panel conferência do sorteio — automático via API Caixa */}
                 {showConferir && (
                   <div className={styles.resultadoPanel}>
-                    <div className={styles.resultadoTitle}>🔍 Conferir Resultado — #{concursoAtivo}</div>
+                    <div className={styles.resultadoTitle}>🔍 Conferir Resultado — Concurso #{concursoAtivo}</div>
                     {bolaoAtual.apostas_data ? (
                       <p className={styles.resultadoInfo}>
-                        ✅ {bolaoAtual.apostas_data.total_apostas} apostas carregadas · Digite as 6 dezenas sorteadas:
+                        ✅ {bolaoAtual.apostas_data.total_apostas} apostas carregadas · O resultado será buscado automaticamente na Caixa.
                       </p>
                     ) : (
                       <p className={styles.resultadoInfo}>
-                        ⚠️ Nenhuma aposta carregada. Clique em &quot;📊 Carregar Apostas&quot; primeiro.
+                        ⚠️ Nenhuma aposta carregada. Use &quot;📊 Carregar Apostas&quot; primeiro.
                       </p>
                     )}
-                    <input
-                      type="text"
-                      className={styles.dezenasInput}
-                      placeholder="Ex: 03 12 25 38 47 59"
-                      value={dezenasInput}
-                      onChange={e => setDezenasInput(e.target.value)}
-                    />
                     <div className={styles.resultadoBtns}>
                       <button type="button" className={styles.btnGanhou}
-                        onClick={conferirSorteio} disabled={conferindoRes || !dezenasInput.trim()}>
-                        {conferindoRes ? '⟳ Conferindo...' : '🔍 Conferir Apostas'}
+                        onClick={conferirSorteio}
+                        disabled={conferindoRes || !bolaoAtual.apostas_data}>
+                        {conferindoRes ? '⟳ Buscando na Caixa...' : '🔍 Buscar e Conferir'}
                       </button>
                       {conferirResult && (
                         <button type="button" className={styles.btnNaoGanhou} onClick={resetarConferencia}>
@@ -890,6 +788,16 @@ export default function AdminPage() {
                         </button>
                       )}
                     </div>
+                    {conferirResult?.dezenas_sorteadas && (
+                      <div className={styles.conferirDezenas}>
+                        <span className={styles.conferirResumoTitle}>Dezenas sorteadas:</span>
+                        <div className={styles.conferirDezGrid}>
+                          {conferirResult.dezenas_sorteadas.map((n: number) => (
+                            <span key={n} className={styles.conferirDezBall}>{String(n).padStart(2,'0')}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     {conferirMsg && (
                       <div className={conferirResult?.status === 'ganhamos' ? styles.resultadoMsgBox : styles.resultadoInfo}>
                         {conferirMsg}
@@ -898,8 +806,9 @@ export default function AdminPage() {
                     {conferirResult && conferirResult.total_premiadas > 0 && (
                       <div className={styles.conferirResumo}>
                         <div className={styles.conferirResumoTitle}>Apostas premiadas:</div>
-                        {['SENA','QUINA','QUADRA'].map(p => {
-                          const count = conferirResult.resumo[p.toLowerCase() === 'sena' ? 'senas' : p.toLowerCase() === 'quina' ? 'quinas' : 'quadras' as keyof typeof conferirResult.resumo]
+                        {(['SENA','QUINA','QUADRA'] as const).map(p => {
+                          const key = p === 'SENA' ? 'senas' : p === 'QUINA' ? 'quinas' : 'quadras'
+                          const count = conferirResult.resumo[key as keyof typeof conferirResult.resumo]
                           return count > 0 ? (
                             <div key={p} className={styles.conferirPremio}>
                               {p === 'SENA' ? '🥇' : p === 'QUINA' ? '🥈' : '🥉'} {p}: {count} aposta{count !== 1 ? 's' : ''}
@@ -910,7 +819,7 @@ export default function AdminPage() {
                           {conferirResult.apostas_premiadas.slice(0,10).map(a => (
                             <div key={a.idx} className={styles.conferirAposta}>
                               <span className={styles.conferirIdx}>#{a.idx}</span>
-                              <span className={styles.conferirDez}>{a.dezenas.map(n => String(n).padStart(2,'0')).join(' ')}</span>
+                              <span className={styles.conferirDez}>{a.dezenas.map((n: number) => String(n).padStart(2,'0')).join(' ')}</span>
                               <span className={styles.conferirPremioTag}>{a.acertos}✓ {a.premio}</span>
                             </div>
                           ))}
