@@ -82,7 +82,6 @@ export default function AdminPage() {
   // Upload apostas
   const [uploadingApostas, setUploadingApostas] = useState(false)
   const [apostasMsg, setApostasMsg]             = useState('')
-  const [apostasCarregadas, setApostasCarregadas] = useState(false)
   const [showApostasModal, setShowApostasModal]   = useState(false)
   const [apostasTexto, setApostasTexto]           = useState('')
 
@@ -98,9 +97,9 @@ export default function AdminPage() {
     setUploadingApostas(false)
     if (res.ok) {
       setApostasMsg(`✅ ${data.total_apostas} apostas carregadas!`)
-      setApostasCarregadas(true)
       setShowApostasModal(false)
       setApostasTexto('')
+      await carregarBoloes() // atualiza bolaoAtual com apostas_data novo
     } else {
       setApostasMsg(`❌ ${data.error}`)
     }
@@ -114,9 +113,9 @@ export default function AdminPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ bolao_id: bolaoAtual.id }),
     })
-    setApostasCarregadas(false)
     setApostasMsg('✅ Apostas removidas.')
     setTimeout(() => setApostasMsg(''), 3000)
+    await carregarBoloes() // atualiza bolaoAtual sem apostas_data
   }
 
   function toggleSelecionado(id: string) {
@@ -233,7 +232,13 @@ export default function AdminPage() {
   // ── DADOS ─────────────────────────────────────────────────────
   async function carregarBoloes() {
     const res = await fetch('/api/boloes').then(r => r.json())
-    setBoloes(res.boloes || [])
+    const lista = res.boloes || []
+    setBoloes(lista)
+    // Atualiza bolaoAtual com dados frescos (apostas_data, resultado_conferencia, etc.)
+    if (bolaoAtual) {
+      const atualizado = lista.find((b: Bolao) => b.id === bolaoAtual.id)
+      if (atualizado) setBolaoAtual(atualizado)
+    }
   }
 
   const carregarInicio = useCallback(async () => {
@@ -726,9 +731,9 @@ export default function AdminPage() {
                   <button type="button" className={styles.btnUploadApostas}
                     onClick={() => setShowApostasModal(true)}
                     title="Colar texto das apostas">
-                    {apostasCarregadas ? '📊 Apostas ✅' : '📊 Carregar Apostas'}
+                    {bolaoAtual?.apostas_data ? '📊 Apostas ✅' : '📊 Carregar Apostas'}
                   </button>
-                  {apostasCarregadas && (
+                  {bolaoAtual?.apostas_data && (
                     <button type="button" className={styles.btnRemoverApostas} onClick={removerApostas} title="Remover apostas">✕</button>
                   )}
                 </div>
