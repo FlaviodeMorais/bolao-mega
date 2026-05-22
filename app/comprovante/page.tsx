@@ -181,8 +181,12 @@ function ComprovanteContent() {
                   <span className={styles.cartaoConcurso}>#{concurso} · {dataSorteio}</span>
                 </div>
                 <div className={styles.canhotoRow}>
-                  <span className={styles.cartaoLabel}>Cotas</span>
-                  <span className={styles.cartaoValor}>{p.cotas.map(c => c.padStart(2,'0')).join(', ')}</span>
+                  <span className={styles.cartaoLabel}>
+                    {p.cotas.length === 1 ? '1 cota adquirida' : `${p.cotas.length} cotas adquiridas`}
+                  </span>
+                  <span className={styles.cartaoValor}>
+                    Nº {p.cotas.map(c => c.padStart(2,'0')).join(', ')}
+                  </span>
                 </div>
                 <div className={styles.canhotoRow}>
                   <span className={styles.cartaoLabel}>Apostas</span>
@@ -259,10 +263,13 @@ function ComprovanteContent() {
 
               {/* Cotas */}
               <div className={styles.cotasSection}>
-                <span className={styles.cartaoLabel}>Cotas</span>
+                <span className={styles.cartaoLabel}>
+                  {p.cotas.length === 1 ? '1 cota adquirida' : `${p.cotas.length} cotas adquiridas`}
+                  {bolao ? ` — de ${bolao.total_cotas} disponíveis` : ''}
+                </span>
                 <div className={styles.cotasGrid}>
                   {p.cotas.map(c => (
-                    <span key={c} className={styles.cota}>{c.padStart(2, '0')}</span>
+                    <span key={c} className={styles.cota}>Nº {c.padStart(2, '0')}</span>
                   ))}
                 </div>
               </div>
