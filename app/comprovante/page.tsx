@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import styles from './comprovante.module.css'
 
@@ -34,7 +34,7 @@ function formatTel(tel: string | undefined) {
   return tel
 }
 
-export default function ComprovantePage() {
+function ComprovanteContent() {
   const router      = useRouter()
   const params      = useSearchParams()
   const filtroId    = params.get('id')              // 1 participante
@@ -232,5 +232,13 @@ export default function ComprovantePage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function ComprovantePage() {
+  return (
+    <Suspense>
+      <ComprovanteContent />
+    </Suspense>
   )
 }
