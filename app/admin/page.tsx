@@ -144,6 +144,48 @@ export default function AdminPage() {
   const [registrandoRes, setRegistrandoRes]     = useState(false)
   const [resultadoMsg, setResultadoMsg]         = useState('')
 
+  // Conferência do sorteio
+  const [showConferir, setShowConferir]         = useState(false)
+  const [dezenasInput, setDezenasInput]         = useState('')
+  const [conferindoRes, setConferindoRes]       = useState(false)
+  const [conferirMsg, setConferirMsg]           = useState('')
+  const [conferirResult, setConferirResult]     = useState<{
+    status: string; resumo: { senas: number; quinas: number; quadras: number };
+    maior_premio: string | null; total_premiadas: number;
+    apostas_premiadas: { idx: number; dezenas: number[]; acertos: number; premio: string }[]
+  } | null>(null)
+
+  async function conferirSorteio() {
+    if (!bolaoAtual) return
+    const nums = dezenasInput.split(/[\s,;]+/).map(Number).filter(n => n >= 1 && n <= 60)
+    if (nums.length !== 6) { setConferirMsg('❌ Informe exatamente 6 dezenas (1–60).'); return }
+    setConferindoRes(true); setConferirMsg('')
+    const res = await fetch('/api/admin/conferir-sorteio', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bolao_id: bolaoAtual.id, dezenas_sorteadas: nums }),
+    }).then(r => r.json())
+    setConferindoRes(false)
+    if (res.error) { setConferirMsg(`❌ ${res.error}`); return }
+    setConferirResult(res)
+    setConferirMsg(res.status === 'ganhamos'
+      ? `🏆 GANHAMOS! ${res.maior_premio} — ${res.total_premiadas} aposta(s) premiada(s)`
+      : `😔 Não premiada — nenhuma aposta com 4+ acertos`)
+  }
+
+  async function resetarConferencia() {
+    if (!bolaoAtual || !confirm('Resetar conferência do sorteio?')) return
+    await fetch('/api/admin/conferir-sorteio', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bolao_id: bolaoAtual.id }),
+    })
+    setConferirResult(null)
+    setDezenasInput('')
+    setConferirMsg('✅ Conferência resetada.')
+    setTimeout(() => setConferirMsg(''), 3000)
+  }
+
   // Configurador
   const [showConfig, setShowConfig]   = useState(false)
   const [editDezenas, setEditDezenas] = useState(6)
@@ -709,6 +751,10 @@ export default function AdminPage() {
                     onClick={() => { setShowResultado(!showResultado); setResultadoMsg(''); setResultadoGanhou(null); setPremioTotal('') }}>
                     🏆 Resultado
                   </button>
+                  <button type="button" className={styles.btnConferir}
+                    onClick={() => { setShowConferir(!showConferir); setConferirMsg('') }}>
+                    🔍 Conferir
+                  </button>
                   {/* Apostas */}
                   <button type="button" className={styles.btnUploadApostas}
                     onClick={() => setShowApostasModal(true)}
@@ -811,6 +857,64 @@ export default function AdminPage() {
                     )}
                   </div>
                 )}
+                {/* Panel conferência do sorteio */}
+                {showConferir && (
+                  <div className={styles.resultadoPanel}>
+                    <div className={styles.resultadoTitle}>🔍 Conferir Resultado — #{concursoAtivo}</div>
+                    <p className={styles.resultadoInfo}>
+                      Digite as 6 dezenas sorteadas (separadas por espaço, vírgula ou enter):
+                    </p>
+                    <input
+                      type="text"
+                      className={styles.dezenasInput}
+                      placeholder="Ex: 03 12 25 38 47 59"
+                      value={dezenasInput}
+                      onChange={e => setDezenasInput(e.target.value)}
+                    />
+                    <div className={styles.resultadoBtns}>
+                      <button type="button" className={styles.btnGanhou}
+                        onClick={conferirSorteio} disabled={conferindoRes || !dezenasInput.trim()}>
+                        {conferindoRes ? '⟳ Conferindo...' : '🔍 Conferir Apostas'}
+                      </button>
+                      {conferirResult && (
+                        <button type="button" className={styles.btnNaoGanhou} onClick={resetarConferencia}>
+                          ↺ Resetar
+                        </button>
+                      )}
+                    </div>
+                    {conferirMsg && (
+                      <div className={conferirResult?.status === 'ganhamos' ? styles.resultadoMsgBox : styles.resultadoInfo}>
+                        {conferirMsg}
+                      </div>
+                    )}
+                    {conferirResult && conferirResult.total_premiadas > 0 && (
+                      <div className={styles.conferirResumo}>
+                        <div className={styles.conferirResumoTitle}>Apostas premiadas:</div>
+                        {['SENA','QUINA','QUADRA'].map(p => {
+                          const count = conferirResult.resumo[p.toLowerCase() === 'sena' ? 'senas' : p.toLowerCase() === 'quina' ? 'quinas' : 'quadras' as keyof typeof conferirResult.resumo]
+                          return count > 0 ? (
+                            <div key={p} className={styles.conferirPremio}>
+                              {p === 'SENA' ? '🥇' : p === 'QUINA' ? '🥈' : '🥉'} {p}: {count} aposta{count !== 1 ? 's' : ''}
+                            </div>
+                          ) : null
+                        })}
+                        <div className={styles.conferirApostas}>
+                          {conferirResult.apostas_premiadas.slice(0,10).map(a => (
+                            <div key={a.idx} className={styles.conferirAposta}>
+                              <span className={styles.conferirIdx}>#{a.idx}</span>
+                              <span className={styles.conferirDez}>{a.dezenas.map(n => String(n).padStart(2,'0')).join(' ')}</span>
+                              <span className={styles.conferirPremioTag}>{a.acertos}✓ {a.premio}</span>
+                            </div>
+                          ))}
+                          {conferirResult.apostas_premiadas.length > 10 && (
+                            <div className={styles.conferirInfo}>…e mais {conferirResult.apostas_premiadas.length - 10} apostas premiadas</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {!bolaoAtual.encerrado && cotasLivres > 0 && pagosLista.length > 0 && (
                   <button type="button" className={styles.btnEncerrar}
                     onClick={() => { setShowEncerrar(!showEncerrar); setEncerrarOk(null) }}>

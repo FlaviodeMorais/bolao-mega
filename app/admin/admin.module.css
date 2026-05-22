@@ -354,6 +354,80 @@
 }
 .btnResultado:hover { background: rgba(234,179,8,.20); }
 
+.btnConferir {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 100px;
+  background: rgba(99,102,241,.10); color: #818cf8;
+  border: 1px solid rgba(99,102,241,.25);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px; font-weight: 700; cursor: pointer; transition: all .2s;
+}
+.btnConferir:hover { background: rgba(99,102,241,.20); }
+
+.dezenasInput {
+  padding: 8px 12px;
+  background: rgba(0,0,0,.3);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 8px;
+  color: #e6edf3;
+  font-family: var(--f-mono, monospace);
+  font-size: 0.9rem;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+}
+.dezenasInput:focus { border-color: rgba(99,102,241,.5); }
+
+.conferirResumo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 4px;
+}
+.conferirResumoTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.conferirPremio {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #e6edf3;
+}
+.conferirApostas {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.conferirAposta {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.78rem;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: rgba(255,255,255,.02);
+}
+.conferirIdx { color: #6e7681; font-family: monospace; min-width: 28px; }
+.conferirDez { color: #a78bfa; font-family: monospace; font-weight: 700; flex: 1; }
+.conferirPremioTag {
+  font-weight: 800;
+  color: #3fb950;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+.conferirInfo { font-size: 0.72rem; color: #6e7681; padding: 4px 6px; }
+
 .resultadoPanel {
   background: rgba(234,179,8,.06); border: 1px solid rgba(234,179,8,.20);
   border-radius: 14px; padding: 18px; margin-bottom: 14px;

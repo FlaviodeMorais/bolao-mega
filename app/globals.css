@@ -846,3 +846,346 @@ hr { border: none; border-top: 1px solid var(--glass-bd); margin: var(--s5) 0; }
 @media print {
   html, body { background: white !important; padding: 0 !important; color: #111 !important; }
 }
+
+/* ══════════════════════════════════════════
+   STATUS SORTEIO — página pública do bolão
+══════════════════════════════════════════ */
+.status-sorteio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+  text-align: center;
+}
+.status-nao_premiada {
+  background: rgba(239,68,68,0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239,68,68,0.25);
+}
+.status-ganhamos {
+  background: rgba(16,185,129,0.12);
+  color: #10b981;
+  border: 1px solid rgba(16,185,129,0.3);
+  font-size: 1rem;
+}
+
+/* p-pago como botão clicável */
+button.p-pago {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+}
+button.p-pago:hover { opacity: 0.75; }
+
+/* ══════════════════════════════════════════
+   MODAL DE VERIFICAÇÃO DE IDENTIDADE
+══════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.modal-box {
+  background: #1a1f2e;
+  border: 1px solid rgba(99,102,241,0.3);
+  border-radius: 16px;
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.modal-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #e6edf3;
+}
+.modal-desc {
+  font-size: 0.875rem;
+  color: #8b949e;
+  margin: 0;
+  line-height: 1.5;
+}
+.modal-input {
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: #e6edf3;
+  font-size: 0.95rem;
+  font-family: inherit;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+.modal-input:focus { border-color: rgba(99,102,241,0.5); }
+.modal-err {
+  font-size: 0.82rem;
+  color: #ef4444;
+  font-weight: 600;
+}
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.modal-btn-cancel {
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.06);
+  color: #8b949e;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.modal-btn-cancel:hover { background: rgba(255,255,255,0.1); color: #e6edf3; }
+.modal-btn-confirm {
+  padding: 8px 20px;
+  background: var(--green);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+.modal-btn-confirm:hover { opacity: 0.85; }
+
+/* ══════════════════════════════════════════
+   COMPROVANTE PÚBLICO (self-service)
+══════════════════════════════════════════ */
+.comprov-overlay {
+  position: fixed;
+  inset: 0;
+  background: #0d1117;
+  z-index: 2000;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.comprov-container {
+  width: 100%;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.comprov-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.comprov-card, .comprov-canhoto {
+  background: #161b22;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+.comprov-card::before, .comprov-canhoto::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--green), #00b4d8);
+  border-radius: 16px 16px 0 0;
+}
+.comprov-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.comprov-logo-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.comprov-logo { font-size: 2rem; }
+.comprov-grupo {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #e6edf3;
+}
+.comprov-bolao-nome {
+  font-size: 0.78rem;
+  color: #8b949e;
+  margin-top: 2px;
+}
+.comprov-badge-pago {
+  background: rgba(63,185,80,0.15);
+  color: #3fb950;
+  border: 1px solid rgba(63,185,80,0.35);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.comprov-section-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #f78166;
+}
+.comprov-divider {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin: 2px 0;
+}
+.comprov-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #6e7681;
+}
+.comprov-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+.comprov-nome-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.comprov-nome {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+.comprov-val {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #e6edf3;
+  font-family: var(--f-mono);
+}
+.comprov-teal {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #58a6ff;
+  font-family: var(--f-mono);
+}
+.comprov-total {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #3fb950;
+  font-family: var(--f-mono);
+}
+.comprov-cotas-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.comprov-cotas-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.comprov-cota {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  height: 32px;
+  padding: 0 10px;
+  background: rgba(124,58,237,0.15);
+  border: 1.5px solid rgba(124,58,237,0.45);
+  border-radius: 8px;
+  font-family: var(--f-mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #a78bfa;
+}
+.comprov-apostas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.comprov-compra-id {
+  font-family: var(--f-mono);
+  font-size: 0.68rem;
+  color: #58a6ff;
+  font-weight: 600;
+}
+.comprov-transacao {
+  font-size: 0.65rem;
+  color: #6e7681;
+  font-family: var(--f-mono);
+  line-height: 1.4;
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.comprov-bets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 3px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 4px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.comprov-bets-grid::-webkit-scrollbar { width: 4px; }
+.comprov-bets-grid::-webkit-scrollbar-track { background: transparent; }
+.comprov-bets-grid::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
+.comprov-bet {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+.comprov-bet-num {
+  font-size: 0.6rem;
+  color: #6e7681;
+  font-family: var(--f-mono);
+  min-width: 18px;
+}
+.comprov-bet-dez {
+  font-family: var(--f-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #a78bfa;
+  min-width: 20px;
+  text-align: center;
+}
+
+@media print {
+  .comprov-controls { display: none; }
+  .comprov-overlay { position: static; background: white; padding: 0; }
+  .comprov-card, .comprov-canhoto { background: white !important; border-color: #ddd; }
+  .comprov-bets-grid { max-height: none; overflow: visible; column-count: 3; display: block; }
+}

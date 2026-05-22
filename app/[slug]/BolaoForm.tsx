@@ -27,6 +27,8 @@ const REGRAS = [
 interface Participante { id: string; nome: string; cotas: string[]; total: number; status: string }
 interface ConcursoAtivo { concurso: string; data: string; premio: string }
 interface PixData { pixCode: string; qrCodeBase64: string; paymentId: string; fonte: string; nome: string; cotas: string[]; total: number }
+interface ApostasData { bets: number[][]; total_apostas: number; transacao_id?: string; compra_id?: string; data_compra?: string; hora_compra?: string; situacao?: string }
+interface ResultadoConf { dezenas_sorteadas: number[]; status: 'nao_apurado'|'nao_premiada'|'ganhamos'; resumo: { senas: number; quinas: number; quadras: number }; maior_premio: string | null; apostas_premiadas: { idx: number; dezenas: number[]; acertos: number; premio: string }[] }
 
 interface Props {
   bolaoNome: string
@@ -69,7 +71,30 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
   const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null)
   const statusRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  // Comprovante self-service
+  const [apostasData, setApostasData]         = useState<ApostasData | null>(null)
+  const [resultadoConf, setResultadoConf]     = useState<ResultadoConf | null>(null)
+  const [modalPart, setModalPart]             = useState<Participante | null>(null)
+  const [nomeVerif, setNomeVerif]             = useState('')
+  const [verfErr, setVerfErr]                 = useState('')
+  const [partVerificada, setPartVerificada]   = useState<Participante | null>(null)
+  const [modoCanhoto, setModoCanhoto]         = useState(false)
+
   const concurso = concursoAtivo?.concurso
+
+  function verificarIdentidade() {
+    if (!modalPart) return
+    const entrada   = nomeVerif.trim().toLowerCase()
+    const cadastrado = modalPart.nome.trim().toLowerCase()
+    if (entrada === cadastrado) {
+      setPartVerificada(modalPart)
+      setModalPart(null)
+      setNomeVerif('')
+      setVerfErr('')
+    } else {
+      setVerfErr('❌ Nome não confere com o cadastro. Tente novamente.')
+    }
+  }
 
   // Relógio
   useEffect(() => {
@@ -101,6 +126,8 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
         setNumApostas(Number(b.num_apostas) || 1)
         setBolaoNome(b.nome || bolaoNomeProp)
         setEncerrado(!!b.encerrado)
+        setApostasData(b.apostas_data || null)
+        setResultadoConf(b.resultado_conferencia || null)
       }
 
       // 3. Cotas e participantes — usa concurso já confirmado (sem depender de state)
@@ -355,12 +382,30 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
               <>
                 <hr />
                 <div className="sec-title">👥 Participantes</div>
+
+                {/* Status do sorteio */}
+                {resultadoConf && (
+                  <div className={`status-sorteio status-${resultadoConf.status}`}>
+                    {resultadoConf.status === 'nao_premiada' && '😔 Não premiada neste concurso'}
+                    {resultadoConf.status === 'ganhamos' && `🏆 GANHAMOS! — ${resultadoConf.maior_premio}`}
+                  </div>
+                )}
+
                 <div className="p-box">
                   {participantes.map(p => (
                     <div className="p-row" key={p.id}>
                       <span className="p-nome">{mascaraNome(p.nome)}</span>
                       <span className="p-cotas">{Array.isArray(p.cotas) ? p.cotas.join(', ') : p.cotas}</span>
-                      <span className={p.status === 'pago' ? 'p-pago' : 'p-pending'}>{p.status === 'pago' ? '✅ PAGO' : '⏳'}</span>
+                      {p.status === 'pago' ? (
+                        <button
+                          type="button"
+                          className="p-pago"
+                          onClick={() => { setModalPart(p); setNomeVerif(''); setVerfErr('') }}
+                          title="Clique para ver seu comprovante"
+                        >✅ PAGO</button>
+                      ) : (
+                        <span className="p-pending">⏳</span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -509,6 +554,124 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
               </div>
             )}
             <button type="button" className="pay-fechar" onClick={() => { setPix(null); if(timerRef.current) clearInterval(timerRef.current); if(statusRef.current) clearInterval(statusRef.current) }}>Fechar</button>
+          </div>
+        </div>
+      )}
+      {/* ── Modal de verificação de identidade ── */}
+      {modalPart && !partVerificada && (
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setModalPart(null) }}>
+          <div className="modal-box">
+            <div className="modal-title">🔒 Verificar identidade</div>
+            <p className="modal-desc">Digite seu <strong>nome completo</strong> conforme cadastrado para visualizar seu comprovante.</p>
+            <input
+              type="text"
+              className="modal-input"
+              placeholder="Seu nome completo"
+              value={nomeVerif}
+              autoFocus
+              onChange={e => { setNomeVerif(e.target.value); setVerfErr('') }}
+              onKeyDown={e => { if (e.key === 'Enter') verificarIdentidade() }}
+            />
+            {verfErr && <div className="modal-err">{verfErr}</div>}
+            <div className="modal-actions">
+              <button type="button" className="modal-btn-cancel" onClick={() => setModalPart(null)}>Cancelar</button>
+              <button type="button" className="modal-btn-confirm" onClick={verificarIdentidade}>Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Comprovante do participante (após verificação) ── */}
+      {partVerificada && (
+        <div className="comprov-overlay">
+          <div className="comprov-container">
+
+            {/* Controles */}
+            <div className="comprov-controls">
+              <button type="button" className="modal-btn-cancel" onClick={() => setModoCanhoto(m => !m)}>
+                {modoCanhoto ? '📋 Comprovante' : '🗟 Canhoto'}
+              </button>
+              <button type="button" className="modal-btn-confirm" onClick={() => window.print()}>🖨️ Imprimir</button>
+              <button type="button" className="modal-btn-cancel" onClick={() => { setPartVerificada(null); setModoCanhoto(false) }}>✕ Fechar</button>
+            </div>
+
+            {modoCanhoto ? (
+              /* ─ CANHOTO ─ */
+              <div className="comprov-canhoto">
+                <div className="comprov-card-header">
+                  <span>🍀 <strong>GRUPO MEGA 💯</strong></span>
+                  <span className="comprov-badge-pago">✅ PAGO</span>
+                </div>
+                <div className="comprov-bolao-nome">{bolaoNome}</div>
+                <hr className="comprov-divider" />
+                <div className="comprov-nome">{partVerificada.nome}</div>
+                <div className="comprov-row"><span className="comprov-label">Concurso</span><span className="comprov-teal">#{concurso}</span></div>
+                <div className="comprov-row">
+                  <span className="comprov-label">{partVerificada.cotas.length === 1 ? '1 cota adquirida' : `${partVerificada.cotas.length} cotas adquiridas`}</span>
+                  <span className="comprov-val">Nº {partVerificada.cotas.map(c => c.padStart(2,'0')).join(', ')}</span>
+                </div>
+                <div className="comprov-row"><span className="comprov-label">Apostas</span><span className="comprov-val">{apostasData ? `${apostasData.total_apostas} apostas` : `${numApostas} apostas`}</span></div>
+                <hr className="comprov-divider" />
+                <div className="comprov-row"><span className="comprov-label">Valor pago</span><span className="comprov-total">R$ {Number(partVerificada.total).toFixed(2).replace('.',',')}</span></div>
+              </div>
+            ) : (
+              /* ─ COMPROVANTE COMPLETO ─ */
+              <div className="comprov-card">
+                <div className="comprov-card-header">
+                  <div className="comprov-logo-group">
+                    <span className="comprov-logo">🍀</span>
+                    <div>
+                      <div className="comprov-grupo">GRUPO MEGA 💯</div>
+                      <div className="comprov-bolao-nome">{bolaoNome}</div>
+                    </div>
+                  </div>
+                  <span className="comprov-badge-pago">✅ PAGO</span>
+                </div>
+
+                <div className="comprov-section-label">● Comprovante de Participação</div>
+                <hr className="comprov-divider" />
+
+                <div className="comprov-nome-row"><span className="comprov-label">Participante</span><span className="comprov-nome">{partVerificada.nome}</span></div>
+                <div className="comprov-row"><span className="comprov-label">Concurso</span><span className="comprov-teal">#{concurso}</span></div>
+
+                <div className="comprov-cotas-section">
+                  <span className="comprov-label">
+                    {partVerificada.cotas.length === 1 ? '1 cota adquirida' : `${partVerificada.cotas.length} cotas adquiridas`} — de {TOTAL_COTAS} disponíveis
+                  </span>
+                  <div className="comprov-cotas-grid">
+                    {partVerificada.cotas.map(c => (
+                      <span key={c} className="comprov-cota">Nº {c.padStart(2,'0')}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <hr className="comprov-divider" />
+                <div className="comprov-row"><span className="comprov-label">Valor pago</span><span className="comprov-total">R$ {Number(partVerificada.total).toFixed(2).replace('.',',')}</span></div>
+
+                {apostasData && (
+                  <>
+                    <hr className="comprov-divider" />
+                    <div className="comprov-apostas-header">
+                      <span className="comprov-label">Apostas registradas — {apostasData.total_apostas} jogos</span>
+                      {apostasData.compra_id && <span className="comprov-compra-id">Compra #{apostasData.compra_id}</span>}
+                    </div>
+                    {apostasData.transacao_id && (
+                      <div className="comprov-transacao">
+                        ID: {apostasData.transacao_id} · {apostasData.data_compra} {apostasData.hora_compra}
+                      </div>
+                    )}
+                    <div className="comprov-bets-grid">
+                      {apostasData.bets.map((bet, bi) => (
+                        <div key={bi} className="comprov-bet">
+                          <span className="comprov-bet-num">{String(bi+1).padStart(2,'0')}.</span>
+                          {bet.map((n, ni) => <span key={ni} className="comprov-bet-dez">{String(n).padStart(2,'0')}</span>)}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
