@@ -77,6 +77,43 @@ export default function AdminPage() {
   // Seleção para impressão
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
 
+  // Upload apostas
+  const [uploadingApostas, setUploadingApostas] = useState(false)
+  const [apostasMsg, setApostasMsg]             = useState('')
+  const [apostasCarregadas, setApostasCarregadas] = useState(false)
+
+  async function uploadApostas(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !bolaoAtual) return
+    setUploadingApostas(true); setApostasMsg('Processando PDF...')
+    const form = new FormData()
+    form.append('file', file)
+    form.append('bolao_id', bolaoAtual.id)
+    const res = await fetch('/api/admin/apostas-upload', { method: 'POST', body: form })
+    const data = await res.json()
+    setUploadingApostas(false)
+    if (res.ok) {
+      setApostasMsg(`✅ ${data.total_apostas} apostas carregadas!`)
+      setApostasCarregadas(true)
+    } else {
+      setApostasMsg(`❌ ${data.error}`)
+    }
+    setTimeout(() => setApostasMsg(''), 5000)
+    e.target.value = ''
+  }
+
+  async function removerApostas() {
+    if (!bolaoAtual || !confirm('Remover dados das apostas?')) return
+    await fetch('/api/admin/apostas-upload', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bolao_id: bolaoAtual.id }),
+    })
+    setApostasCarregadas(false)
+    setApostasMsg('✅ Apostas removidas.')
+    setTimeout(() => setApostasMsg(''), 3000)
+  }
+
   function toggleSelecionado(id: string) {
     setSelecionados(prev => {
       const next = new Set(prev)
@@ -669,7 +706,16 @@ export default function AdminPage() {
                     onClick={() => { setShowResultado(!showResultado); setResultadoMsg(''); setResultadoGanhou(null); setPremioTotal('') }}>
                     🏆 Resultado
                   </button>
+                  {/* Upload apostas PDF */}
+                  <label className={styles.btnUploadApostas} title="Carregar apostas do PDF da Caixa">
+                    {uploadingApostas ? '⟳ Processando...' : apostasCarregadas ? '📊 Apostas ✅' : '📊 Carregar Apostas'}
+                    <input type="file" accept=".pdf" className={styles.inputHidden} onChange={uploadApostas} disabled={uploadingApostas} />
+                  </label>
+                  {apostasCarregadas && (
+                    <button type="button" className={styles.btnRemoverApostas} onClick={removerApostas} title="Remover dados das apostas">✕</button>
+                  )}
                 </div>
+                {apostasMsg && <div className={styles.lembreteMsg}>{apostasMsg}</div>}
 
                 {/* Painel de resultado */}
                 {showResultado && (

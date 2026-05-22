@@ -4,6 +4,16 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import styles from './comprovante.module.css'
 
+interface ApostasData {
+  bets: number[][]
+  transacao_id: string
+  compra_id: string
+  data_compra: string
+  hora_compra: string
+  situacao: string
+  total_apostas: number
+}
+
 interface Bolao {
   id: string
   nome: string
@@ -13,6 +23,7 @@ interface Bolao {
   dezenas: number
   num_apostas: number
   encerrado: boolean
+  apostas_data?: ApostasData | null
 }
 
 interface Participante {
@@ -50,6 +61,7 @@ function ComprovanteContent() {
   const [concurso, setConcurso]               = useState(paramConc || '')
   const [dataSorteio, setDataSorteio]         = useState('')
   const [loading, setLoading]                 = useState(true)
+  const [modoCanhoto, setModoCanhoto]         = useState(false)
 
   const filtroSet = filtroIds ? new Set(filtroIds.split(',')) : null
   const lista = filtroId
@@ -126,37 +138,105 @@ function ComprovanteContent() {
               ))}
             </select>
           )}
+          <button
+            type="button"
+            className={modoCanhoto ? styles.btnCanhotoAtivo : styles.btnCanhoto}
+            onClick={() => setModoCanhoto(m => !m)}
+          >
+            {modoCanhoto ? '📋 Ver Comprovantes' : '🗟 Ver Canhotos'}
+          </button>
           <button type="button" className={styles.btnPrint} onClick={() => window.print()}>
             {modoFiltro ? '🖨️ Imprimir / PDF' : '🖨️ Imprimir Todos'}
           </button>
         </div>
       </div>
 
-      {/* ── Grade de comprovantes ── */}
+      {/* ── Grade ── */}
       {loading ? (
         <p className={styles.loading}>Carregando participantes…</p>
       ) : lista.length === 0 ? (
         <p className={styles.loading}>Nenhum participante encontrado para este bolão.</p>
+      ) : modoCanhoto ? (
+        /* ── MODO CANHOTO ── */
+        <div className={styles.gridCanhoto}>
+          {lista.map((p, idx) => {
+            const ad = bolao?.apostas_data
+            return (
+              <div key={p.id} className={`${styles.canhoto} ${p.status === 'pago' ? styles.pago : styles.pendente}`}>
+                <div className={styles.canhotoHeader}>
+                  <span>🍀 <strong>GRUPO MEGA 💯</strong></span>
+                  <span className={p.status === 'pago' ? styles.statusBadgePago : styles.statusBadgePendente}>
+                    {p.status === 'pago' ? '✅ PAGO' : '⏳ AGUARDANDO'}
+                  </span>
+                </div>
+                <div className={styles.canhotoBolao}>{bolao?.nome}</div>
+                <div className={styles.divider} />
+                <div className={styles.canhotoNome}>{p.nome}</div>
+                <div className={styles.canhotoRow}>
+                  <span className={styles.cartaoLabel}>Celular</span>
+                  <span className={styles.cartaoValor}>{formatTel(p.telefone)}</span>
+                </div>
+                <div className={styles.canhotoRow}>
+                  <span className={styles.cartaoLabel}>Concurso</span>
+                  <span className={styles.cartaoConcurso}>#{concurso} · {dataSorteio}</span>
+                </div>
+                <div className={styles.canhotoRow}>
+                  <span className={styles.cartaoLabel}>Cotas</span>
+                  <span className={styles.cartaoValor}>{p.cotas.map(c => c.padStart(2,'0')).join(', ')}</span>
+                </div>
+                <div className={styles.canhotoRow}>
+                  <span className={styles.cartaoLabel}>Apostas</span>
+                  <span className={styles.cartaoValor}>{ad ? `${ad.total_apostas} apostas` : `${bolao?.num_apostas} apostas`}</span>
+                </div>
+                <div className={styles.divider} />
+                <div className={styles.canhotoRow}>
+                  <span className={styles.cartaoLabel}>Valor pago</span>
+                  <span className={styles.cartaoTotal}>R$ {Number(p.total).toFixed(2).replace('.',',')}</span>
+                </div>
+                {ad?.transacao_id && (
+                  <div className={styles.canhotoTransacao}>
+                    ID: {ad.transacao_id}<br/>
+                    {ad.data_compra} {ad.hora_compra}
+                  </div>
+                )}
+                <div className={styles.canhotoNumero}>Nº {String(idx+1).padStart(3,'0')}</div>
+              </div>
+            )
+          })}
+        </div>
       ) : (
+        /* ── MODO COMPROVANTE COMPLETO ── */
         <div className={styles.grid}>
-          {lista.map(p => (
+          {lista.map((p, idx) => {
+            const apostasCobertas = bolao
+              ? Math.round(p.cotas.length * (bolao.num_apostas / bolao.total_cotas))
+              : p.cotas.length
+            const emissao = new Date(p.created_at).toLocaleDateString('pt-BR', {
+              day: '2-digit', month: '2-digit', year: 'numeric',
+            })
+            const horario = new Date(p.created_at).toLocaleTimeString('pt-BR', {
+              hour: '2-digit', minute: '2-digit',
+            })
+            return (
             <div key={p.id} className={`${styles.cartao} ${p.status === 'pago' ? styles.pago : styles.pendente}`}>
 
               {/* Cabeçalho */}
               <div className={styles.cartaoHeader}>
-                <span className={styles.cartaoLogo}>🍀</span>
-                <div>
-                  <div className={styles.cartaoGrupo}>GRUPO MEGA 💯</div>
-                  <div className={styles.cartaoBolao}>{bolao?.nome}</div>
+                <div className={styles.cartaoHeaderLeft}>
+                  <span className={styles.cartaoLogo}>🍀</span>
+                  <div>
+                    <div className={styles.cartaoGrupo}>GRUPO MEGA 💯</div>
+                    <div className={styles.cartaoBolao}>{bolao?.nome}</div>
+                  </div>
                 </div>
+                <span className={p.status === 'pago' ? styles.statusBadgePago : styles.statusBadgePendente}>
+                  {p.status === 'pago' ? '✅ PAGO' : '⏳ AGUARDANDO'}
+                </span>
               </div>
 
-              <div className={styles.divider} />
-
-              {/* Concurso */}
-              <div className={styles.cartaoRow}>
-                <span className={styles.cartaoLabel}>Concurso</span>
-                <span className={styles.cartaoValor}>#{concurso} · {dataSorteio}</span>
+              {/* Label comprovante */}
+              <div className={styles.comprovanteLabel}>
+                Comprovante de Participação
               </div>
 
               <div className={styles.divider} />
@@ -168,13 +248,18 @@ function ComprovanteContent() {
               </div>
 
               <div className={styles.cartaoRow}>
-                <span className={styles.cartaoLabel}>Celular</span>
+                <span className={styles.cartaoLabel}>Telefone</span>
                 <span className={styles.cartaoValor}>{formatTel(p.telefone)}</span>
+              </div>
+
+              <div className={styles.cartaoRow}>
+                <span className={styles.cartaoLabel}>Concurso</span>
+                <span className={styles.cartaoConcurso}>#{concurso}</span>
               </div>
 
               {/* Cotas */}
               <div className={styles.cotasSection}>
-                <span className={styles.cartaoLabel}>Cotas adquiridas ({p.cotas.length})</span>
+                <span className={styles.cartaoLabel}>Cotas</span>
                 <div className={styles.cotasGrid}>
                   {p.cotas.map(c => (
                     <span key={c} className={styles.cota}>{c.padStart(2, '0')}</span>
@@ -182,9 +267,16 @@ function ComprovanteContent() {
                 </div>
               </div>
 
+              <div className={styles.cartaoRow}>
+                <span className={styles.cartaoLabel}>Apostas cobertas</span>
+                <span className={styles.cartaoValor}>
+                  {apostasCobertas} de {bolao?.num_apostas} apostas
+                </span>
+              </div>
+
               <div className={styles.divider} />
 
-              {/* Totais */}
+              {/* Valor */}
               <div className={styles.cartaoRow}>
                 <span className={styles.cartaoLabel}>Valor pago</span>
                 <span className={styles.cartaoTotal}>
@@ -201,34 +293,62 @@ function ComprovanteContent() {
                 </div>
               )}
 
-              <div className={styles.cartaoRow}>
-                <span className={styles.cartaoLabel}>Status</span>
-                <span className={p.status === 'pago' ? styles.statusPago : styles.statusPendente}>
-                  {p.status === 'pago' ? '✅ PAGO' : '⏳ AGUARDANDO'}
-                </span>
-              </div>
-
-              <div className={styles.cartaoRow}>
-                <span className={styles.cartaoLabel}>Data</span>
-                <span className={styles.cartaoValor}>
-                  {new Date(p.created_at).toLocaleDateString('pt-BR', {
-                    day: '2-digit', month: '2-digit', year: 'numeric',
-                    hour: '2-digit', minute: '2-digit',
-                  })}
-                </span>
-              </div>
+              {/* Apostas da Caixa */}
+              {bolao?.apostas_data && (() => {
+                const ad = bolao.apostas_data!
+                return (
+                  <>
+                    <div className={styles.divider} />
+                    <div className={styles.apostasSection}>
+                      <div className={styles.apostasHeader}>
+                        <span className={styles.cartaoLabel}>Apostas registradas — {ad.total_apostas} jogos</span>
+                        {ad.compra_id && (
+                          <span className={styles.apostasId}>Compra #{ad.compra_id}</span>
+                        )}
+                      </div>
+                      {ad.transacao_id && (
+                        <div className={styles.apostasTransacao}>
+                          ID: {ad.transacao_id} · {ad.data_compra} {ad.hora_compra} · {ad.situacao}
+                        </div>
+                      )}
+                      <div className={styles.apostasBets}>
+                        {ad.bets.map((bet, bi) => (
+                          <div key={bi} className={styles.apostaBet}>
+                            <span className={styles.apostaBetNum}>{String(bi+1).padStart(2,'0')}.</span>
+                            {bet.map((n, ni) => (
+                              <span key={ni} className={styles.apostaBetDezena}>
+                                {String(n).padStart(2,'0')}
+                              </span>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )
+              })()}
 
               <div className={styles.divider} />
 
               {/* Rodapé */}
+              <div className={styles.cartaoFooter}>
+                <div className={styles.cartaoFooterInfo}>
+                  Bolão: bolao-mega-zeta.vercel.app/{bolao?.slug}<br />
+                  Emissão: {emissao} às {horario}
+                </div>
+                <div className={styles.cartaoNumero}>
+                  Nº {String(idx + 1).padStart(3, '0')}
+                </div>
+              </div>
+
               <div className={styles.cartaoTermos}>
-                <strong>{bolao?.num_apostas} apostas · {bolao?.dezenas} dezenas por aposta</strong><br />
                 Prêmio dividido proporcionalmente ao número de cotas adquiridas.<br />
                 Se sobrar cotas, o saldo é rateado entre os participantes.
               </div>
 
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
