@@ -212,9 +212,6 @@ function ComprovanteContent() {
         /* ── MODO COMPROVANTE COMPLETO ── */
         <div className={styles.grid}>
           {lista.map((p, idx) => {
-            const apostasCobertas = bolao
-              ? Math.round(p.cotas.length * (bolao.num_apostas / bolao.total_cotas))
-              : p.cotas.length
             const emissao = new Date(p.created_at).toLocaleDateString('pt-BR', {
               day: '2-digit', month: '2-digit', year: 'numeric',
             })
@@ -274,12 +271,6 @@ function ComprovanteContent() {
                 </div>
               </div>
 
-              <div className={styles.cartaoRow}>
-                <span className={styles.cartaoLabel}>Apostas cobertas</span>
-                <span className={styles.cartaoValor}>
-                  {apostasCobertas} de {bolao?.num_apostas} apostas
-                </span>
-              </div>
 
               <div className={styles.divider} />
 
