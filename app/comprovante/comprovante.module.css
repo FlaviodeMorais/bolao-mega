@@ -343,6 +343,13 @@
   padding: 4px var(--s1) 0;
 }
 
+/* ── Estrutura de impressão com cabeçalho/rodapé repetidos ── */
+.printHead { display: block; }
+.printBody { display: block; }
+.printFoot { display: block; }
+.printRow  { display: block; }
+.printCell { display: block; }
+
 /* ── Botões toggle ── */
 .btnCanhoto {
   padding: var(--s2) var(--s4);
@@ -536,100 +543,101 @@
 
 /* ── Print ── */
 @media print {
+  /* Forçar impressão de cores de fundo (dark theme) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   .controls { display: none; }
 
-  /* ── Página ── */
   .page {
-    background: white !important;
-    padding: 8mm;
+    background: #0d1117 !important;
+    padding: 6mm;
     min-height: 0;
   }
 
-  /* ── Comprovante grid ── */
+  /* Uma coluna por participante, cada um começa numa nova página */
   .grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6mm;
+    display: block;
   }
 
+  /* ── CSS TABLE MODEL para cabeçalho/rodapé repetidos ── */
   .cartao {
-    background: white !important;
-    border: 1px solid #ccc;
-    border-radius: 4mm;
+    display: table;
+    width: 100%;
+    background: #161b22 !important;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 0;
+    padding: 0;
+    page-break-before: always;
+    page-break-after: always;
+  }
+
+  .cartao:first-child { page-break-before: auto; }
+
+  .cartao::before { display: none; }
+
+  /* Cabeçalho repete em cada página */
+  .printHead { display: table-header-group; }
+  .printFoot { display: table-footer-group; }
+  .printBody { display: table-row-group; }
+  .printRow  { display: table-row; }
+  .printCell {
+    display: table-cell;
     padding: 6mm;
-    color: #111;
-    box-shadow: none;
+    background: #161b22 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
   }
 
-  .cartao::before { background: #00A651; }
-
-  /* textos comprovante */
-  .cartaoGrupo        { color: #111; }
-  .cartaoBolao        { color: #555; }
-  .cartaoNome         { color: #111; }
-  .cartaoValor        { color: #111; }
-  .cartaoConcurso     { color: #0057a8; }
-  .cartaoLabel        { color: #888; }
-  .cartaoTotal        { color: #008000; }
-  .cartaoAcrescimo    { color: #b45309; }
-  .cartaoFooterInfo   { color: #888; }
-  .cartaoNumero       { color: #008000; opacity: 1; }
-  .comprovanteLabel   { color: #c0392b; }
-  .comprovanteLabel::before { background: #c0392b; }
-  .divider            { background: #ddd; }
-  .cartaoTermos       { color: #999; }
-
-  .cota {
-    background: rgba(124,58,237,0.06);
-    border-color: rgba(124,58,237,0.35);
-    color: #6d28d9;
+  /* Bets em grid dentro do printBody */
+  .printBody::after {
+    content: '';
+    display: table-row;
+    height: 6mm;
   }
 
-  .statusBadgePago {
-    background: rgba(0,128,0,0.08);
-    border-color: rgba(0,128,0,0.3);
-    color: #008000;
+  /* Apostas: grid 3 colunas na impressão */
+  .apostaBet {
+    display: inline-flex;
+    width: 33%;
+    background: rgba(255,255,255,0.02) !important;
+    border: none;
+    padding: 2px 4px;
+    margin: 1px 0;
+    vertical-align: top;
   }
 
-  .statusBadgePendente {
-    background: rgba(180,83,9,0.08);
-    border-color: rgba(180,83,9,0.3);
-    color: #b45309;
+  .apostasBets {
+    max-height: none !important;
+    overflow: visible !important;
+    background: transparent !important;
+    border: none !important;
+    display: block;
+    padding: 4mm 6mm;
+    column-count: 3;
+    column-gap: 4mm;
   }
 
-  /* apostas */
-  .apostasSection     { background: transparent; }
-  .apostasTransacao   { background: #f5f5f5; border-color: #ddd; color: #555; }
-  .apostasId          { color: #0057a8; }
-  .apostasBets        { background: #fafafa; border-color: #eee; max-height: none; overflow: visible; }
-  .apostaBet          { background: transparent; }
-  .apostaBetNum       { color: #999; }
-  .apostaBetDezena    { color: #6d28d9; }
+  .apostaBet { break-inside: avoid; }
+  .apostaBetNum   { color: #6e7681 !important; }
+  .apostaBetDezena { color: #a78bfa !important; }
 
-  /* ── Canhoto grid ── */
+  .apostasTransacao {
+    background: rgba(255,255,255,0.04) !important;
+    border-color: rgba(255,255,255,0.06) !important;
+    color: #6e7681 !important;
+  }
+
+  /* Canhoto: não muda (mantém dark) */
   .gridCanhoto {
     grid-template-columns: repeat(3, 1fr);
     gap: 5mm;
   }
 
   .canhoto {
-    background: white !important;
-    border: 1px dashed #aaa;
-    border-radius: 3mm;
-    padding: 5mm;
-    color: #111;
-    box-shadow: none;
+    background: #161b22 !important;
+    border-color: rgba(255,255,255,0.1) !important;
+    color: #e6edf3 !important;
   }
-
-  .canhoto::before { background: linear-gradient(90deg, #f59e0b, #00A651); }
-
-  /* textos canhoto */
-  .canhotoHeader      { color: #111; }
-  .canhotoBolao       { color: #555; }
-  .canhotoNome        { color: #111; }
-  .canhotoRow .cartaoLabel  { color: #888; }
-  .canhotoRow .cartaoValor  { color: #111; }
-  .canhotoRow .cartaoConcurso { color: #0057a8; }
-  .canhotoRow .cartaoTotal  { color: #008000; }
-  .canhotoTransacao   { color: #888; border-color: #eee; }
-  .canhotoNumero      { color: #008000; opacity: 1; }
 }
