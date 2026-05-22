@@ -838,6 +838,22 @@
   color: #e6edf3;
 }
 
+.apostasModalDesc {
+  font-size: 0.875rem;
+  color: #8b949e;
+  margin: 0;
+  line-height: 1.6;
+}
+.apostasModalDesc strong { color: #e6edf3; }
+.apostasModalDesc code {
+  background: rgba(255,255,255,.08);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: monospace;
+  font-size: 0.82rem;
+  color: #a78bfa;
+}
+
 .apostasModalSteps {
   margin: 0;
   padding-left: 20px;

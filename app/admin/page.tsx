@@ -725,7 +725,7 @@ export default function AdminPage() {
                   {/* Apostas */}
                   <button type="button" className={styles.btnUploadApostas}
                     onClick={() => setShowApostasModal(true)}
-                    title="Carregar apostas copiadas do PDF da Caixa">
+                    title="Colar texto das apostas">
                     {apostasCarregadas ? '📊 Apostas ✅' : '📊 Carregar Apostas'}
                   </button>
                   {apostasCarregadas && (
@@ -739,15 +739,13 @@ export default function AdminPage() {
                   <div className={styles.apostasModal}>
                     <div className={styles.apostasModalBox}>
                       <div className={styles.apostasModalTitle}>📊 Carregar Apostas</div>
-                      <ol className={styles.apostasModalSteps}>
-                        <li>Abra o PDF no <strong>Chrome</strong></li>
-                        <li>Pressione <kbd>Ctrl+A</kbd> para selecionar tudo</li>
-                        <li>Pressione <kbd>Ctrl+C</kbd> para copiar</li>
-                        <li>Cole abaixo com <kbd>Ctrl+V</kbd></li>
-                      </ol>
+                      <p className={styles.apostasModalDesc}>
+                        Cole abaixo o texto com os números das apostas.<br />
+                        Formato aceito: <strong>6 números por linha</strong>, separados por espaço — ex: <code>02 16 27 31 47 60</code>
+                      </p>
                       <textarea
                         className={styles.apostasTextarea}
-                        placeholder="Cole aqui o texto copiado do PDF..."
+                        placeholder="Cole aqui os números das apostas..."
                         value={apostasTexto}
                         onChange={e => setApostasTexto(e.target.value)}
                         rows={8}

@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
   const bets = parseBets(text)
   if (bets.length === 0) {
     return NextResponse.json(
-      { error: 'Nenhuma aposta encontrada. Cole o texto copiado do PDF no Chrome (Ctrl+A → Ctrl+C → Colar).' },
+      { error: 'Nenhuma aposta encontrada. Verifique se o texto contém os números no formato correto (6 números por linha, separados por espaço).' },
       { status: 422 }
     )
   }
