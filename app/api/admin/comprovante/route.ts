@@ -3,6 +3,14 @@ import { supabase } from '@/lib/supabase'
 import { verificarToken } from '@/lib/auth'
 import { enviarComprovante } from '@/lib/whatsapp'
 
+export async function GET(req: NextRequest) {
+  const token = req.cookies.get('admin_token')?.value
+  if (!token || !(await verificarToken(token))) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+  return NextResponse.json({ ok: true })
+}
+
 export async function POST(req: NextRequest) {
   const token = req.cookies.get('admin_token')?.value
   if (!token || !(await verificarToken(token))) {

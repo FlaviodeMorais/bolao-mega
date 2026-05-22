@@ -1,0 +1,288 @@
+/* ═══════════════════════════════════════
+   Comprovantes de Participação — Bolão Mega
+═══════════════════════════════════════ */
+
+.page {
+  min-height: 100vh;
+  background: var(--gray-50);
+  padding: var(--s6);
+}
+
+/* ── Controles ── */
+.controls {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s4);
+  margin-bottom: var(--s8);
+  flex-wrap: wrap;
+}
+
+.controlsLeft {}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 0 0 var(--s1);
+}
+
+.pageSubtitle {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.controlsRight {
+  display: flex;
+  gap: var(--s3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.select {
+  padding: var(--s2) var(--s4);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--r8);
+  font-family: var(--f-sans);
+  font-size: 0.9rem;
+  background: var(--white);
+  color: var(--navy);
+  cursor: pointer;
+}
+
+.btnBack {
+  padding: var(--s2) var(--s4);
+  background: var(--gray-100);
+  color: var(--navy);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--r8);
+  font-family: var(--f-sans);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-decoration: none;
+}
+
+.btnBack:hover {
+  background: var(--gray-200);
+}
+
+.btnPrint {
+  padding: var(--s2) var(--s5);
+  background: var(--green);
+  color: white;
+  border: none;
+  border-radius: var(--r8);
+  font-family: var(--f-sans);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btnPrint:hover {
+  background: var(--green-hover);
+}
+
+.loading {
+  text-align: center;
+  color: var(--gray-500);
+  padding: var(--s10);
+  font-size: 1rem;
+}
+
+/* ── Grade de comprovantes ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--s6);
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Cartão comprovante ── */
+.cartao {
+  background: var(--white);
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--r12);
+  padding: var(--s6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.cartao.pago {
+  border-color: var(--green);
+}
+
+.cartao.pendente {
+  border-color: var(--amber);
+}
+
+/* Cabeçalho do cartão */
+.cartaoHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  margin-bottom: var(--s1);
+}
+
+.cartaoLogo {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.cartaoGrupo {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--navy);
+  letter-spacing: 0.5px;
+}
+
+.cartaoBolao {
+  font-size: 0.8rem;
+  color: var(--gray-600);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.divider {
+  height: 1px;
+  background: var(--gray-200);
+  margin: var(--s1) 0;
+}
+
+/* Linhas de dados */
+.cartaoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.cartaoNomeRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cartaoLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--gray-400);
+}
+
+.cartaoValor {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--navy);
+  font-family: var(--f-mono);
+}
+
+.cartaoNome {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.cartaoTotal {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--green);
+  font-family: var(--f-mono);
+}
+
+.cartaoAcrescimo {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--amber);
+  font-family: var(--f-mono);
+}
+
+.statusPago {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.statusPendente {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--amber);
+}
+
+/* Cotas */
+.cotasSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.cotasGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cota {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--green);
+  border-radius: 50%;
+  font-family: var(--f-mono);
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--green);
+  background: white;
+}
+
+/* Termos */
+.cartaoTermos {
+  font-size: 0.7rem;
+  color: var(--gray-400);
+  line-height: 1.5;
+  text-align: center;
+  padding: var(--s2) var(--s1);
+}
+
+/* ── Print ── */
+@media print {
+  .controls {
+    display: none;
+  }
+
+  .page {
+    background: white;
+    padding: 10mm;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8mm;
+  }
+
+  .cartao {
+    border: 1px dashed #999;
+    border-radius: 4mm;
+    padding: 6mm;
+  }
+
+  .cota {
+    width: 28px;
+    height: 28px;
+    font-size: 0.7rem;
+  }
+}

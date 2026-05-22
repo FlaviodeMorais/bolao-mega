@@ -74,6 +74,29 @@ export default function AdminPage() {
   const [enviandoComp, setEnviandoComp]         = useState<string | null>(null)
   const [compMsg, setCompMsg]                   = useState('')
 
+  // Seleção para impressão
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
+
+  function toggleSelecionado(id: string) {
+    setSelecionados(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function selecionarTodosPagos() {
+    const pagos = partsBolao.filter(p => p.status === 'pago').map(p => p.id)
+    setSelecionados(new Set(pagos))
+  }
+
+  function imprimirSelecionados() {
+    const ids    = Array.from(selecionados).join(',')
+    const bolao  = bolaoAtual?.slug || ''
+    const conc   = concursoAtivo || ''
+    window.open(`/comprovante?ids=${ids}&bolao=${bolao}&concurso=${conc}`, '_blank')
+  }
+
   // Resultado do sorteio
   const [showResultado, setShowResultado]       = useState(false)
   const [resultadoGanhou, setResultadoGanhou]   = useState<boolean | null>(null)
@@ -159,6 +182,7 @@ export default function AdminPage() {
 
   async function carregarPartsBolao(slug: string, concurso: string) {
     setLoadingParts(true)
+    setSelecionados(new Set())
     const res = await fetch(`/api/participantes?concurso=${concurso}&bolao_slug=${slug}`).then(r => r.json())
     setPartsBolao(res.participantes || [])
     setLoadingParts(false)
@@ -439,6 +463,7 @@ export default function AdminPage() {
               {waStatus === 'ok' ? '📱 WA ●' : '📵 WA ●'}
             </span>
           )}
+          <a href="/comprovante" className={styles.linkForm}>📄 Comprovantes</a>
           <a href="/" className={styles.linkForm}>← Formulário</a>
         </div>
       </div>
@@ -771,16 +796,51 @@ export default function AdminPage() {
                 )}
 
                 {/* Lista de participantes */}
-                <div className={styles.partSectionTitle}>
-                  👥 Participantes — {partsBolao.length} cadastrado{partsBolao.length !== 1 ? 's' : ''}
+                <div className={styles.partSectionHeader}>
+                  <div className={styles.partSectionTitle}>
+                    👥 Participantes — {partsBolao.length} cadastrado{partsBolao.length !== 1 ? 's' : ''}
+                  </div>
+                  {partsBolao.some(p => p.status === 'pago') && (
+                    <button type="button" className={styles.btnSelAll}
+                      onClick={selecionarTodosPagos}
+                      title="Selecionar todos os participantes pagos">
+                      ☑ Selecionar pagos
+                    </button>
+                  )}
                 </div>
+
+                {/* Barra de seleção */}
+                {selecionados.size > 0 && (
+                  <div className={styles.selecaoBar}>
+                    <span className={styles.selecaoCount}>
+                      {selecionados.size} selecionado{selecionados.size !== 1 ? 's' : ''}
+                    </span>
+                    <button type="button" className={styles.btnImprimirSel}
+                      onClick={imprimirSelecionados}>
+                      🖨️ Imprimir / PDF
+                    </button>
+                    <button type="button" className={styles.btnLimparSel}
+                      onClick={() => setSelecionados(new Set())}>
+                      ✕ Limpar seleção
+                    </button>
+                  </div>
+                )}
 
                 {loadingParts ? (
                   <div className={styles.empty}>Carregando...</div>
                 ) : partsBolao.length === 0 ? (
                   <div className={styles.empty}>Nenhum participante neste bolão para o concurso #{concursoAtivo || '?'}</div>
                 ) : partsBolao.map(p => (
-                  <div key={p.id} className={`${styles.partCard} ${p.status === 'pago' ? styles.partCardPago : p.status === 'cancelado' ? styles.partCardCancel : ''}`}>
+                  <div key={p.id} className={`${styles.partCard} ${p.status === 'pago' ? styles.partCardPago : p.status === 'cancelado' ? styles.partCardCancel : ''} ${selecionados.has(p.id) ? styles.partCardSelecionado : ''}`}>
+                    {p.status === 'pago' && (
+                      <input
+                        type="checkbox"
+                        className={styles.partCardCheck}
+                        checked={selecionados.has(p.id)}
+                        onChange={() => toggleSelecionado(p.id)}
+                        title="Selecionar para imprimir"
+                      />
+                    )}
                     <div className={styles.partCardLeft}>
                       <div className={styles.partCardNome}>{p.nome}</div>
                       <div className={styles.partCardTel}>{formatTel(p.telefone)}</div>
@@ -796,6 +856,13 @@ export default function AdminPage() {
                     <div className={styles.partCardRight}>
                       <div className={styles.partCardStatusCol}>
                         {/* Comprovante */}
+                        {p.status === 'pago' && (
+                          <button type="button" className={styles.btnImprimir}
+                            onClick={() => window.open(`/comprovante?id=${p.id}`, '_blank')}
+                            title="Imprimir comprovante">
+                            🖨️
+                          </button>
+                        )}
                         {p.status === 'pago' && p.telefone && (
                           <button type="button" className={styles.btnComprovante}
                             onClick={() => enviarComprovante(p.id)}
