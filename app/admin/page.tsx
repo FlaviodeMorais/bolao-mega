@@ -517,7 +517,6 @@ export default function AdminPage() {
               {waStatus === 'ok' ? '📱 WA ●' : '📵 WA ●'}
             </span>
           )}
-          <a href="/comprovante" className={styles.linkForm}>📄 Comprovantes</a>
           <a href="/" className={styles.linkForm}>← Formulário</a>
         </div>
       </div>

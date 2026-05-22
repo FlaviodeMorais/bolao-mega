@@ -52,9 +52,10 @@ function ComprovanteContent() {
   const filtroIds   = params.get('ids')
   const paramBolao  = params.get('bolao')
   const paramConc   = params.get('concurso')
+  const modoPublico = params.get('pub') === '1'   // acesso do participante (sem admin auth)
   const modoFiltro  = !!(filtroId || filtroIds)
 
-  const [autorizado, setAutorizado]       = useState(false)
+  const [autorizado, setAutorizado]       = useState(modoPublico) // pub mode sempre autorizado
   const [boloes, setBoloes]               = useState<Bolao[]>([])
   const [bolao, setBolao]                 = useState<Bolao | null>(null)
   const [participantes, setParticipantes] = useState<Participante[]>([])
@@ -71,10 +72,16 @@ function ComprovanteContent() {
       : participantes
 
   useEffect(() => {
+    // Sem parâmetros de participante → redireciona ao admin
+    if (!modoPublico && !filtroId && !filtroIds && !paramBolao) {
+      router.replace('/admin')
+      return
+    }
+    if (modoPublico) return
     fetch('/api/admin/comprovante')
       .then(r => { if (r.status === 401) router.replace('/admin'); else setAutorizado(true) })
       .catch(() => router.replace('/admin'))
-  }, [router])
+  }, [router, modoPublico, filtroId, filtroIds, paramBolao])
 
   useEffect(() => {
     if (!autorizado) return
@@ -115,10 +122,12 @@ function ComprovanteContent() {
           </p>
         </div>
         <div className={styles.controlsRight}>
-          <button type="button" className={styles.btnBack} onClick={() => router.push('/admin')}>
-            ← Voltar ao Admin
-          </button>
-          {!modoFiltro && (
+          {!modoPublico && (
+            <button type="button" className={styles.btnBack} onClick={() => router.push('/admin')}>
+              ← Voltar ao Admin
+            </button>
+          )}
+          {!modoFiltro && !modoPublico && (
             <select
               className={styles.select}
               title="Selecionar bolão"
