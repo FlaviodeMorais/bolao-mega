@@ -28,7 +28,14 @@ interface Participante { id: string; nome: string; cotas: string[]; total: numbe
 interface ConcursoAtivo { concurso: string; data: string; premio: string }
 interface PixData { pixCode: string; qrCodeBase64: string; paymentId: string; fonte: string; nome: string; cotas: string[]; total: number }
 interface ApostasData { bets: number[][]; total_apostas: number; transacao_id?: string; compra_id?: string; data_compra?: string; hora_compra?: string; situacao?: string }
-interface ResultadoConf { dezenas_sorteadas: number[]; status: 'nao_apurado'|'nao_premiada'|'ganhamos'; resumo: { senas: number; quinas: number; quadras: number }; maior_premio: string | null; apostas_premiadas: { idx: number; dezenas: number[]; acertos: number; premio: string }[] }
+interface ResultadoConf {
+  status: 'nao_apurado'|'aguardando_apuracao'|'apurando'|'nao_premiada'|'ganhamos'
+  data_sorteio?: string
+  dezenas_sorteadas?: number[]
+  resumo?: { senas: number; quinas: number; quadras: number }
+  maior_premio?: string | null
+  apostas_premiadas?: { idx: number; dezenas: number[]; acertos: number; premio: string }[]
+}
 
 interface Props {
   bolaoNome: string
@@ -386,8 +393,11 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
                 {/* Status do sorteio */}
                 {resultadoConf && (
                   <div className={`status-sorteio status-${resultadoConf.status}`}>
-                    {resultadoConf.status === 'nao_premiada' && '😔 Não premiada neste concurso'}
-                    {resultadoConf.status === 'ganhamos' && `🏆 GANHAMOS! — ${resultadoConf.maior_premio}`}
+                    {resultadoConf.status === 'nao_apurado'         && `⏳ Sorteio não apurado${resultadoConf.data_sorteio ? ` — ${resultadoConf.data_sorteio}` : ''}`}
+                    {resultadoConf.status === 'aguardando_apuracao'  && `🎲 Aguardando apuração — resultado após 22h`}
+                    {resultadoConf.status === 'apurando'             && '🔄 Apuração em andamento...'}
+                    {resultadoConf.status === 'nao_premiada'         && '😔 Não premiada neste concurso'}
+                    {resultadoConf.status === 'ganhamos'             && `🏆 GANHAMOS! — ${resultadoConf.maior_premio}`}
                   </div>
                 )}
 
@@ -654,21 +664,23 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
                     <hr className="comprov-divider" />
                     <div className="comprov-conferir-section">
                       <div className="comprov-conferir-title">🔍 Conferência do Sorteio</div>
-                      <div className="comprov-dzs-row">
-                        <span className="comprov-label">Dezenas sorteadas</span>
-                        <div className="comprov-dzs-grid">
-                          {resultadoConf.dezenas_sorteadas.map(n => (
-                            <span key={n} className="comprov-dz-sorteada">{String(n).padStart(2,'0')}</span>
-                          ))}
+                      {resultadoConf.dezenas_sorteadas && (
+                        <div className="comprov-dzs-row">
+                          <span className="comprov-label">Dezenas sorteadas</span>
+                          <div className="comprov-dzs-grid">
+                            {resultadoConf.dezenas_sorteadas.map(n => (
+                              <span key={n} className="comprov-dz-sorteada">{String(n).padStart(2,'0')}</span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
                       <div className={`comprov-status-result comprov-status-${resultadoConf.status}`}>
                         {resultadoConf.status === 'nao_premiada' && '😔 Não premiada — nenhuma aposta com 4 ou mais acertos'}
-                        {resultadoConf.status === 'ganhamos' && `🏆 GANHAMOS! ${resultadoConf.maior_premio} — ${resultadoConf.apostas_premiadas.length} aposta(s) premiada(s)`}
+                        {resultadoConf.status === 'ganhamos' && `🏆 GANHAMOS! ${resultadoConf.maior_premio} — ${resultadoConf.apostas_premiadas?.length ?? 0} aposta(s) premiada(s)`}
                       </div>
-                      {resultadoConf.apostas_premiadas.length > 0 && (
+                      {(resultadoConf.apostas_premiadas?.length ?? 0) > 0 && (
                         <div className="comprov-premiadas-lista">
-                          {resultadoConf.apostas_premiadas.map(a => (
+                          {resultadoConf.apostas_premiadas!.map(a => (
                             <div key={a.idx} className="comprov-aposta-premiada">
                               <span className="comprov-bet-num">#{a.idx}</span>
                               <span className="comprov-bet-dez-winner">{a.dezenas.map(n => String(n).padStart(2,'0')).join(' ')}</span>
@@ -682,7 +694,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
                 )}
 
                 {apostasData && (() => {
-                  const ganhadoresIdx = new Set(resultadoConf?.apostas_premiadas.map(a => a.idx) ?? [])
+                  const ganhadoresIdx = new Set(resultadoConf?.apostas_premiadas?.map(a => a.idx) ?? [])
                   const sorteadasSet  = new Set(resultadoConf?.dezenas_sorteadas ?? [])
                   return (
                     <>
@@ -699,7 +711,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
                       <div className="comprov-bets-grid">
                         {apostasData.bets.map((bet, bi) => {
                           const isWinner = ganhadoresIdx.has(bi + 1)
-                          const premio = isWinner ? resultadoConf?.apostas_premiadas.find(a => a.idx === bi+1)?.premio : null
+                          const premio = isWinner ? resultadoConf?.apostas_premiadas?.find(a => a.idx === bi+1)?.premio : null
                           return (
                             <div key={bi} className={`comprov-bet${isWinner ? ' comprov-bet-winner' : ''}`}>
                               <span className="comprov-bet-num">{String(bi+1).padStart(2,'0')}.</span>
