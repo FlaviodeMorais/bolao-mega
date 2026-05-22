@@ -27,7 +27,6 @@ const REGRAS = [
 interface Participante { id: string; nome: string; cotas: string[]; total: number; status: string }
 interface ConcursoAtivo { concurso: string; data: string; premio: string }
 interface PixData { pixCode: string; qrCodeBase64: string; paymentId: string; fonte: string; nome: string; cotas: string[]; total: number }
-interface ApostasData { bets: number[][]; total_apostas: number; transacao_id?: string; compra_id?: string; data_compra?: string; hora_compra?: string; situacao?: string }
 interface ResultadoConf {
   status: 'nao_apurado'|'aguardando_apuracao'|'apurando'|'nao_premiada'|'ganhamos'
   data_sorteio?: string
@@ -79,13 +78,10 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
   const statusRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Comprovante self-service
-  const [apostasData, setApostasData]         = useState<ApostasData | null>(null)
   const [resultadoConf, setResultadoConf]     = useState<ResultadoConf | null>(null)
   const [modalPart, setModalPart]             = useState<Participante | null>(null)
   const [nomeVerif, setNomeVerif]             = useState('')
   const [verfErr, setVerfErr]                 = useState('')
-  const [partVerificada, setPartVerificada]   = useState<Participante | null>(null)
-  const [modoCanhoto, setModoCanhoto]         = useState(false)
 
   const concurso = concursoAtivo?.concurso
 
@@ -137,7 +133,6 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
         setNumApostas(Number(b.num_apostas) || 1)
         setBolaoNome(b.nome || bolaoNomeProp)
         setEncerrado(!!b.encerrado)
-        setApostasData(b.apostas_data || null)
         setResultadoConf(b.resultado_conferencia || null)
       }
 
