@@ -411,45 +411,43 @@
 }
 
 .apostasBets {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 3px;
-  max-height: 320px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   padding: 4px;
   background: rgba(0,0,0,0.2);
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,0.05);
 }
-.apostasBets::-webkit-scrollbar { width: 4px; }
-.apostasBets::-webkit-scrollbar-track { background: transparent; }
-.apostasBets::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
 
 .apostaBet {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   padding: 3px 6px;
   border-radius: 4px;
   background: rgba(255,255,255,0.02);
+  width: 100%;
 }
 
 .apostaBet:hover { background: rgba(255,255,255,0.05); }
 
 .apostaBetNum {
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   color: #6e7681;
   font-family: var(--f-mono);
-  min-width: 18px;
+  min-width: 22px;
+  flex-shrink: 0;
 }
 
 .apostaBetDezena {
   font-family: var(--f-mono);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: #a78bfa;
-  min-width: 20px;
+  min-width: 22px;
   text-align: center;
+  flex-shrink: 0;
 }
 
 /* ── CANHOTO (modo stub) ── */
@@ -593,31 +591,44 @@
     height: 6mm;
   }
 
-  /* Apostas: grid 3 colunas na impressão */
-  .apostaBet {
-    display: inline-flex;
-    width: 33%;
-    background: rgba(255,255,255,0.02) !important;
-    border: none;
-    padding: 2px 4px;
-    margin: 1px 0;
-    vertical-align: top;
-  }
-
+  /* Apostas: uma por linha */
   .apostasBets {
     max-height: none !important;
     overflow: visible !important;
     background: transparent !important;
     border: none !important;
     display: block;
-    padding: 4mm 6mm;
-    column-count: 3;
-    column-gap: 4mm;
+    padding: 2mm 0;
   }
 
-  .apostaBet { break-inside: avoid; }
-  .apostaBetNum   { color: #6e7681 !important; }
-  .apostaBetDezena { color: #a78bfa !important; }
+  /* Cada aposta ocupa uma linha inteira */
+  .apostaBet {
+    display: flex !important;
+    align-items: center;
+    width: 100% !important;
+    background: transparent !important;
+    border: none;
+    padding: 1px 0;
+    margin: 0;
+    gap: 4px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .apostaBetNum {
+    color: #6e7681 !important;
+    min-width: 20px;
+    font-size: 0.65rem;
+    flex-shrink: 0;
+  }
+  .apostaBetDezena {
+    color: #a78bfa !important;
+    min-width: 20px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-align: center;
+    flex-shrink: 0;
+  }
 
   .apostasTransacao {
     background: rgba(255,255,255,0.04) !important;
