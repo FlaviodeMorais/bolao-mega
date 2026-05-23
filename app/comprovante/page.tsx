@@ -45,6 +45,15 @@ function formatTel(tel: string | undefined) {
   return tel
 }
 
+function whatsappShare(tel: string | undefined, nome: string, participanteId: string, slug: string, concurso: string) {
+  if (!tel) return ''
+  const n = tel.replace(/\D/g, '')
+  const num = n.startsWith('55') ? n : `55${n}`
+  const link = `https://bolao-mega-zeta.vercel.app/comprovante?id=${participanteId}&pub=1&bolao=${slug}&concurso=${concurso}`
+  const msg = encodeURIComponent(`🍀 Olá ${nome}! Segue seu comprovante de participação no Bolão Mega-Sena:\n${link}`)
+  return `https://wa.me/${num}?text=${msg}`
+}
+
 function ComprovanteContent() {
   const router      = useRouter()
   const params      = useSearchParams()
@@ -249,7 +258,18 @@ function ComprovanteContent() {
                   </div>
                   <div className={styles.cartaoRow}>
                     <span className={styles.cartaoLabel}>Telefone</span>
-                    <span className={styles.cartaoValor}>{formatTel(p.telefone)}</span>
+                    <span className={styles.cartaoValor}>
+                      {p.telefone && !modoPublico ? (
+                        <a
+                          href={whatsappShare(p.telefone, p.nome, p.id, bolao?.slug ?? '', concurso)}
+                          target="_blank" rel="noopener noreferrer"
+                          title="Enviar comprovante via WhatsApp"
+                          className={styles.whatsappLink}
+                        >
+                          📱 {formatTel(p.telefone)}
+                        </a>
+                      ) : formatTel(p.telefone)}
+                    </span>
                   </div>
                   <div className={styles.cartaoRow}>
                     <span className={styles.cartaoLabel}>Concurso</span>
