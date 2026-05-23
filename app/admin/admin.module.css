@@ -261,6 +261,8 @@
 .partCardLeft   { flex: 1; min-width: 0; }
 .partCardNome   { font-size: 15px; font-weight: 700; color: rgba(255,255,255,.90); }
 .partCardTel    { font-size: 12px; color: rgba(255,255,255,.35); margin-top: 2px; }
+.whatsappLink   { color: #25d366; text-decoration: none; font-size: 12px; }
+.whatsappLink:hover { text-decoration: underline; color: #4ade80; }
 .partCardInfo   { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
 .partCardCotas  {
   font-size: 11px; color: rgba(255,255,255,.35);

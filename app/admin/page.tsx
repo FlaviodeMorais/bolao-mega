@@ -34,6 +34,13 @@ function formatTel(tel?: string): string {
   return tel
 }
 
+function whatsappUrl(tel?: string): string {
+  if (!tel) return ''
+  const n = tel.replace(/\D/g, '')
+  const num = n.startsWith('55') ? n : `55${n}`
+  return `https://wa.me/${num}`
+}
+
 export default function AdminPage() {
   const [logado, setLogado]   = useState(false)
   const [senha, setSenha]     = useState('')
@@ -953,7 +960,15 @@ export default function AdminPage() {
                     )}
                     <div className={styles.partCardLeft}>
                       <div className={styles.partCardNome}>{p.nome}</div>
-                      <div className={styles.partCardTel}>{formatTel(p.telefone)}</div>
+                      <div className={styles.partCardTel}>
+                        {p.telefone ? (
+                          <a href={whatsappUrl(p.telefone)} target="_blank" rel="noopener noreferrer"
+                             title={`Abrir WhatsApp — ${formatTel(p.telefone)}`}
+                             className={styles.whatsappLink}>
+                            📱 {formatTel(p.telefone)}
+                          </a>
+                        ) : '—'}
+                      </div>
                       <div className={styles.partCardInfo}>
                         <span className={styles.partCardCotas}>
                           🎟️ {Array.isArray(p.cotas) ? p.cotas.join(', ') : p.cotas}
