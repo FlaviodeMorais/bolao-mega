@@ -344,20 +344,26 @@ function ComprovanteContent() {
                 {/* ══ CORPO — bets fluem entre páginas ══ */}
                 <div className={styles.printBody}>
                 <div className={styles.printRow}><div className={styles.printCell}>
-                  {ad && (
-                    <div className={styles.apostasBets}>
-                      {ad.bets.map((bet, bi) => (
-                        <div key={bi} className={styles.apostaBet}>
-                          <span className={styles.apostaBetNum}>{String(bi+1).padStart(2,'0')}.</span>
-                          {bet.map((n, ni) => (
-                            <span key={ni} className={styles.apostaBetDezena}>
-                              {String(n).padStart(2,'0')}
-                            </span>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {ad && (() => {
+                    const acertos = new Set(bolao?.resultado_conferencia?.dezenas_sorteadas ?? [])
+                    return (
+                      <div className={styles.apostasBets}>
+                        {ad.bets.map((bet, bi) => (
+                          <div key={bi} className={styles.apostaBet}>
+                            <span className={styles.apostaBetNum}>{String(bi+1).padStart(2,'0')}.</span>
+                            {bet.map((n, ni) => (
+                              <span
+                                key={ni}
+                                className={acertos.has(n) ? styles.apostaBetDezenaAcerto : styles.apostaBetDezena}
+                              >
+                                {String(n).padStart(2,'0')}
+                              </span>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })()}
                 </div></div>
                 </div>
 

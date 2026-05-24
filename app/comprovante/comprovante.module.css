@@ -459,6 +459,22 @@
   flex-shrink: 0;
 }
 
+.apostaBetDezenaAcerto {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+  color: #fff;
+  font-family: var(--f-mono);
+  font-size: 0.7rem;
+  font-weight: 800;
+  box-shadow: 0 1px 5px rgba(99,102,241,.5);
+  flex-shrink: 0;
+}
+
 /* ── CANHOTO (modo stub) ── */
 .gridCanhoto {
   display: grid;
@@ -637,6 +653,14 @@
     font-weight: 700;
     text-align: center;
     flex-shrink: 0;
+  }
+  .apostaBetDezenaAcerto {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 0.6rem !important;
+    background: linear-gradient(135deg, #1d4ed8, #7c3aed) !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .apostasTransacao {
