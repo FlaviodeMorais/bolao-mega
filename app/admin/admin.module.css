@@ -429,6 +429,16 @@
   white-space: nowrap;
 }
 .conferirInfo { font-size: 0.72rem; color: #6e7681; padding: 4px 6px; }
+.manualEntry  { margin-top: 10px; }
+.manualLabel  { font-size: 0.75rem; color: #6e7681; margin-bottom: 6px; }
+.manualRow    { display: flex; gap: 8px; align-items: center; }
+.manualInput  {
+  flex: 1; padding: 8px 12px; border-radius: 8px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+  color: #e2e8f0; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;
+  outline: none;
+}
+.manualInput:focus { border-color: rgba(99,102,241,.5); }
 .conferirDezenas {
   display: flex;
   flex-direction: column;

@@ -161,6 +161,8 @@ export default function AdminPage() {
   const [showConferir, setShowConferir]         = useState(false)
   const [conferindoRes, setConferindoRes]       = useState(false)
   const [conferirMsg, setConferirMsg]           = useState('')
+  const [dezenasInput, setDezenasInput]         = useState('')
+  const [conferindoManual, setConferindoManual] = useState(false)
   const [conferirResult, setConferirResult]     = useState<{
     status: string; dezenas_sorteadas: number[];
     resumo: { senas: number; quinas: number; quadras: number };
@@ -208,6 +210,28 @@ export default function AdminPage() {
     setConferirMsg('✅ Conferência resetada.')
     if (conferirAutoRef.current) { clearInterval(conferirAutoRef.current); conferirAutoRef.current = null }
     setTimeout(() => setConferirMsg(''), 3000)
+  }
+
+  async function conferirManual() {
+    if (!bolaoAtual) return
+    const nums = dezenasInput.trim().split(/[\s,;]+/).map(Number).filter(n => n >= 1 && n <= 60)
+    if (nums.length !== 6) { setConferirMsg('❌ Informe exatamente 6 dezenas (1–60)'); return }
+    setConferindoManual(true); setConferirMsg('')
+    const res = await fetch('/api/admin/conferir-sorteio', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bolao_id: bolaoAtual.id, dezenas_sorteadas: nums }),
+    }).then(r => r.json())
+    setConferindoManual(false)
+    if (res.error) { setConferirMsg(`❌ ${res.error}`); return }
+    setConferirResult(res)
+    if (conferirAutoRef.current) { clearInterval(conferirAutoRef.current); conferirAutoRef.current = null }
+    const msgs: Record<string, string> = {
+      ganhamos:     `🏆 GANHAMOS! ${res.maior_premio} — ${res.total_premiadas} aposta(s) premiada(s)`,
+      nao_premiada: `😔 Não premiada — nenhuma aposta com 4 ou mais acertos`,
+    }
+    setConferirMsg(msgs[res.status] || `Status: ${res.status}`)
+    carregarBoloes()
   }
 
   useEffect(() => () => { if (conferirAutoRef.current) clearInterval(conferirAutoRef.current) }, [])
@@ -858,6 +882,27 @@ export default function AdminPage() {
                     {conferirMsg && (
                       <div className={conferirResult?.status === 'ganhamos' ? styles.resultadoMsgBox : styles.resultadoInfo}>
                         {conferirMsg}
+                      </div>
+                    )}
+                    {/* Entrada manual — usada quando API Caixa não responde (ex: Vercel fora do Brasil) */}
+                    {(!conferirResult || conferirResult.status === 'nao_apurado') && bolaoAtual.apostas_data && (
+                      <div className={styles.manualEntry}>
+                        <div className={styles.manualLabel}>Inserir dezenas manualmente:</div>
+                        <div className={styles.manualRow}>
+                          <input
+                            type="text"
+                            className={styles.manualInput}
+                            placeholder="Ex: 03 30 33 35 45 47"
+                            value={dezenasInput}
+                            onChange={e => setDezenasInput(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && conferirManual()}
+                          />
+                          <button type="button" className={styles.btnGanhou}
+                            onClick={conferirManual}
+                            disabled={conferindoManual || !dezenasInput.trim()}>
+                            {conferindoManual ? '⟳' : '✓ Conferir'}
+                          </button>
+                        </div>
                       </div>
                     )}
                     {conferirResult && conferirResult.total_premiadas > 0 && (
