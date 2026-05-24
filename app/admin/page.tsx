@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import styles from './admin.module.css'
 
 interface Participante {
@@ -13,7 +13,16 @@ interface Bolao       {
   total_cotas: number; ativo: boolean; dezenas: number; num_apostas: number
   taxa_admin: number; encerrado: boolean
   apostas_data?: { bets: number[][]; total_apostas: number } | null
-  resultado_conferencia?: { status: string } | null
+  resultado_conferencia?: {
+    status: string
+    dezenas_sorteadas?: number[]
+    dezenas_por_aposta?: number
+    resumo?: { senas: number; quinas: number; quadras: number }
+    maior_premio?: string | null
+    total_premiadas?: number
+    apostas_premiadas?: { idx: number; dezenas: number[]; acertos: number; premio: string }[]
+    apostas_invalidas?: number
+  } | null
 }
 interface HistoricoItem {
   concurso: number; bolao_slug: string | null; bolao_nome: string
@@ -158,15 +167,16 @@ export default function AdminPage() {
     maior_premio: string | null; total_premiadas: number;
     apostas_premiadas: { idx: number; dezenas: number[]; acertos: number; premio: string }[]
   } | null>(null)
+  const conferirAutoRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  async function conferirSorteio() {
+  async function conferirSorteio(silencioso = false) {
     if (!bolaoAtual || !concursoAtivo) return
-    setConferindoRes(true); setConferirMsg('')
+    if (!silencioso) { setConferindoRes(true); setConferirMsg('') }
     const res = await fetch(
       `/api/admin/conferir-sorteio?bolao_id=${bolaoAtual.id}&concurso=${concursoAtivo}`
     ).then(r => r.json())
-    setConferindoRes(false)
-    if (res.error) { setConferirMsg(`❌ ${res.error}`); return }
+    if (!silencioso) setConferindoRes(false)
+    if (res.error) { if (!silencioso) setConferirMsg(`❌ ${res.error}`); return }
     setConferirResult(res)
     const msgs: Record<string, string> = {
       ganhamos:     `🏆 GANHAMOS! ${res.maior_premio} — ${res.total_premiadas} aposta(s) premiada(s)`,
@@ -174,6 +184,17 @@ export default function AdminPage() {
       nao_apurado:  res.message || `⏳ Sorteio #${concursoAtivo} ainda não apurado.`,
     }
     setConferirMsg(msgs[res.status] || res.message || `Status: ${res.status}`)
+
+    // Auto-sync: quando ainda não apurado, recheck a cada 5 minutos
+    if (res.status === 'nao_apurado') {
+      if (!conferirAutoRef.current) {
+        conferirAutoRef.current = setInterval(() => conferirSorteio(true), 5 * 60 * 1000)
+      }
+    } else {
+      if (conferirAutoRef.current) { clearInterval(conferirAutoRef.current); conferirAutoRef.current = null }
+      // Resultado final — sincroniza card do bolão (badge) com o que foi salvo no banco
+      carregarBoloes()
+    }
   }
 
   async function resetarConferencia() {
@@ -185,8 +206,11 @@ export default function AdminPage() {
     })
     setConferirResult(null)
     setConferirMsg('✅ Conferência resetada.')
+    if (conferirAutoRef.current) { clearInterval(conferirAutoRef.current); conferirAutoRef.current = null }
     setTimeout(() => setConferirMsg(''), 3000)
   }
+
+  useEffect(() => () => { if (conferirAutoRef.current) clearInterval(conferirAutoRef.current) }, [])
 
   // Configurador
   const [showConfig, setShowConfig]   = useState(false)
@@ -289,6 +313,22 @@ export default function AdminPage() {
     setConfigSalva(false)
     setShowConfig(false)
     setPartsBolao([])
+    if (conferirAutoRef.current) { clearInterval(conferirAutoRef.current); conferirAutoRef.current = null }
+
+    // Restaura resultado salvo no banco ao trocar de bolão
+    const rc = b.resultado_conferencia
+    if (rc && rc.status !== 'nao_apurado') {
+      setConferirResult(rc as Parameters<typeof setConferirResult>[0])
+      const msgs: Record<string, string> = {
+        ganhamos:     `🏆 GANHAMOS! ${rc.maior_premio} — ${rc.total_premiadas ?? rc.apostas_premiadas?.length ?? 0} aposta(s) premiada(s)`,
+        nao_premiada: '😔 Não premiada — nenhuma aposta com 4 ou mais acertos',
+      }
+      setConferirMsg(msgs[rc.status] || '')
+    } else {
+      setConferirResult(null)
+      setConferirMsg('')
+    }
+
     if (concursoAtivo) carregarPartsBolao(b.slug, concursoAtivo)
   }
 
@@ -624,6 +664,9 @@ export default function AdminPage() {
                     </div>
                   </div>
                   <div className={styles.bolaoActions}>
+                    {b.resultado_conferencia?.status === 'ganhamos'     && <span className={styles.badgeGanhou}>🏆</span>}
+                    {b.resultado_conferencia?.status === 'nao_premiada' && <span className={styles.badgeNaoPremiada}>😔</span>}
+                    {b.resultado_conferencia?.status === 'nao_apurado'  && <span className={styles.badgeNaoApurado}>⏳</span>}
                     {b.ativo
                       ? <span className={styles.bolaoAtivo}>ATIVO</span>
                       : <span className={styles.bolaoCancelado}>CANCELADO</span>

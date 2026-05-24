@@ -657,3 +657,112 @@
     color: #e6edf3 !important;
   }
 }
+
+/* ══ RESULTADO DA CONFERÊNCIA — comprovante completo ══ */
+.resultadoSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.resultadoLabel {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #8b949e;
+}
+
+.resultadoDezenasGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.resultadoDezBall {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+  color: #fff;
+  font-family: var(--f-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(99,102,241,.35);
+  flex-shrink: 0;
+}
+
+.resultadoGanhou {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #3fb950;
+  background: rgba(63,185,80,0.1);
+  border: 1px solid rgba(63,185,80,0.25);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.resultadoNaoPremiada {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #ef4444;
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.resultadoPremiadas {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.resultadoPremiadaRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  background: rgba(255,255,255,.02);
+  border-radius: 4px;
+}
+
+.resultadoPremiadaIdx  { color: #6e7681; font-family: var(--f-mono); min-width: 26px; }
+.resultadoPremiadaDez  { color: #a78bfa; font-family: var(--f-mono); font-weight: 700; flex: 1; }
+.resultadoPremiadaTag  { color: #3fb950; font-weight: 800; font-size: 0.68rem; white-space: nowrap; }
+.resultadoMais         { font-size: 0.68rem; color: #6e7681; padding: 2px 6px; }
+
+/* ══ RESULTADO — modo canhoto ══ */
+.canhotoResultadoGanhou {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #3fb950;
+  background: rgba(63,185,80,0.1);
+  border: 1px solid rgba(63,185,80,0.25);
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin-top: 2px;
+}
+
+.canhotoResultadoNao {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #ef4444;
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin-top: 2px;
+}
+
+.canhotoDezenas {
+  font-family: var(--f-mono);
+  font-size: 0.65rem;
+  opacity: 0.8;
+}

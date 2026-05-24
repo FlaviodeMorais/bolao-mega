@@ -169,6 +169,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
         setNumApostas(Number(b.num_apostas) || 1)
         setBolaoNome(b.nome || bolaoNomeProp)
         setEncerrado(!!b.encerrado)
+        setResultadoConf(b.resultado_conferencia || null)
       }).catch(() => {})
     }
     window.addEventListener('focus', atualizar)
@@ -391,12 +392,24 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
 
                 {/* Status do sorteio */}
                 {resultadoConf && (
-                  <div className={`status-sorteio status-${resultadoConf.status}`}>
-                    {resultadoConf.status === 'nao_apurado'         && `⏳ Sorteio não apurado${resultadoConf.data_sorteio ? ` — ${resultadoConf.data_sorteio}` : ''}`}
-                    {resultadoConf.status === 'aguardando_apuracao'  && `🎲 Aguardando apuração — resultado após 22h`}
-                    {resultadoConf.status === 'apurando'             && '🔄 Apuração em andamento...'}
-                    {resultadoConf.status === 'nao_premiada'         && '😔 Não premiada neste concurso'}
-                    {resultadoConf.status === 'ganhamos'             && `🏆 GANHAMOS! — ${resultadoConf.maior_premio}`}
+                  <div className="sorteio-resultado-wrap">
+                    <div className={`status-sorteio status-${resultadoConf.status}`}>
+                      {resultadoConf.status === 'nao_apurado'         && `⏳ Sorteio não apurado${resultadoConf.data_sorteio ? ` — ${resultadoConf.data_sorteio}` : ''}`}
+                      {resultadoConf.status === 'aguardando_apuracao'  && `🎲 Aguardando apuração — resultado após 22h`}
+                      {resultadoConf.status === 'apurando'             && '🔄 Apuração em andamento...'}
+                      {resultadoConf.status === 'nao_premiada'         && '😔 Não premiada neste concurso'}
+                      {resultadoConf.status === 'ganhamos'             && `🏆 GANHAMOS! — ${resultadoConf.maior_premio}`}
+                    </div>
+                    {resultadoConf.dezenas_sorteadas && resultadoConf.dezenas_sorteadas.length === 6 && (
+                      <div className="sorteio-dezenas">
+                        <span className="sorteio-dezenas-label">Dezenas sorteadas</span>
+                        <div className="sorteio-dezenas-grid">
+                          {resultadoConf.dezenas_sorteadas.map(n => (
+                            <span key={n} className="sorteio-dez-ball">{String(n).padStart(2, '0')}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 

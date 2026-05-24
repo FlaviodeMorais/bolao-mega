@@ -14,6 +14,15 @@ interface ApostasData {
   total_apostas: number
 }
 
+interface ResultadoConf {
+  status: string
+  dezenas_sorteadas?: number[]
+  resumo?: { senas: number; quinas: number; quadras: number }
+  maior_premio?: string | null
+  total_premiadas?: number
+  apostas_premiadas?: { idx: number; dezenas: number[]; acertos: number; premio: string }[]
+}
+
 interface Bolao {
   id: string
   nome: string
@@ -24,6 +33,7 @@ interface Bolao {
   num_apostas: number
   encerrado: boolean
   apostas_data?: ApostasData | null
+  resultado_conferencia?: ResultadoConf | null
 }
 
 interface Participante {
@@ -211,6 +221,18 @@ function ComprovanteContent() {
                     ID: {ad.transacao_id}<br/>{ad.data_compra} {ad.hora_compra}
                   </div>
                 )}
+                {bolao?.resultado_conferencia && bolao.resultado_conferencia.status !== 'nao_apurado' && (
+                  <div className={bolao.resultado_conferencia.status === 'ganhamos' ? styles.canhotoResultadoGanhou : styles.canhotoResultadoNao}>
+                    {bolao.resultado_conferencia.status === 'ganhamos'
+                      ? `🏆 ${bolao.resultado_conferencia.maior_premio}`
+                      : '😔 Não premiada'}
+                    {bolao.resultado_conferencia.dezenas_sorteadas && (
+                      <span className={styles.canhotoDezenas}>
+                        {' · '}{bolao.resultado_conferencia.dezenas_sorteadas.map(n => String(n).padStart(2,'0')).join(' ')}
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className={styles.canhotoNumero}>Nº {String(idx+1).padStart(3,'0')}</div>
               </div>
             )
@@ -342,6 +364,51 @@ function ComprovanteContent() {
                 {/* ══ RODAPÉ — repete em cada página na impressão ══ */}
                 <div className={styles.printFoot}>
                 <div className={styles.printRow}><div className={styles.printCell}>
+
+                  {/* Resultado do sorteio */}
+                  {bolao?.resultado_conferencia && bolao.resultado_conferencia.status !== 'nao_apurado' && (() => {
+                    const rc = bolao.resultado_conferencia!
+                    return (
+                      <div className={styles.resultadoSection}>
+                        <div className={styles.divider} />
+                        <div className={styles.resultadoLabel}>
+                          Resultado — Concurso #{concurso}
+                        </div>
+                        {rc.dezenas_sorteadas && rc.dezenas_sorteadas.length === 6 && (
+                          <div className={styles.resultadoDezenasGrid}>
+                            {rc.dezenas_sorteadas.map(n => (
+                              <span key={n} className={styles.resultadoDezBall}>
+                                {String(n).padStart(2, '0')}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <div className={rc.status === 'ganhamos' ? styles.resultadoGanhou : styles.resultadoNaoPremiada}>
+                          {rc.status === 'ganhamos'
+                            ? `🏆 GANHAMOS! — ${rc.maior_premio} · ${rc.total_premiadas ?? rc.apostas_premiadas?.length ?? 0} aposta(s) premiada(s)`
+                            : '😔 Não premiada — nenhuma aposta com 4 ou mais acertos'}
+                        </div>
+                        {rc.status === 'ganhamos' && rc.apostas_premiadas && rc.apostas_premiadas.length > 0 && (
+                          <div className={styles.resultadoPremiadas}>
+                            {rc.apostas_premiadas.slice(0, 5).map(a => (
+                              <div key={a.idx} className={styles.resultadoPremiadaRow}>
+                                <span className={styles.resultadoPremiadaIdx}>#{a.idx}</span>
+                                <span className={styles.resultadoPremiadaDez}>
+                                  {a.dezenas.map(n => String(n).padStart(2,'0')).join(' ')}
+                                </span>
+                                <span className={styles.resultadoPremiadaTag}>{a.acertos}✓ {a.premio}</span>
+                              </div>
+                            ))}
+                            {rc.apostas_premiadas.length > 5 && (
+                              <div className={styles.resultadoMais}>
+                                +{rc.apostas_premiadas.length - 5} apostas premiadas
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
 
                   <div className={styles.divider} />
                   <div className={styles.cartaoFooter}>

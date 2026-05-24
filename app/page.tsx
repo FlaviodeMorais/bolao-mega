@@ -1,24 +1,33 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
-interface Bolao { id: string; nome: string; slug: string; ativo: boolean }
+interface Bolao { id: string; nome: string; slug: string; ativo: boolean; dezenas: number; num_apostas: number }
 interface ConcursoAtivo { concurso: string; data: string; premio: string }
 
 export default function Home() {
   const [boloes, setBoloes]               = useState<Bolao[]>([])
   const [concursoAtivo, setConcursoAtivo] = useState<ConcursoAtivo | null>(null)
   const [loading, setLoading]             = useState(true)
+  const [host, setHost]                   = useState('')
 
-  useEffect(() => {
+  const carregar = useCallback((inicial = false) => {
     Promise.all([
       fetch('/api/boloes').then(r => r.json()),
       fetch('/api/concurso-ativo').then(r => r.json()),
     ]).then(([b, c]) => {
       setBoloes(b.boloes || [])
       setConcursoAtivo(c)
-      setLoading(false)
-    })
+      if (inicial) setLoading(false)
+    }).catch(() => { if (inicial) setLoading(false) })
   }, [])
+
+  useEffect(() => {
+    setHost(window.location.host)
+    carregar(true)
+    const id = setInterval(() => carregar(), 60000)
+    window.addEventListener('focus', () => carregar())
+    return () => { clearInterval(id); window.removeEventListener('focus', () => carregar()) }
+  }, [carregar])
 
   return (
     <div className="page-wrap">
@@ -73,7 +82,10 @@ export default function Home() {
             <a key={b.id} href={`/${b.slug}`} className="bolao-link-card">
               <div className="blc-info">
                 <div className="blc-nome">{b.nome}</div>
-                <div className="blc-slug">bolao-mega-zeta.vercel.app/{b.slug}</div>
+                {(b.num_apostas || b.dezenas) && (
+                  <div className="blc-meta">{b.num_apostas || 1} Apostas | {b.dezenas || 6} dezenas</div>
+                )}
+                <div className="blc-slug">{host}/{b.slug}</div>
               </div>
               <span className="material-icons-round blc-arrow">arrow_forward_ios</span>
             </a>

@@ -30,6 +30,7 @@ function classificar(bets: number[][], dezenasSorteadas: number[], dezenasPorApo
     status:            ganhou ? 'ganhamos' : 'nao_premiada',
     resumo:            { senas, quinas, quadras },
     maior_premio:      maior,
+    total_premiadas:   premiadas.length,
     apostas_premiadas: premiadas,
     apostas_invalidas: invalidas,
   }
@@ -64,47 +65,24 @@ export async function GET(req: NextRequest) {
     }, { status: 422 })
   }
 
-  // Buscar último resultado publicado na Caixa
-  let latestNumero = 0
-  let dataProximo  = ''  // "DD/MM/YYYY"
+  // Tenta buscar o concurso específico diretamente — mais confiável que checar o "último publicado"
+  // pois a API geral pode demorar para atualizar após o sorteio.
+  let dezenas: number[] = []
   try {
     const r = await fetch(
-      'https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena',
+      `https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena/${concurso}`,
       { cache: 'no-store' }
     )
-    if (!r.ok) throw new Error(`Caixa HTTP ${r.status}`)
-    const d = await r.json()
-    latestNumero = Number(d.numero || d.numeroConcurso || 0)
-    dataProximo  = d.dataProximoConcurso || d.proximo || ''
-  } catch (err) {
-    return NextResponse.json({ error: `Não foi possível consultar a Caixa: ${String(err)}` }, { status: 503 })
-  }
-
-  const concursoNum = parseInt(concurso)
-
-  // ── Caso 1: Concurso já apurado (número ≤ último publicado) ──────────────
-  if (latestNumero >= concursoNum) {
-    let dezenas: number[] = []
-    try {
-      const r = await fetch(
-        `https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena/${concurso}`,
-        { cache: 'no-store' }
-      )
-      if (!r.ok) throw new Error(`Caixa HTTP ${r.status}`)
+    if (r.ok) {
       const d = await r.json()
       dezenas = (d.listaDezenas || d.dezenasSorteadasOrdemSorteio || d.dezenas || [])
         .map((n: string | number) => Number(n))
         .filter((n: number) => n >= 1 && n <= 60)
-    } catch (err) {
-      return NextResponse.json({ error: `Erro ao buscar resultado do concurso: ${String(err)}` }, { status: 503 })
     }
+  } catch { /* ignora — tratado abaixo */ }
 
-    if (dezenas.length !== 6) {
-      return NextResponse.json({
-        error: `Resultado do concurso #${concurso} não disponível ou incompleto.`,
-      }, { status: 404 })
-    }
-
+  // ── Caso 1: Resultado disponível ─────────────────────────────────────────
+  if (dezenas.length === 6) {
     const dezenasPorAposta = bolao.apostas_data.dezenas_por_aposta ?? bolao.dezenas ?? 6
     const resultado = classificar(bolao.apostas_data.bets, dezenas, dezenasPorAposta)
     const payload = { dezenas_sorteadas: dezenas, dezenas_por_aposta: dezenasPorAposta, ...resultado }
@@ -119,11 +97,18 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  // ── Concurso ainda não apurado ──────────────────────────────────────────
-  // Nota: dataProximoConcurso da API Caixa é a data de ENCERRAMENTO DAS APOSTAS,
-  // que pode ser diferente da data real do sorteio (ex: Mega-Sena 30 Anos).
-  // Por isso NÃO usamos a data para inferir hora do sorteio — apenas guardamos
-  // como informação e retornamos "nao_apurado" até o resultado aparecer na API.
+  // ── Caso 2: Ainda não apurado — busca data de encerramento na API geral ──
+  let dataProximo = ''
+  try {
+    const r = await fetch(
+      'https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena',
+      { cache: 'no-store' }
+    )
+    if (r.ok) {
+      const d = await r.json()
+      dataProximo = d.dataProximoConcurso || d.proximo || ''
+    }
+  } catch { /* não crítico */ }
 
   const payload = { status: 'nao_apurado', data_encerramento: dataProximo || '' }
   await salvarStatus(bolaoId, payload)
