@@ -835,7 +835,7 @@ export default function AdminPage() {
                     )}
                     <div className={styles.resultadoBtns}>
                       <button type="button" className={styles.btnGanhou}
-                        onClick={conferirSorteio}
+                        onClick={() => conferirSorteio()}
                         disabled={conferindoRes || !bolaoAtual.apostas_data}>
                         {conferindoRes ? '⟳ Buscando na Caixa...' : '🔍 Buscar e Conferir'}
                       </button>
