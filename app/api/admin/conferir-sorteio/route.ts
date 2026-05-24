@@ -55,14 +55,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'bolao_id e concurso são obrigatórios' }, { status: 400 })
   }
 
-  // Apostas carregadas
+  // Apostas carregadas + resultado já salvo
   const { data: bolao } = await supabase
-    .from('boloes').select('apostas_data, dezenas').eq('id', bolaoId).single()
+    .from('boloes').select('apostas_data, dezenas, resultado_conferencia').eq('id', bolaoId).single()
 
   if (!bolao?.apostas_data?.bets?.length) {
     return NextResponse.json({
       error: 'Nenhuma aposta carregada. Use "📊 Carregar Apostas" primeiro.',
     }, { status: 422 })
+  }
+
+  // Se já tem resultado final salvo, retorna sem tentar buscar novamente
+  const rc = bolao.resultado_conferencia as { status?: string } | null
+  if (rc?.status === 'ganhamos' || rc?.status === 'nao_premiada') {
+    return NextResponse.json({ ok: true, total_apostas: bolao.apostas_data.bets.length, ...rc })
   }
 
   // Tenta buscar o concurso específico diretamente — mais confiável que checar o "último publicado"
