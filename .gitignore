@@ -8,3 +8,5 @@ _legado/
 tsconfig.tsbuildinfo
 settings.local.json
 .claude/settings.local.json
+
+.vercel

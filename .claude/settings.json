@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s \"http://localhost:3000/comprovante?id=35f60c0f-ad4e-4925-b5c5-225bc485eb6a&pub=1&bolao=002&concurso=3010\")",
+      "Bash(git commit -m ' *)",
+      "WebFetch(domain:vercel.com)",
+      "Bash(git ls-remote *)",
+      "Bash(gh api *)",
+      "WebFetch(domain:bolao-mega-flaviodemorais-projects.vercel.app)",
+      "Bash(npx vercel *)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:d.get\\(k\\) for k in ['gitSource','meta','name','target','readyState']}, indent=2\\)\\)\")"
+    ]
+  }
+}
