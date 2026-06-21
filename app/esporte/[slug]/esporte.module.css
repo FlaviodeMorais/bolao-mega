@@ -71,7 +71,7 @@
 .headerDesc {
   position: relative;
   color: rgba(255,255,255,0.4);
-  font-size: 13px;
+  font-size: 30px;
   margin: 0 0 24px;
   line-height: 1.6;
   max-width: 380px;
@@ -631,6 +631,7 @@
 @media (max-width: 480px) {
   .headerTitle { font-size: 22px; }
   .headerComp { font-size: 22px; }
+  .headerDesc { font-size: 22px; }
   .headerTrophy { font-size: 40px; }
   .timeBandeira { font-size: 32px; }
   .timeNome { font-size: 12px; }
