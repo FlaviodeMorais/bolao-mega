@@ -2,10 +2,12 @@
 import { useEffect, useState, useCallback } from 'react'
 
 interface Bolao { id: string; nome: string; slug: string; ativo: boolean; dezenas: number; num_apostas: number }
+interface BolaoEsporte { id: string; nome: string; slug: string; descricao?: string; valor_cota: number }
 interface ConcursoAtivo { concurso: string; data: string; premio: string }
 
 export default function Home() {
   const [boloes, setBoloes]               = useState<Bolao[]>([])
+  const [boloesEsporte, setBoloesEsporte] = useState<BolaoEsporte[]>([])
   const [concursoAtivo, setConcursoAtivo] = useState<ConcursoAtivo | null>(null)
   const [loading, setLoading]             = useState(true)
   const [host, setHost]                   = useState('')
@@ -14,9 +16,11 @@ export default function Home() {
     Promise.all([
       fetch('/api/boloes').then(r => r.json()),
       fetch('/api/concurso-ativo').then(r => r.json()),
-    ]).then(([b, c]) => {
+      fetch('/api/esporte/boloes').then(r => r.json()).catch(() => ({ boloes: [] })),
+    ]).then(([b, c, e]) => {
       setBoloes(b.boloes || [])
       setConcursoAtivo(c)
+      setBoloesEsporte(e.boloes || [])
       if (inicial) setLoading(false)
     }).catch(() => { if (inicial) setLoading(false) })
   }, [])
@@ -98,6 +102,28 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Bolões Esportivos */}
+      {boloesEsporte.length > 0 && (
+        <div className="card" style={{ marginTop: 0 }}>
+          <div className="form-body">
+            <div className="sec-title">⚽ Bolões Esportivos</div>
+            {boloesEsporte.map(b => (
+              <a key={b.id} href={`/esporte/${b.slug}`} className="bolao-link-card bolao-esporte-card">
+                <div className="blc-esporte-img">
+                  <img src="/FIFA-2026-World-Cup-White-Logo.png" alt="FIFA 2026" width={48} height={48} style={{ objectFit: 'contain', mixBlendMode: 'screen' }} />
+                </div>
+                <div className="blc-info">
+                  <div className="blc-nome">{b.nome}</div>
+                  {b.descricao && <div className="blc-meta">{b.descricao}</div>}
+                  <div className="blc-slug">{host}/esporte/{b.slug}</div>
+                </div>
+                <span className="material-icons-round blc-arrow">arrow_forward_ios</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
