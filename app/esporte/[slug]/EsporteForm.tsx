@@ -291,6 +291,27 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
         {bolao.descricao && <p className={styles.headerDesc}>{bolao.descricao}</p>}
       </div>
 
+      {/* ── Momentos FIFA ── */}
+      <div className={styles.momentosSec}>
+        <div className={styles.momentosTitle}>🎬 Momentos da Copa do Mundo FIFA™</div>
+        <div className={styles.momentosWrap}>
+          <iframe
+            src="https://www.fifa.com/pt/tournaments/mens/worldcup/canadamexicousa2026#clips/"
+            className={styles.momentosFrame}
+            title="Momentos FIFA 2026"
+            allowFullScreen
+            loading="lazy"
+          />
+          <div className={styles.momentosFallback}>
+            <span>⚽</span>
+            <p>Conteúdo bloqueado pelo site da FIFA.</p>
+            <a href="https://www.fifa.com/pt/tournaments/mens/worldcup/canadamexicousa2026#clips/" target="_blank" rel="noopener noreferrer" className={styles.momentosLink}>
+              Ver no site oficial da FIFA →
+            </a>
+          </div>
+        </div>
+      </div>
+
       {/* ── Premiação ── */}
       {(() => {
         const arrecadacao = 50 * Number(bolao.valor_cota)
