@@ -8,7 +8,18 @@
       "Bash(gh api *)",
       "WebFetch(domain:bolao-mega-flaviodemorais-projects.vercel.app)",
       "Bash(npx vercel *)",
-      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:d.get\\(k\\) for k in ['gitSource','meta','name','target','readyState']}, indent=2\\)\\)\")"
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:d.get\\(k\\) for k in ['gitSource','meta','name','target','readyState']}, indent=2\\)\\)\")",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":3000\")",
+      "Bash(findstr \"LISTENING\")",
+      "Bash(taskkill /PID 24960 /F)",
+      "PowerShell(Stop-Process -Id 24960 -Force)",
+      "Bash(gh repo *)",
+      "Bash(ls \"C:\\\\Users\\\\MORAIS\\\\Documentos\\\\GitHub\")",
+      "Read(//c/Users/MORAIS/Documentos/GitHub/**)",
+      "Bash(git clone *)",
+      "Bash(Get-ChildItem -Recurse \"C:\\\\Users\\\\MORAIS\\\\Documentos\\\\GitHub\\\\cmugh-tubulacao\")",
+      "Bash(Select-Object FullName)"
     ]
   }
 }
