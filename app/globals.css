@@ -889,6 +889,13 @@ hr { border: none; border-top: 1px solid var(--glass-bd); margin: var(--s5) 0; }
   .mega-prize      { font-size: clamp(30px,9vw,42px); }
   .t-value         { font-size: 26px; }
   .pay-box         { padding: var(--s6) var(--s4) var(--s8); }
+
+  /* Card esportivo mobile */
+  .esporte-card         { margin-left: var(--s3); margin-right: var(--s3); }
+  .esporte-card-nome    { font-size: clamp(13px,4vw,18px); letter-spacing: 1.5px; }
+  .esporte-card-desc    { font-size: 12px; letter-spacing: 1.5px; }
+  .esporte-card-gif     { width: 100px; }
+  .esporte-card-label   { font-size: 16px; }
 }
 
 @media (min-width: 600px) {

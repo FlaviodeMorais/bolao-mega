@@ -749,12 +749,28 @@
 /* ── RESPONSIVE ──────────────────────────── */
 @media (max-width: 480px) {
   .headerTitle { font-size: 22px; }
-  .headerComp { font-size: 22px; }
-  .headerDesc { font-size: 22px; }
+  .headerComp { font-size: 20px; letter-spacing: 2px; }
+  .headerDesc { font-size: 16px; letter-spacing: 2px; }
+  .headerLogo { width: 100px; }
   .headerTrophy { font-size: 40px; }
   .timeBandeira { font-size: 32px; }
   .timeNome { font-size: 12px; }
   .golInput { width: 46px; height: 46px; font-size: 20px; border-radius: 10px; }
   .jogoCardBody { padding: 16px 10px; gap: 6px; }
   .badge { font-size: 11px; padding: 5px 12px; }
+
+  /* Carrossel mobile */
+  .videoCard { width: 200px; }
+  .videoThumbWrap { height: 90px; }
+  .videoTitulo { font-size: 10px; padding: 5px 6px 2px; }
+  .videoData { font-size: 9px; padding: 2px 6px 6px; }
+
+  /* Seção de prêmios */
+  .pontuacaoItem { padding: 10px 6px; min-width: 80px; }
+  .pontuacaoTxt { font-size: 10px; }
+  .pontuacaoValor { font-size: 14px; }
+
+  /* Jogo card */
+  .section { padding: 16px 12px; }
+  .momentosSec { margin: 0 0 12px; }
 }
