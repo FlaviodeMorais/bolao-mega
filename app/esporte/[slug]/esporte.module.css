@@ -755,8 +755,13 @@
   .headerTrophy { font-size: 40px; }
   .timeBandeira { font-size: 32px; }
   .timeNome { font-size: 12px; }
-  .golInput { width: 46px; height: 46px; font-size: 20px; border-radius: 10px; }
-  .jogoCardBody { padding: 16px 10px; gap: 6px; }
+  .golInput { width: 40px; height: 40px; font-size: 18px; border-radius: 10px; }
+  .jogoCardBody { padding: 12px 8px; gap: 4px; grid-template-columns: 1fr auto 1fr; }
+  .timeNome { font-size: 11px; letter-spacing: 0; word-break: break-word; white-space: normal; }
+  .timeBandeira { width: 32px !important; height: 22px !important; }
+  .timeBandeiraImg { width: 32px; height: 22px; }
+  .timeCasa { gap: 6px; }
+  .timeVisit { gap: 6px; }
   .badge { font-size: 11px; padding: 5px 12px; }
 
   /* Header mobile — evita quebra de linha */
