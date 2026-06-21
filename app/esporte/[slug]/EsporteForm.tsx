@@ -110,58 +110,76 @@ function formatReal(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-const MOMENTOS = [
-  { src: 'https://digitalhub.fifa.com/transform/ae310ce7-a51a-4d4c-bc6a-a53e5457901d/FIFAWC2026_KV_Blue_16x9', alt: 'FIFA 2026' },
-  { src: 'https://digitalhub.fifa.com/transform/f6c82aef-04fc-4f1e-bcd9-2de5e02b5996/2026-FIFA-World-Cup-Official-Emblem', alt: 'Emblema FIFA 2026' },
-  { src: 'https://digitalhub.fifa.com/transform/3e4d48b7-4c4c-4c8d-9b3e-6f2e8b4d3c2a/wc2026-trophy', alt: 'Troféu Copa 2026' },
-]
+interface Noticia { titulo: string; link: string; fonte: string; data: string }
 
 function MomentosCarousel() {
+  const [noticias, setNoticias] = useState<Noticia[]>([])
   const [idx, setIdx] = useState(0)
-  const [imgs, setImgs] = useState<{src:string;alt:string}[]>(MOMENTOS)
+  const [loading, setLoading] = useState(true)
   const trackRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const t = setInterval(() => setIdx(i => (i + 1) % imgs.length), 4000)
+    fetch('/api/esporte/noticias').then(r => r.json()).then(d => {
+      setNoticias(d.noticias || [])
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    if (noticias.length === 0) return
+    const t = setInterval(() => setIdx(i => (i + 1) % noticias.length), 5000)
     return () => clearInterval(t)
-  }, [imgs.length])
+  }, [noticias.length])
 
   useEffect(() => {
     if (trackRef.current) {
-      trackRef.current.scrollTo({ left: idx * trackRef.current.offsetWidth, behavior: 'smooth' })
+      const w = trackRef.current.offsetWidth
+      trackRef.current.scrollTo({ left: idx * w, behavior: 'smooth' })
     }
   }, [idx])
 
-  function prev() { setIdx(i => (i - 1 + imgs.length) % imgs.length) }
-  function next() { setIdx(i => (i + 1) % imgs.length) }
+  function prev() { setIdx(i => (i - 1 + noticias.length) % noticias.length) }
+  function next() { setIdx(i => (i + 1) % noticias.length) }
 
   return (
     <div className={styles.momentosSec}>
-      <div className={styles.momentosTitle}>🎬 Momentos da Copa do Mundo FIFA™</div>
-      <div className={styles.carouselWrap}>
-        <div className={styles.carouselTrack} ref={trackRef}>
-          {imgs.map((img, i) => (
-            <div key={i} className={styles.carouselSlide}>
-              <img src={img.src} alt={img.alt} className={styles.carouselImg}
-                onError={e => {
-                  const el = e.currentTarget.parentElement!
-                  el.classList.add(styles.carouselSlideErr)
-                  e.currentTarget.style.display = 'none'
-                }}
-              />
+      <div className={styles.momentosTitle}>📰 Últimas Notícias · Copa do Mundo FIFA 2026</div>
+
+      {loading && <div className={styles.momentosLoading}>Carregando notícias...</div>}
+
+      {!loading && noticias.length === 0 && (
+        <div className={styles.momentosLoading}>Nenhuma notícia disponível.</div>
+      )}
+
+      {!loading && noticias.length > 0 && (
+        <>
+          <div className={styles.carouselWrap}>
+            <div className={styles.carouselTrack} ref={trackRef}>
+              {noticias.map((n, i) => (
+                <a key={i} href={n.link} target="_blank" rel="noopener noreferrer"
+                  className={styles.noticiaCard}>
+                  <div className={styles.noticiaEmoji}>📰</div>
+                  <div className={styles.noticiaTitulo}>{n.titulo}</div>
+                  <div className={styles.noticiaRodape}>
+                    <span className={styles.noticiaFonte}>{n.fonte}</span>
+                    <span className={styles.noticiaData}>{n.data}</span>
+                  </div>
+                </a>
+              ))}
             </div>
-          ))}
-        </div>
-        <button className={`${styles.carouselBtn} ${styles.carouselBtnL}`} onClick={prev}>‹</button>
-        <button className={`${styles.carouselBtn} ${styles.carouselBtnR}`} onClick={next}>›</button>
-        <div className={styles.carouselDots}>
-          {imgs.map((_, i) => (
-            <button key={i} className={`${styles.carouselDot} ${i === idx ? styles.carouselDotActive : ''}`} onClick={() => setIdx(i)} />
-          ))}
-        </div>
-      </div>
-      <a href="https://www.fifa.com/pt/tournaments/mens/worldcup/canadamexicousa2026#clips/" target="_blank" rel="noopener noreferrer" className={styles.momentosLink}>
-        Ver todos os momentos no site da FIFA →
+            <button className={`${styles.carouselBtn} ${styles.carouselBtnL}`} onClick={prev}>‹</button>
+            <button className={`${styles.carouselBtn} ${styles.carouselBtnR}`} onClick={next}>›</button>
+            <div className={styles.carouselDots}>
+              {noticias.map((_, i) => (
+                <button key={i} className={`${styles.carouselDot} ${i === idx ? styles.carouselDotActive : ''}`} onClick={() => setIdx(i)} />
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      <a href="https://news.google.com/search?q=Copa+do+Mundo+FIFA+2026&hl=pt-BR" target="_blank" rel="noopener noreferrer" className={styles.momentosLink}>
+        Ver mais notícias →
       </a>
     </div>
   )
