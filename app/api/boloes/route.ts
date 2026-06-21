@@ -6,6 +6,7 @@ export async function GET() {
   const { data } = await supabase
     .from('boloes')
     .select('*')
+    .order('ativo', { ascending: false })
     .order('criado_em', { ascending: false })
   return NextResponse.json({ boloes: data || [] })
 }
@@ -66,21 +67,30 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const { id, slug } = await req.json()
+  const { id, force } = await req.json()
   if (!id) return NextResponse.json({ error: 'ID obrigatório' }, { status: 400 })
 
-  // Impede exclusão se houver participantes
+  // Busca slug e estado do banco para evitar bypass via cliente
+  const { data: bolaoDb } = await supabase.from('boloes').select('slug, ativo, encerrado').eq('id', id).single()
+  if (!bolaoDb) return NextResponse.json({ error: 'Bolão não encontrado' }, { status: 404 })
+
+  // Conta participantes não cancelados
   const { count } = await supabase
     .from('participantes')
     .select('id', { count: 'exact', head: true })
-    .eq('bolao_slug', slug)
+    .eq('bolao_slug', bolaoDb.slug)
     .neq('status', 'cancelado')
 
   if (count && count > 0) {
-    return NextResponse.json(
-      { error: `Não é possível excluir: há ${count} participante(s) neste bolão. Cancele o bolão em vez de excluir.` },
-      { status: 409 }
-    )
+    // Permite exclusão forçada apenas se o bolão está inativo (cancelado/encerrado)
+    if (!force || bolaoDb.ativo) {
+      return NextResponse.json(
+        { error: `Não é possível excluir: há ${count} participante(s) neste bolão.`, count },
+        { status: 409 }
+      )
+    }
+    // Exclusão com cascade: remove todos os participantes primeiro
+    await supabase.from('participantes').delete().eq('bolao_slug', bolaoDb.slug)
   }
 
   const { error } = await supabase.from('boloes').delete().eq('id', id)

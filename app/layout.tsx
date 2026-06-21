@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import 'flag-icons/css/flag-icons.min.css'
 
 export const metadata: Metadata = {
   title: 'GRUPO MEGA 💯 – Bolão Mega-Sena',

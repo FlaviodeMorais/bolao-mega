@@ -1,21 +1,38 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const detalhes = req.nextUrl.searchParams.get('detalhes') === '1'
+  const filtroConcurso = req.nextUrl.searchParams.get('concurso')
+  const filtroSlug = req.nextUrl.searchParams.get('bolao')
+
   const [{ data: partic }, { data: boloes }] = await Promise.all([
     supabase
       .from('participantes')
-      .select('concurso, total, status, bolao_slug')
-      .order('concurso', { ascending: false }),
-    supabase
-      .from('boloes')
-      .select('slug, nome'),
+      .select('id, nome, telefone, cotas, total, status, concurso, bolao_slug, acrescimo, acrescimo_pago, created_at')
+      .order('concurso', { ascending: false })
+      .order('created_at', { ascending: true }),
+    supabase.from('boloes').select('slug, nome'),
   ])
 
-  if (!partic) return NextResponse.json({ historico: [] })
+  if (!partic) return NextResponse.json({ historico: [], participantes: [] })
 
   const bolaoMap = new Map((boloes || []).map(b => [b.slug, b.nome]))
 
+  // ── Modo detalhado: lista individual de participantes ──────────────────
+  if (detalhes) {
+    let lista = partic.map(p => ({
+      ...p,
+      bolao_nome: bolaoMap.get(p.bolao_slug) || (p.bolao_slug ? `/${p.bolao_slug}` : 'Principal'),
+    }))
+
+    if (filtroConcurso) lista = lista.filter(p => String(p.concurso) === filtroConcurso)
+    if (filtroSlug)     lista = lista.filter(p => p.bolao_slug === filtroSlug)
+
+    return NextResponse.json({ participantes: lista })
+  }
+
+  // ── Modo resumo: agrupado por concurso/bolão ───────────────────────────
   const map = new Map<string, {
     concurso: number; bolao_slug: string | null; bolao_nome: string
     total: number; pagos: number; pendentes: number; cancelados: number; arrecadado: number
@@ -33,9 +50,9 @@ export async function GET() {
     }
     const e = map.get(key)!
     e.total += 1
-    if (row.status === 'pago')      { e.pagos      += 1; e.arrecadado += Number(row.total) }
+    if (row.status === 'pago')       { e.pagos      += 1; e.arrecadado += Number(row.total) }
     if (row.status === 'aguardando') { e.pendentes  += 1 }
-    if (row.status === 'cancelado') { e.cancelados  += 1 }
+    if (row.status === 'cancelado')  { e.cancelados += 1 }
   }
 
   const historico = Array.from(map.values())

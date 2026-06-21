@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { buscarPagamentoMP } from '@/lib/mercadopago'
 import { notificarPagamento } from '@/lib/whatsapp'
+import { enviarConfirmacaoPagamento } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,18 +16,28 @@ export async function POST(req: NextRequest) {
       // Pagamento principal
       const { data: part } = await supabase
         .from('participantes')
-        .select('nome, cotas, total, concurso, telefone')
+        .select('id, nome, cotas, total, concurso, telefone, email, bolao_slug')
         .eq('mp_payment_id', paymentId)
         .single()
 
       if (part) {
         await supabase.from('participantes').update({ status: 'pago' }).eq('mp_payment_id', paymentId)
-        await notificarPagamento(part.nome, part.cotas, part.concurso, Number(part.total), part.telefone)
+        notificarPagamento(part.nome, part.cotas, part.concurso, Number(part.total), part.telefone).catch(() => {})
+
+        if (part.email) {
+          const { data: bolaoInfo } = await supabase
+            .from('boloes').select('nome, num_apostas, dezenas').eq('slug', part.bolao_slug || '').single()
+          enviarConfirmacaoPagamento(
+            part.email, part.nome, part.cotas, Number(part.total),
+            part.concurso, bolaoInfo?.nome || 'Bolão Mega-Sena',
+            bolaoInfo?.num_apostas || 1, bolaoInfo?.dezenas || 6
+          ).catch(() => {})
+        }
       } else {
         // Pagamento de acréscimo
         const { data: partAcr } = await supabase
           .from('participantes')
-          .select('nome, cotas, acrescimo, concurso, telefone')
+          .select('nome, cotas, acrescimo, concurso, telefone, email')
           .eq('acrescimo_payment_id', paymentId)
           .single()
 
@@ -34,10 +45,10 @@ export async function POST(req: NextRequest) {
           await supabase.from('participantes')
             .update({ acrescimo_pago: true })
             .eq('acrescimo_payment_id', paymentId)
-          await notificarPagamento(
+          notificarPagamento(
             partAcr.nome, partAcr.cotas, partAcr.concurso,
             Number(partAcr.acrescimo), partAcr.telefone
-          )
+          ).catch(() => {})
         }
       }
     }

@@ -59,7 +59,8 @@ function whatsappShare(tel: string | undefined, nome: string, participanteId: st
   if (!tel) return ''
   const n = tel.replace(/\D/g, '')
   const num = n.startsWith('55') ? n : `55${n}`
-  const link = `https://bolao-mega-zeta.vercel.app/comprovante?id=${participanteId}&pub=1&bolao=${slug}&concurso=${concurso}`
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const link = `${origin}/comprovante?id=${participanteId}&pub=1&bolao=${slug}&concurso=${concurso}`
   const msg = encodeURIComponent(`🍀 Olá ${nome}! Segue seu comprovante de participação no Bolão Mega-Sena:\n${link}`)
   return `https://wa.me/${num}?text=${msg}`
 }
@@ -81,7 +82,6 @@ function ComprovanteContent() {
   const [concurso, setConcurso]           = useState(paramConc || '')
   const [dataSorteio, setDataSorteio]     = useState('')
   const [loading, setLoading]             = useState(true)
-  const [modoCanhoto, setModoCanhoto]     = useState(false)
 
   const filtroSet = filtroIds ? new Set(filtroIds.split(',')) : null
   const lista = filtroId
@@ -135,7 +135,7 @@ function ComprovanteContent() {
       {/* ── Controles ── */}
       <div className={styles.controls}>
         <div className={styles.controlsLeft}>
-          <h1 className={styles.pageTitle}>🖨️ Comprovantes de Participação</h1>
+          <h1 className={styles.pageTitle}>Comprovante de Participação</h1>
           <p className={styles.pageSubtitle}>
             {lista.length} participante(s) · Concurso #{concurso} · {dataSorteio}
           </p>
@@ -156,13 +156,6 @@ function ComprovanteContent() {
               {boloes.map(b => <option key={b.slug} value={b.slug}>{b.nome}</option>)}
             </select>
           )}
-          <button
-            type="button"
-            className={modoCanhoto ? styles.btnCanhotoAtivo : styles.btnCanhoto}
-            onClick={() => setModoCanhoto(m => !m)}
-          >
-            {modoCanhoto ? '📋 Ver Comprovantes' : '🗟 Ver Canhotos'}
-          </button>
           <button type="button" className={styles.btnPrint} onClick={() => window.print()}>
             {modoFiltro ? '🖨️ Imprimir / PDF' : '🖨️ Imprimir Todos'}
           </button>
@@ -174,74 +167,9 @@ function ComprovanteContent() {
         <p className={styles.loading}>Carregando participantes…</p>
       ) : lista.length === 0 ? (
         <p className={styles.loading}>Nenhum participante encontrado para este bolão.</p>
-      ) : modoCanhoto ? (
-
-        /* ════ MODO CANHOTO ════ */
-        <div className={styles.gridCanhoto}>
-          {lista.map((p, idx) => {
-            const ad = bolao?.apostas_data
-            return (
-              <div key={p.id} className={`${styles.canhoto} ${p.status === 'pago' ? styles.pago : styles.pendente}`}>
-                <div className={styles.canhotoHeader}>
-                  <span>🍀 <strong>GRUPO MEGA 💯</strong></span>
-                  <span className={p.status === 'pago' ? styles.statusBadgePago : styles.statusBadgePendente}>
-                    {p.status === 'pago' ? '✅ PAGO' : '⏳ AGUARDANDO'}
-                  </span>
-                </div>
-                <div className={styles.canhotoBolao}>{bolao?.nome}</div>
-                <div className={styles.divider} />
-                <div className={styles.canhotoNome}>{p.nome}</div>
-                <div className={styles.canhotoRow}>
-                  <span className={styles.cartaoLabel}>Celular</span>
-                  <span className={styles.cartaoValor}>{formatTel(p.telefone)}</span>
-                </div>
-                <div className={styles.canhotoRow}>
-                  <span className={styles.cartaoLabel}>Concurso</span>
-                  <span className={styles.cartaoConcurso}>#{concurso} · {dataSorteio}</span>
-                </div>
-                <div className={styles.canhotoRow}>
-                  <span className={styles.cartaoLabel}>
-                    {p.cotas.length === 1 ? '1 cota adquirida' : `${p.cotas.length} cotas adquiridas`}
-                  </span>
-                  <span className={styles.cartaoValor}>
-                    Nº {p.cotas.map(c => c.padStart(2,'0')).join(', ')}
-                  </span>
-                </div>
-                <div className={styles.canhotoRow}>
-                  <span className={styles.cartaoLabel}>Apostas</span>
-                  <span className={styles.cartaoValor}>{ad ? `${ad.total_apostas} apostas` : `${bolao?.num_apostas} apostas`}</span>
-                </div>
-                <div className={styles.divider} />
-                <div className={styles.canhotoRow}>
-                  <span className={styles.cartaoLabel}>Valor pago</span>
-                  <span className={styles.cartaoTotal}>R$ {Number(p.total).toFixed(2).replace('.',',')}</span>
-                </div>
-                {ad?.transacao_id && (
-                  <div className={styles.canhotoTransacao}>
-                    ID: {ad.transacao_id}<br/>{ad.data_compra} {ad.hora_compra}
-                  </div>
-                )}
-                {bolao?.resultado_conferencia && bolao.resultado_conferencia.status !== 'nao_apurado' && (
-                  <div className={bolao.resultado_conferencia.status === 'ganhamos' ? styles.canhotoResultadoGanhou : styles.canhotoResultadoNao}>
-                    {bolao.resultado_conferencia.status === 'ganhamos'
-                      ? `🏆 ${bolao.resultado_conferencia.maior_premio}`
-                      : '😔 Não premiada'}
-                    {bolao.resultado_conferencia.dezenas_sorteadas && (
-                      <span className={styles.canhotoDezenas}>
-                        {' · '}{bolao.resultado_conferencia.dezenas_sorteadas.map(n => String(n).padStart(2,'0')).join(' ')}
-                      </span>
-                    )}
-                  </div>
-                )}
-                <div className={styles.canhotoNumero}>Nº {String(idx+1).padStart(3,'0')}</div>
-              </div>
-            )
-          })}
-        </div>
-
       ) : (
 
-        /* ════ MODO COMPROVANTE COMPLETO ════ */
+        /* ════ COMPROVANTE ════ */
         <div className={styles.grid}>
           {lista.map((p, idx) => {
             const ad = bolao?.apostas_data ?? null
@@ -419,7 +347,7 @@ function ComprovanteContent() {
                   <div className={styles.divider} />
                   <div className={styles.cartaoFooter}>
                     <div className={styles.cartaoFooterInfo}>
-                      Bolão: bolao-mega-zeta.vercel.app/{bolao?.slug}<br />
+                      Bolão: {typeof window !== 'undefined' ? window.location.host : ''}/{bolao?.slug}<br />
                       Emissão: {emissao} às {horario}
                     </div>
                     <div className={styles.cartaoNumero}>Nº {String(idx + 1).padStart(3, '0')}</div>

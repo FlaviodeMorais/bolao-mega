@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import QRCode from 'qrcode'
-import { notificarInscricao, verificarNumeroWhatsApp, enviarQRCodePIX } from '@/lib/whatsapp'
+import { notificarInscricao } from '@/lib/whatsapp'
+import { enviarPixEmail, notificarAdminInscricao } from '@/lib/email'
 
 export async function GET(req: NextRequest) {
   const concurso = req.nextUrl.searchParams.get('concurso')
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { concurso, nome, telefone, cotas, total, mp_payment_id, pix_code, bolao_slug } = body
+  const { concurso, nome, telefone, email, cotas, total, mp_payment_id, pix_code, bolao_slug } = body
 
   // Valida configuração e valor da cota contra o banco
   if (bolao_slug) {
@@ -48,17 +48,6 @@ export async function POST(req: NextRequest) {
         { error: 'Bolão ainda não configurado pelo administrador. Aguarde.' },
         { status: 409 }
       )
-    }
-
-    // Verifica se o telefone é válido no WhatsApp
-    if (telefone) {
-      const existe = await verificarNumeroWhatsApp(telefone)
-      if (!existe) {
-        return NextResponse.json(
-          { error: 'Número de celular não encontrado no WhatsApp. Verifique o número informado.' },
-          { status: 409 }
-        )
-      }
     }
 
     const totalEsperado = parseFloat((cotas.length * Number(bolao.valor_cota)).toFixed(2))
@@ -93,27 +82,26 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('participantes')
-    .insert({ concurso, nome, telefone, cotas, total, mp_payment_id, pix_code, bolao_slug: bolao_slug || null, status: 'aguardando' })
+    .insert({ concurso, nome, telefone, email: email || null, cotas, total, mp_payment_id, pix_code, bolao_slug: bolao_slug || null, status: 'aguardando' })
     .select()
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Notifica grupo e envia QR Code PIX para o participante
-  await notificarInscricao(nome, cotas, concurso, total)
+  const { data: bolaoInfo } = await supabase
+    .from('boloes').select('nome, num_apostas, dezenas').eq('slug', bolao_slug || '').single()
+  const bolaoNome = bolaoInfo?.nome || 'Bolão Mega-Sena'
 
-  if (telefone && pix_code) {
-    const { data: bolaoInfo } = await supabase
-      .from('boloes').select('nome, num_apostas, dezenas').eq('slug', bolao_slug || '').single()
-    const qrDataUrl = await QRCode.toDataURL(pix_code, { width: 400, margin: 2 }).catch(() => '')
-    const qrBase64 = qrDataUrl.replace('data:image/png;base64,', '')
-    if (qrBase64) {
-      await enviarQRCodePIX(
-        telefone, qrBase64, total, pix_code,
-        bolaoInfo?.nome || 'Bolão Mega-Sena'
-      )
-    }
+  // Notifica grupo WhatsApp (silencioso se Whapi não estiver ativo)
+  notificarInscricao(nome, cotas, concurso, total).catch(() => {})
+
+  // Envia PIX por e-mail ao participante
+  if (email && pix_code) {
+    enviarPixEmail(email, nome, total, pix_code, bolaoNome, cotas).catch(() => {})
   }
+
+  // Notifica admin por e-mail
+  notificarAdminInscricao(nome, cotas, total, concurso, telefone).catch(() => {})
 
   return NextResponse.json({ participante: data })
 }

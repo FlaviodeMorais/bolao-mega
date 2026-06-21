@@ -59,6 +59,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
 
   const [nome, setNome]                   = useState('')
   const [telefone, setTelefone]           = useState('')
+  const [email, setEmail]                 = useState('')
   const [cotasOcupadas, setCotasOcupadas] = useState<string[]>([])
   const [selecionadas, setSelecionadas]   = useState<string[]>([])
   const [participantes, setParticipantes] = useState<Participante[]>([])
@@ -221,6 +222,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
   async function confirmar() {
     if (!nome.trim())            { alert('⚠️ Informe seu nome completo!'); return }
     if (telefone.replace(/\D/g,'').length < 11) { alert('⚠️ Informe seu WhatsApp com DDD (ex: 19 99999-9999)!'); return }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('⚠️ E-mail inválido.'); return }
     if (!concurso)               { alert('⚠️ Nenhum concurso ativo.'); return }
     if (!selecionadas.length)    { alert('⚠️ Selecione ao menos uma cota!'); return }
     setEnviando(true)
@@ -232,12 +234,12 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
       }).then(r => r.json())
       const reg = await fetch('/api/participantes', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ concurso: parseInt(concurso), nome: nome.trim().toUpperCase(), telefone: '55' + telefone.replace(/\D/g,''), cotas: selecionadas.sort(), total, mp_payment_id: pixRes.paymentId, pix_code: pixRes.pixCode, bolao_slug: bolaoSlug }),
+        body: JSON.stringify({ concurso: parseInt(concurso), nome: nome.trim().toUpperCase(), telefone: '55' + telefone.replace(/\D/g,''), email: email.trim().toLowerCase() || null, cotas: selecionadas.sort(), total, mp_payment_id: pixRes.paymentId, pix_code: pixRes.pixCode, bolao_slug: bolaoSlug }),
       }).then(r => r.json())
       if (reg.error) { alert('⚠️ ' + reg.error); return }
       const cotasSalvas = [...selecionadas].sort()
       setPix({ ...pixRes, nome: nome.trim().toUpperCase(), cotas: cotasSalvas, total: cotasSalvas.length * VALOR_COTA })
-      setNome(''); setTelefone(''); setSelecionadas([]); recarregar()
+      setNome(''); setTelefone(''); setEmail(''); setSelecionadas([]); recarregar()
       let secs = 30 * 60
       if (timerRef.current) clearInterval(timerRef.current)
       timerRef.current = setInterval(() => { secs--; const m = String(Math.floor(secs/60)).padStart(2,'0'); const s = String(secs%60).padStart(2,'0'); setPayTimer(`${m}:${s}`); if (secs<=0) clearInterval(timerRef.current!) }, 1000)
@@ -344,6 +346,17 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
                 }}
                 placeholder="(19) 99999-9999"
                 inputMode="numeric"
+              />
+            </div>
+            <div className="field">
+              <label className="field-label">E-mail (opcional — para receber comprovante)</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                inputMode="email"
+                autoComplete="email"
               />
             </div>
             <div className="field">

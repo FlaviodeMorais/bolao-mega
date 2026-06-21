@@ -25,8 +25,9 @@ export default function Home() {
     setHost(window.location.host)
     carregar(true)
     const id = setInterval(() => carregar(), 60000)
-    window.addEventListener('focus', () => carregar())
-    return () => { clearInterval(id); window.removeEventListener('focus', () => carregar()) }
+    const onFocus = () => carregar()
+    window.addEventListener('focus', onFocus)
+    return () => { clearInterval(id); window.removeEventListener('focus', onFocus) }
   }, [carregar])
 
   return (

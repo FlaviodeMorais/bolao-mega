@@ -1,253 +1,122 @@
-# 🍀 Bolão Mega - Documentação de Projeto
+# 🍀 Bolão Mega — Documentação do Projeto
 
-## 📋 Visão Geral
+## Stack
 
-**Bolão Mega** é uma aplicação web para gerenciar bolões/sindicatos da Mega-Sena. Permite que grupos de pessoas se unam para fazer apostas coletivas em loterias, com gestão de cotas, participantes, pagamentos e comprovantes.
-
-### Stack Tecnológico
-
-- **Frontend**: Next.js 14 com React 18 (App Router)
-- **Backend**: API Routes do Next.js  
+- **Frontend**: Next.js 14 com React 18 (App Router, `'use client'` onde necessário)
+- **Backend**: API Routes do Next.js
 - **Banco de Dados**: Supabase (PostgreSQL)
-- **Autenticação**: JWT com bcryptjs
-- **Pagamentos**: Mercado Pago
-- **Extras**: Geração de QR codes, html2canvas, jsPDF
+- **Autenticação**: JWT via `jose` + bcryptjs, armazenado em cookie `admin_token`
+- **Pagamentos**: Mercado Pago (PIX) com fallback PIX local (`lib/pix-local.ts`)
+- **Notificações**: WhatsApp via Whapi.cloud (`lib/whatsapp.ts`)
+- **Extras**: QR codes (`qrcode`), PDF de apostas (`pdf-parse`)
 
-## 🏗️ Arquitetura
+## Estrutura real de arquivos
 
 ```
-/app                  # Páginas e rotas (App Router)
-├── /api             # Endpoints REST
-├── /admin           # Painel administrativo
-├── /comprovante     # Nova: Gerador de comprovantes
-└── /layout.tsx      # Layout raiz
+/app
+├── page.tsx                      # Home — lista bolões ativos
+├── layout.tsx                    # Layout raiz (fontes, globals.css)
+├── [slug]/
+│   ├── page.tsx                  # SSR: carrega bolão via Supabase
+│   └── BolaoForm.tsx             # Cliente: seleção de cotas, PIX, polling
+├── admin/
+│   └── page.tsx                  # Painel admin (login + gestão completa)
+├── comprovante/
+│   └── page.tsx                  # Comprovantes para impressão/PDF
+└── api/
+    ├── auth/route.ts             # POST: login → gera JWT cookie
+    ├── boloes/route.ts           # GET/POST/PATCH/DELETE
+    ├── concurso-ativo/route.ts   # GET/POST
+    ├── participantes/route.ts    # GET/POST
+    ├── participantes/[id]/route.ts # PATCH/DELETE
+    ├── cotas/route.ts            # GET: cotas ocupadas
+    ├── pix/route.ts              # POST: gera PIX (MP ou local)
+    ├── status/route.ts           # GET: status pagamento MP
+    ├── historico/route.ts        # GET: histórico de concursos
+    ├── webhook/mercadopago/route.ts
+    ├── whatsapp/health/route.ts  # GET: status conexão WA
+    ├── admin/
+    │   ├── apostas-upload/route.ts   # POST/DELETE: carrega apostas (texto ou PDF)
+    │   ├── comprovante/route.ts      # GET: auth check · POST: envia WA
+    │   ├── conferir-sorteio/route.ts # GET/POST/DELETE: confere resultado
+    │   ├── encerrar-bolao/route.ts   # POST: rateio + PIX acréscimo
+    │   ├── lembrete/route.ts         # POST: envia lembrete WA
+    │   └── senha/route.ts            # POST: altera senha admin
+    └── cron/
+        ├── resultado/route.ts        # Vercel Cron: notifica resultado
+        └── lembrete/route.ts         # Vercel Cron: envia lembrete
 
-/components           # Componentes React reutilizáveis
-├── ComprovanteForm.tsx        # Novo: Formulário de aposta
-└── ComprovantePreview.tsx     # Novo: Preview do comprovante
+/lib
+├── supabase.ts       # Cliente Supabase (SERVICE_KEY)
+├── auth.ts           # verificarToken / gerarToken / verificarSenha / alterarSenha
+├── mercadopago.ts    # criarPixMP / buscarPagamentoMP
+├── pix-local.ts      # gerarPixLocal (fallback — chave PIX hardcoded)
+└── whatsapp.ts       # Todas as funções de notificação WA via Whapi
 
-/lib                  # Utilitários e helpers
-├── supabase.ts      # Cliente Supabase
-├── auth.ts          # Funções de autenticação
-└── comprovante.ts   # Novo: Utilitários para comprovantes
+/middleware.ts         # Security headers em todas as rotas
 
 /public               # Assets estáticos
+/vercel.json          # Cron jobs (resultado: ter/qui/sáb 22h · lembrete: 10h)
 ```
 
-## 🎯 Funcionalidades Principais
+## Banco de dados (Supabase)
 
-### 1. Gerenciamento de Bolões
-- Criar, editar e deletar bolões
-- Configurar parâmetros (número de dezenas, cotas, valor)
-- Ativar/desativar bolões
-- Proteção: não permite deletar com participantes ativos
+### Tabelas
+- `boloes` — slug, nome, ativo, encerrado, dezenas, num_apostas, total_cotas, valor_cota, taxa_admin, apostas_data (jsonb), resultado_conferencia (jsonb)
+- `participantes` — concurso, bolao_slug, nome, telefone, cotas (array), total, status (aguardando|pago|cancelado), mp_payment_id, pix_code, acrescimo, acrescimo_pago
+- `config` — key/value para estado persistente (ex: ultimo_resultado_notificado)
 
-### 2. Concursos Ativos
-- Exibir concurso atual da Mega-Sena
-- Mostrar prêmio estimado
-- Sincronização automática
+## Fluxos principais
 
-### 3. Participantes e Cotas
-- Gerenciar participantes do bolão
-- Rastrear cotas por participante
-- Controlar status (ativo, cancelado)
+### Registro de participante
+1. `BolaoForm` → `POST /api/pix` → MP ou PIX local
+2. `POST /api/participantes` → valida bolão, cotas, total → insere
+3. WhatsApp: notifica grupo + envia QR PIX para participante
+4. Polling `GET /api/status?paymentId=` até confirmação
+5. `POST /api/webhook/mercadopago` → atualiza status para "pago"
 
-### 4. Pagamentos
-- Integração com Mercado Pago
-- Suporte a PIX
-- Histórico de transações
+### Conferência de sorteio (Admin)
+1. Admin carrega apostas via texto → `POST /api/admin/apostas-upload`
+2. `GET /api/admin/conferir-sorteio` → busca dezenas na API Caixa → classifica
+3. Fallback manual: `POST /api/admin/conferir-sorteio` com dezenas informadas
+4. Resultado salvo em `boloes.resultado_conferencia`
 
-### 5. **✨ NEW: Comprovantes de Aposta**
-- Formulário para inserir números apostados
-- Gerador de comprovante estilo Caixa Econômica
-- Visualização em tempo real
-- Impressão direta (Print)
-- Exportação para PDF
+### Encerramento de bolão
+1. `POST /api/admin/encerrar-bolao` → calcula acréscimo por participante
+2. Gera PIX individual para cada participante pago
+3. Envia via WhatsApp → marca `boloes.encerrado = true`
 
-## 📝 Nova Funcionalidade: Comprovante de Aposta
+## Variáveis de ambiente
 
-### Localização
-- **Rota**: `/comprovante`
-- **Página**: `app/comprovante/page.tsx`
-- **Componentes**: 
-  - `components/ComprovanteForm.tsx`
-  - `components/ComprovantePreview.tsx`
-- **Estilos**: `app/comprovante/comprovante.module.css`
-- **Utilitários**: `lib/comprovante.ts`
-
-### Funcionalidades
-
-#### Formulário
-- ✅ Seleção de 6 números (1-60) com interface visual
-- ✅ Botão "Aleatória" para gerar números automaticamente
-- ✅ Informações do participante (nome, CPF, concurso, data)
-- ✅ Valor da aposta e local de venda
-- ✅ Campo de observações livre
-- ✅ Validação em tempo real
-
-#### Comprovante
-- ✅ Design estilo bolão oficial da Caixa
-- ✅ Exibição formatada dos 6 números
-- ✅ Todos os dados do formulário integrados
-- ✅ Rodapé com aviso legal
-- ✅ Timestamp automático
-
-#### Ações
-- ✅ **Imprimir**: Abre dialog de impressão do navegador
-- ✅ **Gerar PDF**: Exporta para PDF com layout preservado
-- ✅ Ambos otimizados para impressão
-
-### API e Dados
-
-```typescript
-interface ComprovanteDataForm {
-  numeros: number[]               // 6 números de 1-60
-  nomeParticipante: string        // Nome completo
-  cpfParticipante: string         // Opcional
-  concursoNumero: string          // Nº do concurso da Mega
-  dataAposte: string              // Data ISO (YYYY-MM-DD)
-  valorAposta: number             // Em reais
-  localVenda: string              // Ex: "BOLÃO MEGA"
-  observacao: string              // Observações extras
-}
+```
+SUPABASE_URL
+SUPABASE_SERVICE_KEY
+JWT_SECRET                  # default inseguro: 'bolao-mega-secret-2026'
+ADMIN_PASSWORD_HASH         # bcrypt hash da senha admin
+MP_ACCESS_TOKEN             # Mercado Pago
+WHAPI_TOKEN                 # Whapi.cloud
+WHAPI_GROUP_ID              # ID do grupo WhatsApp
+CRON_SECRET                 # Secret nos query params do Vercel Cron
 ```
 
-### Funções Utilitárias
+## Segurança
 
-```typescript
-// Validar números Mega-Sena (exatamente 6, de 1-60)
-validarNumerosMegaSena(numeros: number[]): boolean
+- JWT verificado individualmente em cada API route protegida (sem middleware centralizado de auth, pois a página /admin é a própria tela de login)
+- DELETE /api/boloes busca o slug do banco (não confia no cliente) antes de checar participantes
+- Middleware adiciona security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy)
+- Cron routes verificam `?secret=CRON_SECRET` via query param (padrão Vercel Cron)
 
-// Formatar número com zeros à esquerda (ex: 01)
-formatarNumero(n: number): string
+## Design
 
-// Gerar PDF do comprovante
-gerarPDF(elementId: string, nomeArquivo?: string): Promise<void>
-
-// Abrir dialog de impressão
-imprimirComprovante(elementId: string): void
-```
-
-### Validações
-
-- Exatamente 6 números diferentes (1-60)
-- Nome do participante obrigatório
-- Número do concurso obrigatório
-- Data padrão: hoje
-- Valor padrão: 0
-
-### Print/PDF
-
-- **Print**: Usa `window.open()` com `@media print`
-- **PDF**: html2canvas + jsPDF
-- Ambos preservam layout e estilos
-- Suporta múltiplas páginas se necessário
-
-## 🎨 Design System
-
-### Cores Principais
-- **Verde (Brand)**: #00A651
+- **Verde brand**: #00A651
 - **Azul Caixa**: #1D6EA6
-- **Ambrar (PIX/Pagos)**: #F59E0B
-- **Neutros**: Escala de cinza #F8FAFC a #0F172A
+- **Fontes**: Plus Jakarta Sans (UI) + JetBrains Mono (números)
+- CSS Modules em todas as páginas (admin.module.css, comprovante.module.css)
 
-### Tipografia
-- **Sans**: Plus Jakarta Sans (400-800)
-- **Mono**: JetBrains Mono (para números)
+## Como rodar
 
-### Spacing Grid
-- Base: 4px
-- s1-s12: múltiplos de 4px
-
-### Espaçamento e Raio
-- Raio padrão: 8-12px
-- Elevação com sombras definidas (e1-e4)
-
-## 🔐 Segurança
-
-### Autenticação
-- Token JWT armazenado em cookies
-- Verificação de token em operações críticas
-- Funções `verificarToken()` para proteger endpoints
-
-### Validações
-- Dados do cliente e servidor
-- CPF/informações pessoais opcionais
-- Proteção contra exclusão de bolões com participantes
-
-## 📊 Banco de Dados (Supabase)
-
-### Tabelas Principais
-- `boloes` - Configuração dos bolões
-- `participantes` - Dados dos participantes
-- `cotas` - Distribuição de cotas
-- `historico` - Registro de concursos
-
-### Nota
-Comprovantes são gerados localmente (sem persistência automática)
-
-## 🚀 Como Usar
-
-### Para Desenvolvedores
-
-1. **Instalar dependências**:
-   ```bash
-   npm install
-   ```
-
-2. **Rodar em desenvolvimento**:
-   ```bash
-   npm run dev
-   ```
-
-3. **Acessar comprovante**:
-   ```
-   http://localhost:3000/comprovante
-   ```
-
-4. **Build para produção**:
-   ```bash
-   npm run build
-   npm run start
-   ```
-
-### Para Usuários
-
-1. Ir para `/comprovante`
-2. Preencher informações do participante
-3. Selecionar 6 números (ou gerar aleatoriamente)
-4. Clicar "Confirmar" para gerar comprovante
-5. Imprimir ou exportar para PDF
-
-## 📚 Próximos Passos Possíveis
-
-- [ ] Integração de comprovantes com base de dados (salvar histórico)
-- [ ] QR code no comprovante para validação
-- [ ] Compartilhamento de comprovantes por email/WhatsApp
-- [ ] Templates customizáveis por bolão
-- [ ] Assinatura digital
-- [ ] Suporte a múltiplos jogos (cartelas) por comprovante
-- [ ] Integração com API oficial da Caixa para validação
-
-## 🐛 Troubleshooting
-
-### PDF não gera
-- Verificar se html2canvas e jsPDF estão instalados
-- Confirmar elemento com id `comprovante-preview` existe
-- Testar no Chrome (melhor suporte)
-
-### Print não abre
-- Verificar permissões de pop-ups do navegador
-- Alguns navegadores bloqueiam `window.open()` sem interação
-
-### Números não selecionam
-- Máximo 6 números simultaneamente
-- Remover antes de adicionar novos
-- Usar botão "Limpar" para resetar
-
-## 📞 Suporte
-
-Para dúvidas ou bugs, documentar no GitHub Issues com:
-- Versão do navegador
-- Steps para reproduzir
-- Screenshots se aplicável
+```bash
+npm install
+npm run dev       # http://localhost:3000
+npm run build     # verifica erros de build antes de deploy
+```
