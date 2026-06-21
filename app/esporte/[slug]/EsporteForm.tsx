@@ -110,6 +110,63 @@ function formatReal(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
+const MOMENTOS = [
+  { src: 'https://digitalhub.fifa.com/transform/ae310ce7-a51a-4d4c-bc6a-a53e5457901d/FIFAWC2026_KV_Blue_16x9', alt: 'FIFA 2026' },
+  { src: 'https://digitalhub.fifa.com/transform/f6c82aef-04fc-4f1e-bcd9-2de5e02b5996/2026-FIFA-World-Cup-Official-Emblem', alt: 'Emblema FIFA 2026' },
+  { src: 'https://digitalhub.fifa.com/transform/3e4d48b7-4c4c-4c8d-9b3e-6f2e8b4d3c2a/wc2026-trophy', alt: 'Troféu Copa 2026' },
+]
+
+function MomentosCarousel() {
+  const [idx, setIdx] = useState(0)
+  const [imgs, setImgs] = useState<{src:string;alt:string}[]>(MOMENTOS)
+  const trackRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const t = setInterval(() => setIdx(i => (i + 1) % imgs.length), 4000)
+    return () => clearInterval(t)
+  }, [imgs.length])
+
+  useEffect(() => {
+    if (trackRef.current) {
+      trackRef.current.scrollTo({ left: idx * trackRef.current.offsetWidth, behavior: 'smooth' })
+    }
+  }, [idx])
+
+  function prev() { setIdx(i => (i - 1 + imgs.length) % imgs.length) }
+  function next() { setIdx(i => (i + 1) % imgs.length) }
+
+  return (
+    <div className={styles.momentosSec}>
+      <div className={styles.momentosTitle}>🎬 Momentos da Copa do Mundo FIFA™</div>
+      <div className={styles.carouselWrap}>
+        <div className={styles.carouselTrack} ref={trackRef}>
+          {imgs.map((img, i) => (
+            <div key={i} className={styles.carouselSlide}>
+              <img src={img.src} alt={img.alt} className={styles.carouselImg}
+                onError={e => {
+                  const el = e.currentTarget.parentElement!
+                  el.classList.add(styles.carouselSlideErr)
+                  e.currentTarget.style.display = 'none'
+                }}
+              />
+            </div>
+          ))}
+        </div>
+        <button className={`${styles.carouselBtn} ${styles.carouselBtnL}`} onClick={prev}>‹</button>
+        <button className={`${styles.carouselBtn} ${styles.carouselBtnR}`} onClick={next}>›</button>
+        <div className={styles.carouselDots}>
+          {imgs.map((_, i) => (
+            <button key={i} className={`${styles.carouselDot} ${i === idx ? styles.carouselDotActive : ''}`} onClick={() => setIdx(i)} />
+          ))}
+        </div>
+      </div>
+      <a href="https://www.fifa.com/pt/tournaments/mens/worldcup/canadamexicousa2026#clips/" target="_blank" rel="noopener noreferrer" className={styles.momentosLink}>
+        Ver todos os momentos no site da FIFA →
+      </a>
+    </div>
+  )
+}
+
 export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
   const [step, setStep]         = useState<'form'|'pix'|'ok'>('form')
   const [cadastrando, setCadastrando] = useState(false)
@@ -292,25 +349,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
       </div>
 
       {/* ── Momentos FIFA ── */}
-      <div className={styles.momentosSec}>
-        <div className={styles.momentosTitle}>🎬 Momentos da Copa do Mundo FIFA™</div>
-        <div className={styles.momentosWrap}>
-          <iframe
-            src="https://www.fifa.com/pt/tournaments/mens/worldcup/canadamexicousa2026#clips/"
-            className={styles.momentosFrame}
-            title="Momentos FIFA 2026"
-            allowFullScreen
-            loading="lazy"
-          />
-          <div className={styles.momentosFallback}>
-            <span>⚽</span>
-            <p>Conteúdo bloqueado pelo site da FIFA.</p>
-            <a href="https://www.fifa.com/pt/tournaments/mens/worldcup/canadamexicousa2026#clips/" target="_blank" rel="noopener noreferrer" className={styles.momentosLink}>
-              Ver no site oficial da FIFA →
-            </a>
-          </div>
-        </div>
-      </div>
+      <MomentosCarousel />
 
       {/* ── Premiação ── */}
       {(() => {
