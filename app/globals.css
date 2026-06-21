@@ -150,20 +150,61 @@ body::before {
 .blc-slug  { font-size: 11px; color: rgba(0,166,81,.80); margin-top: 4px; font-family: var(--f-mono); }
 .blc-arrow { color: var(--green); font-size: 16px !important; flex-shrink: 0; }
 
-.bolao-esporte-card {
-  background: linear-gradient(135deg, rgba(29,110,166,.15) 0%, rgba(0,166,81,.08) 100%);
-  border-color: rgba(29,110,166,.35);
-}
-.bolao-esporte-card:hover {
-  border-color: rgba(29,110,166,.60) !important;
-  background: linear-gradient(135deg, rgba(29,110,166,.25) 0%, rgba(0,166,81,.12) 100%) !important;
-  transform: translateX(4px);
-}
-.blc-esporte-img {
-  width: 52px; height: 52px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  background: #0a1520; border-radius: 12px;
+.esporte-card {
+  display: block;
+  margin: var(--s4) var(--s4) 0;
+  border-radius: var(--r16);
+  overflow: hidden;
+  background: var(--glass-10);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
   border: 1px solid rgba(29,110,166,.30);
+  box-shadow: var(--e-dark), inset 0 1px 0 rgba(255,255,255,.06);
+  text-decoration: none;
+  animation: slideUp .45s cubic-bezier(.22,1,.36,1);
+  transition: border-color .2s, transform .2s;
+}
+.esporte-card:hover {
+  border-color: rgba(29,110,166,.60);
+  transform: translateY(-2px);
+}
+.esporte-card-header {
+  padding: var(--s4) var(--s5);
+  background: linear-gradient(135deg, rgba(29,110,166,.85) 0%, rgba(0,100,180,.65) 100%);
+  display: flex; align-items: center; gap: var(--s3);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.esporte-card-icon { font-size: 22px; }
+.esporte-card-label {
+  flex: 1;
+  font-size: 20px; font-weight: 800;
+  color: #fff;
+  letter-spacing: .5px;
+}
+.esporte-card-body {
+  padding: var(--s6) var(--s5);
+  text-align: center;
+}
+.esporte-card-gif {
+  width: 150px; height: auto;
+  display: block; margin: 0 auto var(--s4);
+  border-radius: 8px;
+  filter: drop-shadow(0 4px 24px rgba(255,184,28,0.5));
+}
+.esporte-card-nome {
+  font-size: clamp(20px,6vw,28px);
+  font-weight: 800;
+  color: #FFB81C;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+.esporte-card-desc {
+  font-size: 16px; font-weight: 800;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 4px;
 }
 
 /* ── BOLAO TAG ── */

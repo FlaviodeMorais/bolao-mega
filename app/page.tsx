@@ -104,26 +104,19 @@ export default function Home() {
       </div>
 
       {/* Bolões Esportivos */}
-      {boloesEsporte.length > 0 && (
-        <div className="card" style={{ marginTop: 0 }}>
-          <div className="form-body">
-            <div className="sec-title">⚽ Bolões Esportivos</div>
-            {boloesEsporte.map(b => (
-              <a key={b.id} href={`/esporte/${b.slug}`} className="bolao-link-card bolao-esporte-card">
-                <div className="blc-esporte-img">
-                  <img src="/FIFA-2026-World-Cup-White-Logo.png" alt="FIFA 2026" width={48} height={48} style={{ objectFit: 'contain', mixBlendMode: 'screen' }} />
-                </div>
-                <div className="blc-info">
-                  <div className="blc-nome">{b.nome}</div>
-                  {b.descricao && <div className="blc-meta">{b.descricao}</div>}
-                  <div className="blc-slug">{host}/esporte/{b.slug}</div>
-                </div>
-                <span className="material-icons-round blc-arrow">arrow_forward_ios</span>
-              </a>
-            ))}
+      {boloesEsporte.map(b => (
+        <a key={b.id} href={`/esporte/${b.slug}`} className="esporte-card">
+          <div className="esporte-card-header">
+            <span className="esporte-card-icon">⚽</span>
+            <span className="esporte-card-label">Bolão Esportivo</span>
           </div>
-        </div>
-      )}
+          <div className="esporte-card-body">
+            <img src="/1684502982782.gif" alt="FIFA 2026" className="esporte-card-gif" />
+            <div className="esporte-card-nome">{b.nome}</div>
+            {b.descricao && <div className="esporte-card-desc">{b.descricao}</div>}
+          </div>
+        </a>
+      ))}
     </div>
   )
 }
