@@ -165,13 +165,7 @@ function MomentosCarousel() {
 
       {!loading && !vazio && (
         <div className={styles.videoRow} ref={rowRef}>
-          {aoVivo.length > 0 && (
-            <div className={styles.videoLabel}>🔴 Próximas transmissões ao vivo</div>
-          )}
           {aoVivo.map((v, i) => renderCard(v, i))}
-          {momentos.length > 0 && (
-            <div className={styles.videoLabel}>🏆 Melhores Momentos | Copa do Mundo FIFA™ 2026</div>
-          )}
           {momentos.map((v, i) => renderCard(v, aoVivo.length + i))}
         </div>
       )}

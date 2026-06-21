@@ -691,7 +691,7 @@
 }
 .videoCard:hover { transform: scale(1.04); }
 .videoThumbWrap {
-  position: relative; width: 100%; aspect-ratio: 16/9; overflow: hidden;
+  position: relative; width: 100%; height: 120px; overflow: hidden;
 }
 .videoThumb { width: 100%; height: 100%; object-fit: cover; display: block; }
 .videoPlay {
