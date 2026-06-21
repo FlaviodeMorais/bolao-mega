@@ -759,16 +759,24 @@
   .jogoCardBody { padding: 16px 10px; gap: 6px; }
   .badge { font-size: 11px; padding: 5px 12px; }
 
+  /* Header mobile — evita quebra de linha */
+  .headerComp { font-size: 16px; letter-spacing: 1px; white-space: nowrap; }
+  .headerDesc  { font-size: 13px; letter-spacing: 1px; }
+  .headerLogo  { width: 90px; }
+
   /* Carrossel mobile */
-  .videoCard { width: 200px; }
-  .videoThumbWrap { height: 90px; }
+  .videoCard { width: 180px; }
+  .videoThumbWrap { height: 80px; }
   .videoTitulo { font-size: 10px; padding: 5px 6px 2px; }
   .videoData { font-size: 9px; padding: 2px 6px 6px; }
 
-  /* Seção de prêmios */
-  .pontuacaoItem { padding: 10px 6px; min-width: 80px; }
-  .pontuacaoTxt { font-size: 10px; }
+  /* Seção de prêmios — empilha verticalmente */
+  .pontuacaoBar { flex-direction: column; padding: 0 16px; }
+  .pontuacaoItem { padding: 12px 8px; white-space: normal; }
+  .pontuacaoDiv { width: auto; height: 1px; align-self: stretch; }
+  .pontuacaoTxt { font-size: 11px; white-space: normal; }
   .pontuacaoValor { font-size: 14px; }
+  .pontuacaoPts { font-size: 18px; }
 
   /* Jogo card */
   .section { padding: 16px 12px; }
