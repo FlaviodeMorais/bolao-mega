@@ -713,6 +713,12 @@
   text-align: center; padding: 24px;
   color: rgba(255,255,255,.35); font-size: 13px;
 }
+.videoSec { margin-bottom: 16px; }
+.videoSecTitle {
+  font-size: 12px; font-weight: 700;
+  color: rgba(255,255,255,.70);
+  margin-bottom: 8px; letter-spacing: .3px;
+}
 .carouselBtn {
   position: absolute; top: 50%; transform: translateY(-50%);
   background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.15);

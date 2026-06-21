@@ -112,25 +112,15 @@ function formatReal(v: number) {
 
 interface Video { id: string; titulo: string; thumb: string; link: string; data: string }
 
-function MomentosCarousel() {
-  const [videos, setVideos] = useState<Video[]>([])
-  const [idx, setIdx] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const trackRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    fetch('/api/esporte/noticias').then(r => r.json()).then(d => {
-      setVideos(d.videos || [])
-      setLoading(false)
-    }).catch(() => setLoading(false))
-  }, [])
+function VideoRow({ videos }: { videos: Video[] }) {
+  const rowRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (videos.length === 0) return
-    const CARD_W = 148 // 140px + 8px gap
+    const CARD_W = 148
     let pos = 0
     const t = setInterval(() => {
-      const el = trackRef.current
+      const el = rowRef.current
       if (!el) return
       const maxScroll = el.scrollWidth - el.clientWidth
       pos = pos + CARD_W > maxScroll ? 0 : pos + CARD_W
@@ -139,26 +129,65 @@ function MomentosCarousel() {
     return () => clearInterval(t)
   }, [videos])
 
+  if (videos.length === 0) return null
+  return (
+    <div className={styles.videoRow} ref={rowRef}>
+      {videos.map((v, i) => (
+        <a key={i} href={v.link} target="_blank" rel="noopener noreferrer" className={styles.videoCard}>
+          <div className={styles.videoThumbWrap}>
+            <img src={v.thumb} alt={v.titulo} className={styles.videoThumb} />
+            <div className={styles.videoPlay}>▶</div>
+          </div>
+          <div className={styles.videoTitulo}>{v.titulo}</div>
+          <div className={styles.videoData}>{v.data}</div>
+        </a>
+      ))}
+    </div>
+  )
+}
+
+function MomentosCarousel() {
+  const [aoVivo, setAoVivo]     = useState<Video[]>([])
+  const [momentos, setMomentos] = useState<Video[]>([])
+  const [outros, setOutros]     = useState<Video[]>([])
+  const [loading, setLoading]   = useState(true)
+
+  useEffect(() => {
+    fetch('/api/esporte/noticias').then(r => r.json()).then(d => {
+      setAoVivo(d.aoVivo || [])
+      setMomentos(d.momentos || [])
+      setOutros(d.outros || [])
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [])
+
+  const vazio = !loading && aoVivo.length === 0 && momentos.length === 0 && outros.length === 0
+
   return (
     <div className={styles.momentosSec}>
       <div className={styles.momentosTitle}>📺 CazéTV · Copa do Mundo FIFA 2026</div>
 
       {loading && <div className={styles.momentosLoading}>Carregando vídeos...</div>}
-      {!loading && videos.length === 0 && <div className={styles.momentosLoading}>Nenhum vídeo disponível.</div>}
+      {vazio   && <div className={styles.momentosLoading}>Nenhum vídeo disponível.</div>}
 
-      {!loading && videos.length > 0 && (
-        <div className={styles.videoRow} ref={trackRef}>
-          {videos.map((v, i) => (
-            <a key={i} href={v.link} target="_blank" rel="noopener noreferrer"
-              className={styles.videoCard}>
-              <div className={styles.videoThumbWrap}>
-                <img src={v.thumb} alt={v.titulo} className={styles.videoThumb} />
-                <div className={styles.videoPlay}>▶</div>
-              </div>
-              <div className={styles.videoTitulo}>{v.titulo}</div>
-              <div className={styles.videoData}>{v.data}</div>
-            </a>
-          ))}
+      {aoVivo.length > 0 && (
+        <div className={styles.videoSec}>
+          <div className={styles.videoSecTitle}>🔴 Próximas transmissões ao vivo</div>
+          <VideoRow videos={aoVivo} />
+        </div>
+      )}
+
+      {momentos.length > 0 && (
+        <div className={styles.videoSec}>
+          <div className={styles.videoSecTitle}>🏆 Melhores Momentos | Copa do Mundo FIFA™ 2026</div>
+          <VideoRow videos={momentos} />
+        </div>
+      )}
+
+      {outros.length > 0 && (
+        <div className={styles.videoSec}>
+          <div className={styles.videoSecTitle}>📹 Outros vídeos</div>
+          <VideoRow videos={outros} />
         </div>
       )}
 
