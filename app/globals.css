@@ -192,7 +192,7 @@ body::before {
   filter: drop-shadow(0 4px 24px rgba(255,184,28,0.5));
 }
 .esporte-card-nome {
-  font-size: clamp(20px,6vw,28px);
+  font-size: clamp(19.6px,5.88vw,27.44px);
   font-weight: 800;
   color: #FFB81C;
   text-transform: uppercase;
