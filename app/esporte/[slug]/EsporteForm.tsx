@@ -112,11 +112,23 @@ function formatReal(v: number) {
 
 interface Video { id: string; titulo: string; thumb: string; link: string; data: string }
 
-function VideoRow({ videos }: { videos: Video[] }) {
+function MomentosCarousel() {
+  const [aoVivo, setAoVivo]     = useState<Video[]>([])
+  const [momentos, setMomentos] = useState<Video[]>([])
+  const [loading, setLoading]   = useState(true)
   const rowRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (videos.length === 0) return
+    fetch('/api/esporte/noticias').then(r => r.json()).then(d => {
+      setAoVivo(d.aoVivo || [])
+      setMomentos(d.momentos || [])
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    const total = aoVivo.length + momentos.length
+    if (total === 0) return
     const CARD_W = 148
     let pos = 0
     const t = setInterval(() => {
@@ -127,41 +139,22 @@ function VideoRow({ videos }: { videos: Video[] }) {
       el.scrollTo({ left: pos, behavior: 'smooth' })
     }, 2500)
     return () => clearInterval(t)
-  }, [videos])
+  }, [aoVivo, momentos])
 
-  if (videos.length === 0) return null
-  return (
-    <div className={styles.videoRow} ref={rowRef}>
-      {videos.map((v, i) => (
-        <a key={i} href={v.link} target="_blank" rel="noopener noreferrer" className={styles.videoCard}>
-          <div className={styles.videoThumbWrap}>
-            <img src={v.thumb} alt={v.titulo} className={styles.videoThumb} />
-            <div className={styles.videoPlay}>▶</div>
-          </div>
-          <div className={styles.videoTitulo}>{v.titulo}</div>
-          <div className={styles.videoData}>{v.data}</div>
-        </a>
-      ))}
-    </div>
-  )
-}
+  const vazio = !loading && aoVivo.length === 0 && momentos.length === 0
 
-function MomentosCarousel() {
-  const [aoVivo, setAoVivo]     = useState<Video[]>([])
-  const [momentos, setMomentos] = useState<Video[]>([])
-  const [outros, setOutros]     = useState<Video[]>([])
-  const [loading, setLoading]   = useState(true)
-
-  useEffect(() => {
-    fetch('/api/esporte/noticias').then(r => r.json()).then(d => {
-      setAoVivo(d.aoVivo || [])
-      setMomentos(d.momentos || [])
-      setOutros(d.outros || [])
-      setLoading(false)
-    }).catch(() => setLoading(false))
-  }, [])
-
-  const vazio = !loading && aoVivo.length === 0 && momentos.length === 0 && outros.length === 0
+  function renderCard(v: Video, i: number) {
+    return (
+      <a key={i} href={v.link} target="_blank" rel="noopener noreferrer" className={styles.videoCard}>
+        <div className={styles.videoThumbWrap}>
+          <img src={v.thumb} alt={v.titulo} className={styles.videoThumb} />
+          <div className={styles.videoPlay}>▶</div>
+        </div>
+        <div className={styles.videoTitulo}>{v.titulo}</div>
+        <div className={styles.videoData}>{v.data}</div>
+      </a>
+    )
+  }
 
   return (
     <div className={styles.momentosSec}>
@@ -170,24 +163,16 @@ function MomentosCarousel() {
       {loading && <div className={styles.momentosLoading}>Carregando vídeos...</div>}
       {vazio   && <div className={styles.momentosLoading}>Nenhum vídeo disponível.</div>}
 
-      {aoVivo.length > 0 && (
-        <div className={styles.videoSec}>
-          <div className={styles.videoSecTitle}>🔴 Próximas transmissões ao vivo</div>
-          <VideoRow videos={aoVivo} />
-        </div>
-      )}
-
-      {momentos.length > 0 && (
-        <div className={styles.videoSec}>
-          <div className={styles.videoSecTitle}>🏆 Melhores Momentos | Copa do Mundo FIFA™ 2026</div>
-          <VideoRow videos={momentos} />
-        </div>
-      )}
-
-      {outros.length > 0 && (
-        <div className={styles.videoSec}>
-          <div className={styles.videoSecTitle}>📹 Outros vídeos</div>
-          <VideoRow videos={outros} />
+      {!loading && !vazio && (
+        <div className={styles.videoRow} ref={rowRef}>
+          {aoVivo.length > 0 && (
+            <div className={styles.videoLabel}>🔴 Próximas transmissões ao vivo</div>
+          )}
+          {aoVivo.map((v, i) => renderCard(v, i))}
+          {momentos.length > 0 && (
+            <div className={styles.videoLabel}>🏆 Melhores Momentos | Copa do Mundo FIFA™ 2026</div>
+          )}
+          {momentos.map((v, i) => renderCard(v, aoVivo.length + i))}
         </div>
       )}
 

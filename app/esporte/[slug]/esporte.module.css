@@ -713,11 +713,16 @@
   text-align: center; padding: 24px;
   color: rgba(255,255,255,.35); font-size: 13px;
 }
-.videoSec { margin-bottom: 16px; }
-.videoSecTitle {
-  font-size: 12px; font-weight: 700;
-  color: rgba(255,255,255,.70);
-  margin-bottom: 8px; letter-spacing: .3px;
+.videoLabel {
+  flex-shrink: 0;
+  writing-mode: vertical-lr; transform: rotate(180deg);
+  font-size: 10px; font-weight: 700;
+  color: rgba(255,255,255,.50);
+  letter-spacing: 1px; text-transform: uppercase;
+  padding: 6px 4px;
+  border-right: 1px solid rgba(255,255,255,.10);
+  margin-right: 4px; align-self: stretch;
+  display: flex; align-items: center;
 }
 .carouselBtn {
   position: absolute; top: 50%; transform: translateY(-50%);
