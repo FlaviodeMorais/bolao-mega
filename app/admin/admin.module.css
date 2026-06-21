@@ -1093,6 +1093,15 @@
   border-radius: 8px; padding: 8px 14px; margin-bottom: 10px;
 }
 
+.btnAcao {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 10px;
+  background: #1a2535; color: #a0b4c8; border: 1px solid #2a3d52;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s;
+}
+.btnAcao:hover { background: #1e2d3d; }
+
 /* ═══════════════════════════════
    RESPONSIVE — Mobile-first Admin
 ═══════════════════════════════ */

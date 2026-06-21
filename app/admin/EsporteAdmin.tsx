@@ -33,7 +33,7 @@ export default function EsporteAdmin() {
   const [jogos, setJogos]             = useState<Jogo[]>([])
   const [ranking, setRanking]               = useState<RankingPart[]>([])
   const [participantes, setParticipantes]   = useState<Participante[]>([])
-  const [show, setShow]                     = useState(false)
+  const [show, setShow]                     = useState(true)
   const [aba, setAba]                       = useState<'jogos'|'participantes'|'ranking'|'novo'>('jogos')
 
   // Form novo bolão
