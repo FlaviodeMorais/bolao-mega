@@ -290,11 +290,6 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
         <div className={styles.headerComp}>{bolao.competicao}</div>
         <h1 className={styles.headerTitle}>{bolao.nome}</h1>
         {bolao.descricao && <p className={styles.headerDesc}>{bolao.descricao}</p>}
-        <div className={styles.headerBadges}>
-          <span className={`${styles.badge} ${styles.badgeGold}`}>🏆 Premiação</span>
-          <span className={styles.badge}>💰 R$ {Number(bolao.valor_cota).toFixed(2).replace('.',',')} / cota</span>
-          <span className={styles.badge}>⚽ {jogosDisponiveis.length} jogos disponíveis</span>
-        </div>
       </div>
 
       {/* ── Premiação ── */}
