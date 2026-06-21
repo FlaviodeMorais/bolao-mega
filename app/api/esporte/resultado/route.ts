@@ -6,7 +6,7 @@ import { verificarToken } from '@/lib/auth'
 // Categoria B: acertou só o vencedor            → 20%
 // Categoria C: acertou só o placar exato        → 20%
 // Sem acerto                                    →  0
-export function calcularCategoria(palCasa: number, palFora: number, resCasa: number, resFora: number): 'A' | 'B' | 'C' | null {
+function calcularCategoria(palCasa: number, palFora: number, resCasa: number, resFora: number): 'A' | 'B' | 'C' | null {
   const acertouPlacar = palCasa === resCasa && palFora === resFora
 
   const palVenc = palCasa > palFora ? 'casa' : palCasa < palFora ? 'fora' : 'empate'
