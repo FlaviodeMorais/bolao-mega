@@ -681,7 +681,7 @@
 .videoRow::-webkit-scrollbar { display: none; }
 
 .videoCard {
-  flex-shrink: 0; width: 200px;
+  flex-shrink: 0; width: 240px;
   display: flex; flex-direction: column;
   text-decoration: none;
   border-radius: 8px; overflow: hidden;
