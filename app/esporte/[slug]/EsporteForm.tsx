@@ -287,8 +287,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
       {/* ── Header ── */}
       <div className={styles.header}>
         <img src="/1684502982782.gif" alt="FIFA World Cup 2026" className={styles.headerLogo} />
-        <div className={styles.headerComp}>{bolao.competicao}</div>
-        <h1 className={styles.headerTitle}>{bolao.nome}</h1>
+        <div className={styles.headerComp}>{bolao.nome}</div>
         {bolao.descricao && <p className={styles.headerDesc}>{bolao.descricao}</p>}
       </div>
 
