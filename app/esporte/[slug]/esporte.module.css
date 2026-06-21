@@ -70,8 +70,11 @@
 }
 .headerDesc {
   position: relative;
-  color: rgba(255,255,255,0.4);
+  color: #fff;
   font-size: 30px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 4px;
   margin: 0 0 24px;
   line-height: 1.6;
   max-width: 380px;
