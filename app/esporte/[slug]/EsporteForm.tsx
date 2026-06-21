@@ -110,76 +110,75 @@ function formatReal(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-interface Noticia { titulo: string; link: string; fonte: string; data: string }
+interface Video { id: string; titulo: string; thumb: string; link: string; data: string }
 
 function MomentosCarousel() {
-  const [noticias, setNoticias] = useState<Noticia[]>([])
+  const [videos, setVideos] = useState<Video[]>([])
   const [idx, setIdx] = useState(0)
   const [loading, setLoading] = useState(true)
   const trackRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetch('/api/esporte/noticias').then(r => r.json()).then(d => {
-      setNoticias(d.noticias || [])
+      setVideos(d.videos || [])
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [])
 
   useEffect(() => {
-    if (noticias.length === 0) return
-    const t = setInterval(() => setIdx(i => (i + 1) % noticias.length), 5000)
+    if (videos.length === 0) return
+    const t = setInterval(() => setIdx(i => (i + 1) % videos.length), 6000)
     return () => clearInterval(t)
-  }, [noticias.length])
+  }, [videos.length])
 
   useEffect(() => {
     if (trackRef.current) {
-      const w = trackRef.current.offsetWidth
-      trackRef.current.scrollTo({ left: idx * w, behavior: 'smooth' })
+      trackRef.current.scrollTo({ left: idx * trackRef.current.offsetWidth, behavior: 'smooth' })
     }
   }, [idx])
 
-  function prev() { setIdx(i => (i - 1 + noticias.length) % noticias.length) }
-  function next() { setIdx(i => (i + 1) % noticias.length) }
+  function prev() { setIdx(i => (i - 1 + videos.length) % videos.length) }
+  function next() { setIdx(i => (i + 1) % videos.length) }
 
   return (
     <div className={styles.momentosSec}>
-      <div className={styles.momentosTitle}>📰 Últimas Notícias · Copa do Mundo FIFA 2026</div>
+      <div className={styles.momentosTitle}>📺 CazéTV · Copa do Mundo FIFA 2026</div>
 
-      {loading && <div className={styles.momentosLoading}>Carregando notícias...</div>}
+      {loading && <div className={styles.momentosLoading}>Carregando vídeos...</div>}
+      {!loading && videos.length === 0 && <div className={styles.momentosLoading}>Nenhum vídeo disponível.</div>}
 
-      {!loading && noticias.length === 0 && (
-        <div className={styles.momentosLoading}>Nenhuma notícia disponível.</div>
-      )}
-
-      {!loading && noticias.length > 0 && (
-        <>
-          <div className={styles.carouselWrap}>
-            <div className={styles.carouselTrack} ref={trackRef}>
-              {noticias.map((n, i) => (
-                <a key={i} href={n.link} target="_blank" rel="noopener noreferrer"
-                  className={styles.noticiaCard}>
-                  <div className={styles.noticiaEmoji}>📰</div>
-                  <div className={styles.noticiaTitulo}>{n.titulo}</div>
-                  <div className={styles.noticiaRodape}>
-                    <span className={styles.noticiaFonte}>{n.fonte}</span>
-                    <span className={styles.noticiaData}>{n.data}</span>
+      {!loading && videos.length > 0 && (
+        <div className={styles.carouselWrap}>
+          <div className={styles.carouselTrack} ref={trackRef}>
+            {videos.map((v, i) => (
+              <a key={i} href={v.link} target="_blank" rel="noopener noreferrer"
+                className={styles.videoCard}>
+                <div className={styles.videoThumbWrap}>
+                  <img src={v.thumb} alt={v.titulo} className={styles.videoThumb} />
+                  <div className={styles.videoPlay}>▶</div>
+                </div>
+                <div className={styles.videoInfo}>
+                  <div className={styles.videoTitulo}>{v.titulo}</div>
+                  <div className={styles.videoRodape}>
+                    <span className={styles.videoFonte}>CazéTV</span>
+                    <span className={styles.videoData}>{v.data}</span>
                   </div>
-                </a>
-              ))}
-            </div>
-            <button className={`${styles.carouselBtn} ${styles.carouselBtnL}`} onClick={prev}>‹</button>
-            <button className={`${styles.carouselBtn} ${styles.carouselBtnR}`} onClick={next}>›</button>
-            <div className={styles.carouselDots}>
-              {noticias.map((_, i) => (
-                <button key={i} className={`${styles.carouselDot} ${i === idx ? styles.carouselDotActive : ''}`} onClick={() => setIdx(i)} />
-              ))}
-            </div>
+                </div>
+              </a>
+            ))}
           </div>
-        </>
+          <button className={`${styles.carouselBtn} ${styles.carouselBtnL}`} onClick={prev}>‹</button>
+          <button className={`${styles.carouselBtn} ${styles.carouselBtnR}`} onClick={next}>›</button>
+          <div className={styles.carouselDots}>
+            {videos.map((_, i) => (
+              <button key={i} className={`${styles.carouselDot} ${i === idx ? styles.carouselDotActive : ''}`} onClick={() => setIdx(i)} />
+            ))}
+          </div>
+        </div>
       )}
 
-      <a href="https://news.google.com/search?q=Copa+do+Mundo+FIFA+2026&hl=pt-BR" target="_blank" rel="noopener noreferrer" className={styles.momentosLink}>
-        Ver mais notícias →
+      <a href="https://www.youtube.com/@cazetv" target="_blank" rel="noopener noreferrer" className={styles.momentosLink}>
+        Ver canal CazéTV no YouTube →
       </a>
     </div>
   )
