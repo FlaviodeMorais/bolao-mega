@@ -127,18 +127,20 @@ function MomentosCarousel() {
 
   useEffect(() => {
     if (videos.length === 0) return
-    const t = setInterval(() => setIdx(i => (i + 1) % videos.length), 6000)
+    const t = setInterval(() => {
+      const el = trackRef.current
+      if (!el) return
+      const cardW = 170 // card 160px + gap 10px
+      const maxScroll = el.scrollWidth - el.clientWidth
+      const next = el.scrollLeft + cardW
+      if (next >= maxScroll - 10) {
+        el.scrollTo({ left: 0, behavior: 'smooth' })
+      } else {
+        el.scrollTo({ left: next, behavior: 'smooth' })
+      }
+    }, 3000)
     return () => clearInterval(t)
   }, [videos.length])
-
-  useEffect(() => {
-    if (trackRef.current) {
-      trackRef.current.scrollTo({ left: idx * trackRef.current.offsetWidth, behavior: 'smooth' })
-    }
-  }, [idx])
-
-  function prev() { setIdx(i => (i - 1 + videos.length) % videos.length) }
-  function next() { setIdx(i => (i + 1) % videos.length) }
 
   return (
     <div className={styles.momentosSec}>
