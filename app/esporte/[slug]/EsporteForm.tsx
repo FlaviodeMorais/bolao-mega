@@ -148,32 +148,18 @@ function MomentosCarousel() {
       {!loading && videos.length === 0 && <div className={styles.momentosLoading}>Nenhum vídeo disponível.</div>}
 
       {!loading && videos.length > 0 && (
-        <div className={styles.carouselWrap}>
-          <div className={styles.carouselTrack} ref={trackRef}>
-            {videos.map((v, i) => (
-              <a key={i} href={v.link} target="_blank" rel="noopener noreferrer"
-                className={styles.videoCard}>
-                <div className={styles.videoThumbWrap}>
-                  <img src={v.thumb} alt={v.titulo} className={styles.videoThumb} />
-                  <div className={styles.videoPlay}>▶</div>
-                </div>
-                <div className={styles.videoInfo}>
-                  <div className={styles.videoTitulo}>{v.titulo}</div>
-                  <div className={styles.videoRodape}>
-                    <span className={styles.videoFonte}>CazéTV</span>
-                    <span className={styles.videoData}>{v.data}</span>
-                  </div>
-                </div>
-              </a>
-            ))}
-          </div>
-          <button className={`${styles.carouselBtn} ${styles.carouselBtnL}`} onClick={prev}>‹</button>
-          <button className={`${styles.carouselBtn} ${styles.carouselBtnR}`} onClick={next}>›</button>
-          <div className={styles.carouselDots}>
-            {videos.map((_, i) => (
-              <button key={i} className={`${styles.carouselDot} ${i === idx ? styles.carouselDotActive : ''}`} onClick={() => setIdx(i)} />
-            ))}
-          </div>
+        <div className={styles.videoRow} ref={trackRef}>
+          {videos.map((v, i) => (
+            <a key={i} href={v.link} target="_blank" rel="noopener noreferrer"
+              className={styles.videoCard}>
+              <div className={styles.videoThumbWrap}>
+                <img src={v.thumb} alt={v.titulo} className={styles.videoThumb} />
+                <div className={styles.videoPlay}>▶</div>
+              </div>
+              <div className={styles.videoTitulo}>{v.titulo}</div>
+              <div className={styles.videoData}>{v.data}</div>
+            </a>
+          ))}
         </div>
       )}
 
