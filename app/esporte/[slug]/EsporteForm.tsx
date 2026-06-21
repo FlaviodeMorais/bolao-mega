@@ -170,9 +170,6 @@ function MomentosCarousel() {
         </div>
       )}
 
-      <a href="https://www.youtube.com/@cazetv" target="_blank" rel="noopener noreferrer" className={styles.momentosLink}>
-        Ver canal CazéTV no YouTube →
-      </a>
     </div>
   )
 }
