@@ -129,7 +129,7 @@ function MomentosCarousel() {
   useEffect(() => {
     const total = aoVivo.length + momentos.length
     if (total === 0) return
-    const CARD_W = 248
+    const CARD_W = 296
     let pos = 0
     const t = setInterval(() => {
       const el = rowRef.current
