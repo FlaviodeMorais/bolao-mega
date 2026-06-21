@@ -127,20 +127,17 @@ function MomentosCarousel() {
 
   useEffect(() => {
     if (videos.length === 0) return
+    const CARD_W = 148 // 140px + 8px gap
+    let pos = 0
     const t = setInterval(() => {
       const el = trackRef.current
       if (!el) return
-      const cardW = 170 // card 160px + gap 10px
       const maxScroll = el.scrollWidth - el.clientWidth
-      const next = el.scrollLeft + cardW
-      if (next >= maxScroll - 10) {
-        el.scrollTo({ left: 0, behavior: 'smooth' })
-      } else {
-        el.scrollTo({ left: next, behavior: 'smooth' })
-      }
-    }, 3000)
+      pos = pos + CARD_W > maxScroll ? 0 : pos + CARD_W
+      el.scrollTo({ left: pos, behavior: 'smooth' })
+    }, 2500)
     return () => clearInterval(t)
-  }, [videos.length])
+  }, [videos])
 
   return (
     <div className={styles.momentosSec}>
