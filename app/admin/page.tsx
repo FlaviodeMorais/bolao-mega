@@ -3,6 +3,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { useKpis } from '@/hooks/admin/useKpis'
 import { useHistorico } from '@/hooks/admin/useHistorico'
 import { useConferencia } from '@/hooks/admin/useConferencia'
+import { useBoloes } from '@/hooks/admin/useBoloes'
+import { useConcurso } from '@/hooks/admin/useConcurso'
+import { useParticipantes } from '@/hooks/admin/useParticipantes'
 import styles from './admin.module.css'
 import EsporteAdmin from './EsporteAdmin'
 import AdminHeader from '@/components/admin/AdminHeader'
@@ -15,34 +18,8 @@ import KpiDashboard from '@/components/admin/KpiDashboard'
 import HistoricoPanel from '@/components/admin/HistoricoPanel'
 import BolaoDetailPanel from '@/components/admin/BolaoDetailPanel'
 
-interface Participante {
-  id: string; nome: string; cotas: string[]; total: number
-  status: string; telefone?: string; criado_em?: string
-  acrescimo?: number; acrescimo_pago?: boolean
-}
-interface Concurso    { num: number; data: string; premio: string }
-interface Bolao       {
-  id: string; nome: string; slug: string; valor_cota: number
-  total_cotas: number; ativo: boolean; dezenas: number; num_apostas: number
-  taxa_admin: number; encerrado: boolean
-  apostas_data?: { bets: number[][]; total_apostas: number } | null
-  resultado_conferencia?: {
-    status: string
-    dezenas_sorteadas?: number[]
-    dezenas_por_aposta?: number
-    resumo?: { senas: number; quinas: number; quadras: number }
-    maior_premio?: string | null
-    total_premiadas?: number
-    apostas_premiadas?: { idx: number; dezenas: number[]; acertos: number; premio: string }[]
-    apostas_invalidas?: number
-  } | null
-}
-
-const CAIXA_PRECOS: Record<number, number> = {
-  6: 6, 7: 42, 8: 168, 9: 504, 10: 1260,
-  11: 2772, 12: 5544, 13: 10296, 14: 18018, 15: 30030,
-  16: 48048, 17: 74256, 18: 111384, 19: 162792, 20: 232560,
-}
+import type { Bolao } from '@/hooks/admin/useBoloes'
+import type { Concurso } from '@/hooks/admin/useConcurso'
 
 function formatTel(tel?: string): string {
   if (!tel) return '—'
@@ -60,150 +37,81 @@ function whatsappUrl(tel?: string): string {
 }
 
 export default function AdminPage() {
-  const [logado, setLogado]   = useState(false)
-  const [senha, setSenha]     = useState('')
+  const [logado, setLogado]     = useState(false)
+  const [senha, setSenha]       = useState('')
   const [errLogin, setErrLogin] = useState('')
 
-  // Bolões
-  const [boloes, setBoloes]         = useState<Bolao[]>([])
-  const [bolaoAtual, setBolaoAtual] = useState<Bolao | null>(null)
-  const [linkCopiado, setLinkCopiado]   = useState(false)
-  const [renamingId, setRenamingId]     = useState<string | null>(null)
-  const [renameVal, setRenameVal]       = useState('')
-  const [showCreate, setShowCreate]     = useState(false)
-  const [novoNome, setNovoNome]     = useState('')
-  const [novoSlug, setNovoSlug]     = useState('')
-  const [criando, setCriando]       = useState(false)
-  const [criarErro, setCriarErro]   = useState('')
-
-  // Concurso
-  const [concursoAtivo, setConcursoAtivo] = useState('')
-  const [dataAtiva, setDataAtiva]         = useState('')
-  const [premioAtivo, setPremioAtivo]     = useState('')
-  const [proximos, setProximos]           = useState<Concurso[]>([])
-  const [loadingCaixa, setLoadingCaixa]   = useState(false)
-
-  // Participantes do bolão selecionado
-  const [partsBolao, setPartsBolao]           = useState<Participante[]>([])
-  const [loadingParts, setLoadingParts]       = useState(false)
-  const [confirmandoTodos, setConfirmandoTodos] = useState(false)
-  const [lembreteMsg, setLembreteMsg]         = useState('')
-
-  // Encerramento
-  const [showEncerrar, setShowEncerrar]   = useState(false)
-  const [encerrando, setEncerrando]       = useState(false)
-  const [encerrarOk, setEncerrarOk]       = useState<{acrescimo: number, participantes: number} | null>(null)
-
-  // WhatsApp health
-  const [waStatus, setWaStatus] = useState<'ok'|'erro'|''>('')
+  // WhatsApp health (inline — pequeno e sem domínio próprio)
+  const [waStatus, setWaStatus] = useState<'ok' | 'erro' | ''>('')
   const [waMsg, setWaMsg]       = useState('')
 
-  // Comprovante
-  const [enviandoComp, setEnviandoComp]         = useState<string | null>(null)
-  const [compMsg, setCompMsg]                   = useState('')
+  // ── Hooks de domínio ─────────────────────────────────────────
+  const boloes   = useBoloes()
+  const concurso = useConcurso()
+  const parts    = useParticipantes(boloes.bolaoAtual, concurso.concursoAtivo, boloes.carregarBoloes)
+  const conf     = useConferencia(boloes.bolaoAtual, concurso.concursoAtivo, boloes.carregarBoloes)
+  const hist     = useHistorico(boloes.boloes, concurso.concursoAtivo)
+  const kpis     = useKpis()
 
-  // Seleção para impressão
-  const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
+  // ── Aliases (mantêm JSX sem alteração) ───────────────────────
+  const { bolaoAtual, carregarBoloes } = boloes
+  const { concursoAtivo, dataAtiva, premioAtivo } = concurso
+  const { partsBolao, pagosLista, pendentesLista, arrecadado, cotasOcup } = parts
+  const cotasLivres = (bolaoAtual?.total_cotas || 20) - cotasOcup
 
-  // Upload apostas
-  const [uploadingApostas, setUploadingApostas] = useState(false)
-  const [apostasMsg, setApostasMsg]             = useState('')
-  const [showApostasModal, setShowApostasModal]   = useState(false)
-  const [apostasTexto, setApostasTexto]           = useState('')
+  // BolaoList
+  const { linkCopiado, renamingId, setRenamingId, renameVal, setRenameVal,
+          showCreate, setShowCreate, novoNome, setNovoNome, novoSlug, setNovoSlug,
+          criando, criarErro } = boloes
+  const copiarLink     = boloes.copiarLink
+  const renomearBolao  = boloes.renomearBolao
+  const criarBolao     = boloes.criarBolao
 
-  async function salvarApostas() {
-    if (!bolaoAtual || !apostasTexto.trim()) return
-    setUploadingApostas(true); setApostasMsg('')
-    const res = await fetch('/api/admin/apostas-upload', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: apostasTexto, bolao_id: bolaoAtual.id }),
-    })
-    const data = await res.json()
-    setUploadingApostas(false)
-    if (res.ok) {
-      setApostasMsg(`✅ ${data.total_apostas} apostas carregadas!`)
-      setShowApostasModal(false)
-      setApostasTexto('')
-      await carregarBoloes() // atualiza bolaoAtual com apostas_data novo
-    } else {
-      setApostasMsg(`❌ ${data.error}`)
-    }
-    setTimeout(() => setApostasMsg(''), 6000)
-  }
+  // ConcursoPanel
+  const { proximos, loadingCaixa, editDatas, setEditDatas, buscarCaixa } = concurso
 
-  async function removerApostas() {
-    if (!bolaoAtual || !confirm('Remover dados das apostas?')) return
-    await fetch('/api/admin/apostas-upload', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bolao_id: bolaoAtual.id }),
-    })
-    setApostasMsg('✅ Apostas removidas.')
-    setTimeout(() => setApostasMsg(''), 3000)
-    await carregarBoloes() // atualiza bolaoAtual sem apostas_data
-  }
+  // BolaoDetailPanel — participantes
+  const { loadingParts, confirmandoTodos, selecionados, enviandoComp,
+          lembreteMsg, compMsg, apostasMsg,
+          showApostasModal, setShowApostasModal, apostasTexto, setApostasTexto,
+          uploadingApostas,
+          showEncerrar, setShowEncerrar, encerrando, encerrarOk, setEncerrarOk } = parts
+  const confirmarTodos    = parts.confirmarTodos
+  const enviarLembrete    = parts.enviarLembrete
+  const toggleSelecionado = parts.toggleSelecionado
+  const selecionarTodosPagos   = parts.selecionarTodosPagos
+  const imprimirSelecionados   = () => parts.imprimirSelecionados(bolaoAtual?.slug || '')
+  const enviarComprovante      = parts.enviarComprovante
+  const confirmarPagamento     = parts.confirmarPagamento
+  const confirmarAcrescimo     = parts.confirmarAcrescimo
+  const excluir                = parts.excluir
+  const salvarApostas  = () => bolaoAtual && parts.salvarApostas(bolaoAtual.id, carregarBoloes)
+  const removerApostas = () => bolaoAtual && parts.removerApostas(bolaoAtual.id, carregarBoloes)
+  const encerrarBolao  = () => bolaoAtual && parts.encerrarBolao(bolaoAtual.id, bolaoAtual.slug)
 
-  function toggleSelecionado(id: string) {
-    setSelecionados(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
+  // BolaoDetailPanel — conferência
+  const { showConferir, setShowConferir, conferindoRes, conferirMsg, setConferirMsg,
+          dezenasInput, setDezenasInput, conferindoManual,
+          conferirResult, setConferirResult,
+          conferirSorteio, resetarConferencia, conferirManual } = conf
 
-  function selecionarTodosPagos() {
-    const pagos = partsBolao.filter(p => p.status === 'pago').map(p => p.id)
-    setSelecionados(new Set(pagos))
-  }
+  // BolaoDetailPanel — config
+  const { showConfig, setShowConfig, editDezenas, setEditDezenas,
+          editApostas, setEditApostas, editCotas, setEditCotas,
+          editTaxa, setEditTaxa, salvando, configSalva,
+          precoCaixa, custoApostas, totalBolao, valorPorCota } = boloes
+  const salvarConfig = () => bolaoAtual && boloes.salvarConfig(bolaoAtual.id)
 
-  function imprimirSelecionados() {
-    const ids    = Array.from(selecionados).join(',')
-    const bolao  = bolaoAtual?.slug || ''
-    const conc   = concursoAtivo || ''
-    window.open(`/comprovante?ids=${ids}&bolao=${bolao}&concurso=${conc}`, '_blank')
-  }
+  // HistoricoPanel
+  const { historico, showHistorico, modoHistorico, setModoHistorico,
+          histParticipantes, histFiltroConc, setHistFiltroConc,
+          histFiltroSlug, setHistFiltroSlug, histBusca, setHistBusca,
+          loadingHist, msgConvite, setMsgConvite,
+          carregarHistorico, carregarHistParticipantes, enviarConviteNovoBolao } = hist
 
-  // Conferência do sorteio — via useConferencia hook
-  const {
-    showConferir, setShowConferir,
-    conferindoRes, conferirMsg, setConferirMsg,
-    dezenasInput, setDezenasInput,
-    conferindoManual,
-    conferirResult, setConferirResult,
-    conferirSorteio, resetarConferencia, conferirManual,
-    restaurarResultadoSalvo, limparAutoRef,
-  } = useConferencia(bolaoAtual, concursoAtivo, carregarBoloes)
-
-  // Configurador
-  const [showConfig, setShowConfig]   = useState(false)
-  const [editDezenas, setEditDezenas] = useState(6)
-  const [editApostas, setEditApostas] = useState(1)
-  const [editDatas, setEditDatas]     = useState<Record<number, string>>({})
-  const [editCotas, setEditCotas]     = useState(20)
-  const [editTaxa, setEditTaxa]       = useState(0)
-  const [salvando, setSalvando]       = useState(false)
-  const [configSalva, setConfigSalva] = useState(false)
-
-  // Histórico — via useHistorico hook
-  const {
-    historico, showHistorico,
-    modoHistorico, setModoHistorico,
-    histParticipantes,
-    histFiltroConc, setHistFiltroConc,
-    histFiltroSlug, setHistFiltroSlug,
-    histBusca, setHistBusca,
-    loadingHist,
-    msgConvite, setMsgConvite,
-    carregarHistorico, carregarHistParticipantes, enviarConviteNovoBolao,
-  } = useHistorico(boloes, concursoAtivo)
-
-  // KPIs — via useKpis hook
-  const {
-    showKpi, loadingKpi,
-    kpiGeral, kpiConcursos, kpiFreq, kpiGasto, kpiCotas, kpiAba,
-    carregarKpis, setKpiAba,
-  } = useKpis()
+  // KpiDashboard
+  const { showKpi, loadingKpi, kpiGeral, kpiConcursos, kpiFreq,
+          kpiGasto, kpiCotas, kpiAba, carregarKpis, setKpiAba } = kpis
 
   // ── AUTH ──────────────────────────────────────────────────────
   async function login() {
@@ -215,28 +123,15 @@ export default function AdminPage() {
     else setErrLogin('Senha incorreta.')
   }
 
-  // ── DADOS ─────────────────────────────────────────────────────
-  async function carregarBoloes() {
-    const res = await fetch('/api/boloes').then(r => r.json())
-    const lista = res.boloes || []
-    setBoloes(lista)
-    // Atualiza bolaoAtual com dados frescos (apostas_data, resultado_conferencia, etc.)
-    if (bolaoAtual) {
-      const atualizado = lista.find((b: Bolao) => b.id === bolaoAtual.id)
-      if (atualizado) setBolaoAtual(atualizado)
-    }
-  }
-
+  // ── INICIALIZAÇÃO ─────────────────────────────────────────────
   const carregarInicio = useCallback(async () => {
     const [b, ca] = await Promise.all([
       fetch('/api/boloes').then(r => r.json()),
       fetch('/api/concurso-ativo').then(r => r.json()),
     ])
-    setBoloes(b.boloes || [])
-    setConcursoAtivo(ca.concurso || '')
-    setDataAtiva(ca.data || '')
-    setPremioAtivo(ca.premio || '')
-  }, [])
+    boloes.setBoloes(b.boloes || []) // setBoloes do useBoloes
+    concurso.setFromApi(ca.concurso || '', ca.data || '', ca.premio || '') // setFromApi do useConcurso
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { if (logado) carregarInicio() }, [logado, carregarInicio])
 
@@ -250,93 +145,19 @@ export default function AdminPage() {
     return () => clearInterval(id)
   }, [logado])
 
-  async function carregarPartsBolao(slug: string, concurso: string) {
-    setLoadingParts(true)
-    setSelecionados(new Set())
-    const res = await fetch(`/api/participantes?concurso=${concurso}&bolao_slug=${slug}`).then(r => r.json())
-    setPartsBolao(res.participantes || [])
-    setLoadingParts(false)
-  }
-
-  // ── BOLÕES ────────────────────────────────────────────────────
+  // ── ORQUESTRAÇÃO: bolão + participantes + conferência ─────────
   function selecionarBolao(b: Bolao) {
-    setBolaoAtual(b)
-    setEditDezenas(b.dezenas || 6)
-    setEditApostas(b.num_apostas || 1)
-    setEditCotas(b.total_cotas || 20)
-    setEditTaxa(Number(b.taxa_admin) || 0)
-    setConfigSalva(false)
-    setShowConfig(false)
-    setPartsBolao([])
-    limparAutoRef()
-    restaurarResultadoSalvo(b.resultado_conferencia)
-    if (concursoAtivo) carregarPartsBolao(b.slug, concursoAtivo)
+    boloes.setBolaoAtual(b)
+    boloes.aplicarConfigDoBolao(b)
+    conf.limparAutoRef()
+    conf.restaurarResultadoSalvo(b.resultado_conferencia)
+    if (concursoAtivo) parts.carregarPartsBolao(b.slug, concursoAtivo)
   }
 
   function fecharBolao() {
-    setBolaoAtual(null); setPartsBolao([])
-    setShowConfig(false); setConfigSalva(false)
-    setShowEncerrar(false); setEncerrarOk(null)
-  }
-
-  async function encerrarBolao() {
-    if (!bolaoAtual) return
-    setEncerrando(true)
-    const res = await fetch('/api/admin/encerrar-bolao', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        bolao_id:   bolaoAtual.id,
-        bolao_slug: bolaoAtual.slug,
-        concurso:   parseInt(concursoAtivo),
-      }),
-    }).then(r => r.json())
-    setEncerrando(false)
-    if (res.ok) {
-      setShowEncerrar(false)
-      setEncerrarOk({ acrescimo: res.acrescimo, participantes: res.participantes })
-      await carregarBoloes()
-      await carregarPartsBolao(bolaoAtual.slug, concursoAtivo)
-    } else {
-      alert('Erro: ' + res.error)
-    }
-  }
-
-
-  async function enviarComprovante(id: string) {
-    if (!bolaoAtual) return
-    setEnviandoComp(id); setCompMsg('')
-    const res = await fetch('/api/admin/comprovante', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ participante_id: id, bolao_slug: bolaoAtual.slug }),
-    }).then(r => r.json())
-    setEnviandoComp(null)
-    setCompMsg(res.ok ? '✅ Comprovante enviado!' : '❌ ' + (res.error || 'Erro ao enviar'))
-    setTimeout(() => setCompMsg(''), 4000)
-  }
-
-  async function confirmarAcrescimo(id: string) {
-    await fetch(`/api/participantes/${id}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ acrescimo_pago: true }),
-    })
-    if (bolaoAtual && concursoAtivo) carregarPartsBolao(bolaoAtual.slug, concursoAtivo)
-  }
-
-  function copiarLink(slug: string) {
-    navigator.clipboard.writeText(`${window.location.origin}/${slug}`)
-      .then(() => { setLinkCopiado(true); setTimeout(() => setLinkCopiado(false), 2000) })
-  }
-
-  async function renomearBolao(id: string) {
-    const nome = renameVal.trim()
-    if (!nome) return
-    const res = await fetch('/api/boloes', {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, nome }),
-    }).then(r => r.json())
-    if (res.error) { alert('❌ ' + res.error); return }
-    setRenamingId(null)
-    await carregarBoloes()
+    boloes.setBolaoAtual(null)
+    boloes.setShowConfig(false)
+    parts.limparEstado()
   }
 
   async function cancelarBolao(b: Bolao) {
@@ -355,146 +176,30 @@ export default function AdminPage() {
       ? `⚠️ ATENÇÃO: Excluir "${b.nome}" junto com TODOS os participantes e histórico?\n\nEsta ação é irreversível.`
       : `Excluir permanentemente "${b.nome}"?\n\nEsta ação não pode ser desfeita.`
     if (!confirm(aviso)) return
-
     const res = await fetch('/api/boloes', {
       method: 'DELETE', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: b.id, force }),
     }).then(r => r.json())
-
     if (res.error && res.count > 0 && !force) {
-      // Oferece exclusão forçada com aviso extra
-      const confirmarForce = confirm(
+      const ok = confirm(
         `❌ Este bolão tem ${res.count} participante(s) no histórico.\n\n` +
         `Deseja excluir o bolão E todos os participantes permanentemente?\n\n` +
         `(Isso remove o histórico completo deste bolão)`
       )
-      if (confirmarForce) excluirBolao(b, true)
+      if (ok) excluirBolao(b, true)
       return
     }
-
     if (res.error) { alert('❌ ' + res.error); return }
     await carregarBoloes()
     if (bolaoAtual?.id === b.id) fecharBolao()
   }
 
-  async function criarBolao() {
-    if (!novoNome || !novoSlug) return
-    setCriando(true); setCriarErro('')
-    const res = await fetch('/api/boloes', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome: novoNome, slug: novoSlug }),
-    }).then(r => r.json())
-    setCriando(false)
-    if (res.error) { setCriarErro('❌ ' + res.error); return }
-    await carregarBoloes()
-    setNovoNome(''); setNovoSlug(''); setShowCreate(false); setCriarErro('')
-  }
-
-  // ── PARTICIPANTES ─────────────────────────────────────────────
-  async function confirmarPagamento(id: string) {
-    await fetch(`/api/participantes/${id}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'pago' }),
-    })
-    if (bolaoAtual && concursoAtivo) carregarPartsBolao(bolaoAtual.slug, concursoAtivo)
-  }
-
-  async function confirmarTodos() {
-    const pendentes = partsBolao.filter(p => p.status === 'aguardando')
-    if (!pendentes.length) return
-    if (!confirm(`Confirmar pagamento de ${pendentes.length} participante(s)?`)) return
-    setConfirmandoTodos(true)
-    await Promise.all(pendentes.map(p =>
-      fetch(`/api/participantes/${p.id}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'pago' }),
-      })
-    ))
-    if (bolaoAtual && concursoAtivo) await carregarPartsBolao(bolaoAtual.slug, concursoAtivo)
-    setConfirmandoTodos(false)
-  }
-
-  async function excluir(id: string, nome: string) {
-    if (!confirm(`Excluir ${nome}?`)) return
-    await fetch(`/api/participantes/${id}`, { method: 'DELETE' })
-    if (bolaoAtual && concursoAtivo) carregarPartsBolao(bolaoAtual.slug, concursoAtivo)
-  }
-
-  async function enviarLembrete() {
-    setLembreteMsg('Enviando...')
-    const res = await fetch('/api/admin/lembrete', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ concurso: parseInt(concursoAtivo), bolao_slug: bolaoAtual?.slug }),
-    }).then(r => r.json())
-    setLembreteMsg(res.ok ? `✅ Lembrete enviado — ${res.pendentes} pendentes` : '❌ Erro ao enviar')
-    setTimeout(() => setLembreteMsg(''), 4000)
-  }
-
-  // ── CONFIGURADOR ──────────────────────────────────────────────
-  async function salvarConfig() {
-    if (!bolaoAtual) return
-    setSalvando(true)
-    const preco = CAIXA_PRECOS[editDezenas] ?? 6
-    const custo = editApostas * preco
-    const valor = editCotas > 0 ? parseFloat(((custo + editTaxa) / editCotas).toFixed(2)) : 0
-    await fetch('/api/boloes', {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: bolaoAtual.id, dezenas: editDezenas, num_apostas: editApostas,
-        total_cotas: editCotas, taxa_admin: editTaxa, valor_cota: valor,
-      }),
-    })
-    await carregarBoloes()
-    setSalvando(false); setConfigSalva(true)
-    setTimeout(() => setConfigSalva(false), 3000)
-  }
-
-  // ── CONCURSO ──────────────────────────────────────────────────
-  async function buscarCaixa() {
-    setLoadingCaixa(true)
-    try {
-      const API = 'https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena'
-      let data: Record<string, unknown>
-      try { data = await fetch(API).then(r => r.json()) }
-      catch {
-        const w = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(API)}`).then(r => r.json())
-        data = JSON.parse(w.contents as string)
-      }
-      const ultimo   = parseInt(String(data.numero || data.numeroConcurso || 0))
-      const proxData = String(data.dataProximoConcurso || '')
-      const premioVal = data.valorEstimadoProximoConcurso as number
-      const d1 = parseBRDate(proxData)
-      const d2 = d1 ? nextDrawDate(d1) : null
-      const d3 = d2 ? nextDrawDate(d2) : null
-      setProximos([
-        { num: ultimo+1, data: formatData(d1), premio: premioVal ? formatPremio(premioVal) : '—' },
-        { num: ultimo+2, data: formatData(d2), premio: 'Acumulando' },
-        { num: ultimo+3, data: formatData(d3), premio: 'Acumulando' },
-      ])
-    } finally { setLoadingCaixa(false) }
-  }
-
-  async function selecionarConcurso(c: Concurso) {
-    await fetch('/api/concurso-ativo', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ concurso: c.num, data: c.data, premio: c.premio }),
-    })
-    setConcursoAtivo(String(c.num)); setDataAtiva(c.data); setPremioAtivo(c.premio)
-    if (bolaoAtual) carregarPartsBolao(bolaoAtual.slug, String(c.num))
+  async function selecionarConcurso(c: { num: number; data: string; premio: string }) {
+    await concurso.selecionarConcurso(c)
+    if (bolaoAtual) parts.carregarPartsBolao(bolaoAtual.slug, String(c.num))
   }
 
 
-  // ── COMPUTED ──────────────────────────────────────────────────
-  const pagosLista    = partsBolao.filter(p => p.status === 'pago')
-  const pendentesLista = partsBolao.filter(p => p.status === 'aguardando')
-  const arrecadado    = pagosLista.reduce((s, p) => s + Number(p.total), 0)
-  const cotasOcup     = [...new Set(partsBolao.flatMap(p => Array.isArray(p.cotas) ? p.cotas : []))].length
-  const cotasLivres   = (bolaoAtual?.total_cotas || 20) - cotasOcup
-
-  const precoCaixa   = CAIXA_PRECOS[editDezenas] ?? 6
-  const custoApostas = editApostas * precoCaixa
-  const totalBolao   = custoApostas + editTaxa
-  const valorPorCota = editCotas > 0 ? totalBolao / editCotas : 0
 
   // ── LOGIN ─────────────────────────────────────────────────────
   if (!logado) return (
@@ -679,7 +384,7 @@ export default function AdminPage() {
           histFiltroSlug={histFiltroSlug}
           histFiltroConc={histFiltroConc}
           msgConvite={msgConvite}
-          boloes={boloes}
+          boloes={boloes.boloes}
           onModoChange={setModoHistorico}
           onCarregarResumo={carregarHistorico}
           onCarregarParticipantes={carregarHistParticipantes}
@@ -701,25 +406,4 @@ export default function AdminPage() {
       </div>
     </div>
   )
-}
-
-function parseBRDate(str: string): Date | null {
-  if (!str) return null
-  const [d, m, y] = str.split('/').map(Number)
-  return new Date(y, m - 1, d)
-}
-function nextDrawDate(d: Date): Date {
-  const dia = d.getDay()
-  const add = dia === 2 ? 2 : dia === 4 ? 2 : dia === 6 ? 3 : 1
-  const n = new Date(d); n.setDate(n.getDate() + add); return n
-}
-function formatData(d: Date | null): string {
-  if (!d) return '—'
-  const dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
-  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} · ${dias[d.getDay()]}`
-}
-function formatPremio(v: number): string {
-  if (v >= 1e9) return `R$ ${(v/1e9).toFixed(1).replace('.',',')} bi`
-  if (v >= 1e6) return `R$ ${(v/1e6).toFixed(1).replace('.',',')} mi`
-  return `R$ ${v.toLocaleString('pt-BR')}`
 }
