@@ -30,3 +30,27 @@ Responsavel apenas pela tela de login do painel administrativo.
 - Notifica alteracoes por `onSenhaChange`.
 - Dispara a tentativa de login por `onLogin`.
 - Nao conhece API, cookie, JWT ou regra de autenticacao.
+
+### `AdminStats`
+
+Grade de estatisticas no topo do painel.
+
+- Exibe resumo do bolao selecionado (pagos, pendentes, arrecadado) ou visao geral (concurso ativo, premio, boloes ativos).
+- Apenas renderizacao — sem side effects ou chamadas de API.
+- Props: `bolaoAtual`, `pagosLista`, `pendentesLista`, `arrecadado`, `concursoAtivo`, `dataAtiva`, `premioAtivo`, `boloesAtivosCount`.
+
+### `AdminSenha`
+
+Painel de seguranca para alteracao de senha do admin.
+
+- Gerencia seu proprio estado interno (senhaAtual, novaSenha, confirmSenha).
+- Chama `/api/admin/senha` diretamente — componente autocontido.
+- Nao recebe callbacks externos.
+
+### `BolaoList`
+
+Painel esquerdo com lista de boloes e formulario de criacao.
+
+- Recebe dados e callbacks por props; sem chamadas de API diretas.
+- Regras de negocio (criar, cancelar, excluir, renomear) ficam em `app/admin/page.tsx`.
+- Props agrupadas em `actions` para reduzir verbosidade da interface.

@@ -4,6 +4,9 @@ import styles from './admin.module.css'
 import EsporteAdmin from './EsporteAdmin'
 import AdminHeader from '@/components/admin/AdminHeader'
 import AdminLogin from '@/components/admin/AdminLogin'
+import AdminStats from '@/components/admin/AdminStats'
+import AdminSenha from '@/components/admin/AdminSenha'
+import BolaoList from '@/components/admin/BolaoList'
 
 interface Participante {
   id: string; nome: string; cotas: string[]; total: number
@@ -298,14 +301,6 @@ export default function AdminPage() {
     setShowKpi(true)
   }
 
-  // Segurança
-  const [showSenha, setShowSenha]         = useState(false)
-  const [senhaAtual, setSenhaAtual]       = useState('')
-  const [novaSenha, setNovaSenha]         = useState('')
-  const [confirmSenha, setConfirmSenha]   = useState('')
-  const [senhaMsg, setSenhaMsg]           = useState('')
-  const [salvandoSenha, setSalvandoSenha] = useState(false)
-
   // ── AUTH ──────────────────────────────────────────────────────
   async function login() {
     const res = await fetch('/api/auth', {
@@ -314,22 +309,6 @@ export default function AdminPage() {
     })
     if (res.ok) { setLogado(true); setErrLogin(''); carregarInicio() }
     else setErrLogin('Senha incorreta.')
-  }
-
-  async function alterarSenha() {
-    if (novaSenha !== confirmSenha) { setSenhaMsg('❌ As senhas não coincidem.'); return }
-    if (novaSenha.length < 6)       { setSenhaMsg('❌ Mínimo de 6 caracteres.'); return }
-    setSalvandoSenha(true); setSenhaMsg('')
-    const res = await fetch('/api/admin/senha', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ senhaAtual, novaSenha }),
-    }).then(r => r.json())
-    setSalvandoSenha(false)
-    if (res.ok) {
-      setSenhaMsg('✅ Senha alterada com sucesso!')
-      setSenhaAtual(''); setNovaSenha(''); setConfirmSenha('')
-      setTimeout(() => { setSenhaMsg(''); setShowSenha(false) }, 3000)
-    } else { setSenhaMsg('❌ ' + res.error) }
   }
 
   // ── DADOS ─────────────────────────────────────────────────────
@@ -678,148 +657,48 @@ export default function AdminPage() {
       <div className={styles.content}>
 
         {/* ── STATS ── */}
-        <div className={styles.statsGrid}>
-          {bolaoAtual ? (<>
-            <div className={styles.statCard}>
-              <span className={styles.statLabel}>Bolão</span>
-              <div className={styles.statValSm}>{bolaoAtual.nome}</div>
-              <span className={styles.statSub}>/{bolaoAtual.slug}</span>
-            </div>
-            <div className={styles.statCard}>
-              <span className={styles.statLabel}>✅ Pagos</span>
-              <div className={styles.statVal}>{pagosLista.length}</div>
-            </div>
-            <div className={`${styles.statCard} ${pendentesLista.length > 0 ? styles.statWarn : ''}`}>
-              <span className={styles.statLabel}>⏳ Pendentes</span>
-              <div className={styles.statVal}>{pendentesLista.length}</div>
-            </div>
-            <div className={styles.statCard}>
-              <span className={styles.statLabel}>Arrecadado</span>
-              <div className={styles.statVal}>R$ {arrecadado.toFixed(2).replace('.',',')}</div>
-            </div>
-          </>) : (<>
-            <div className={styles.statCard}>
-              <span className={styles.statLabel}>Concurso Ativo</span>
-              <div className={styles.statVal}>{concursoAtivo ? `#${concursoAtivo}` : '—'}</div>
-              {dataAtiva && <span className={styles.statSub}>{dataAtiva}</span>}
-            </div>
-            <div className={styles.statCard}>
-              <span className={styles.statLabel}>Prêmio Estimado</span>
-              <div className={styles.statVal}>{premioAtivo || '—'}</div>
-            </div>
-            <div className={styles.statCard}>
-              <span className={styles.statLabel}>Bolões Ativos</span>
-              <div className={styles.statVal}>{boloes.filter(b => b.ativo).length}</div>
-            </div>
-            <div className={styles.statCard}>
-              <span className={styles.statLabel}>Selecione um Bolão</span>
-              <div className={styles.statValHint}>para ver detalhes</div>
-            </div>
-          </>)}
-        </div>
+        <AdminStats
+          bolaoAtual={bolaoAtual}
+          pagosLista={pagosLista}
+          pendentesLista={pendentesLista}
+          arrecadado={arrecadado}
+          concursoAtivo={concursoAtivo}
+          dataAtiva={dataAtiva}
+          premioAtivo={premioAtivo}
+          boloesAtivosCount={boloes.filter(b => b.ativo).length}
+        />
 
         {/* ── GRID PRINCIPAL ── */}
         <div className={styles.adminGrid}>
 
           {/* ── ESQUERDA: BOLÕES ── */}
           <div className={styles.leftPanel}>
-            <div className={styles.panel}>
-              <div className={styles.panelTitle}>🎰 Bolões</div>
-
-              {boloes.length === 0 && !showCreate && (
-                <div className={styles.empty}>Nenhum bolão. Clique em &quot;+ Novo Bolão&quot;.</div>
-              )}
-
-              {boloes.map(b => (
-                <div key={b.id}
-                  className={`${styles.bolaoCard} ${bolaoAtual?.id === b.id ? styles.selected : ''} ${!b.ativo ? styles.bolaoInativo : ''}`}
-                  onClick={() => b.ativo && selecionarBolao(b)}>
-                  <div className={styles.bolaoInfo}>
-                    {renamingId === b.id ? (
-                      <div className={styles.renameRow} onClick={e => e.stopPropagation()}>
-                        <input
-                          className={styles.renameInput}
-                          value={renameVal}
-                          title="Novo nome do bolão"
-                          placeholder="Nome do bolão"
-                          onChange={e => setRenameVal(e.target.value)}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') renomearBolao(b.id)
-                            if (e.key === 'Escape') setRenamingId(null)
-                          }}
-                          autoFocus
-                        />
-                        <button type="button" className={styles.btnRenomearOk} onClick={() => renomearBolao(b.id)}>✓</button>
-                        <button type="button" className={styles.btnRenomearCancel} onClick={() => setRenamingId(null)}>✕</button>
-                      </div>
-                    ) : (
-                      <div className={styles.bolaoNomeRow}>
-                        <div className={styles.bolaoNome}>{b.nome}</div>
-                        <button type="button" className={styles.btnRenomear}
-                          onClick={e => { e.stopPropagation(); setRenamingId(b.id); setRenameVal(b.nome) }}
-                          title="Renomear">✎</button>
-                      </div>
-                    )}
-                    <div className={styles.bolaoUrl}>/{b.slug}</div>
-                    <div className={styles.bolaoMeta}>
-                      {b.num_apostas || 1} apostas · {b.dezenas || 6} dez · R$ {Number(b.valor_cota).toFixed(2).replace('.',',')}/cota
-                    </div>
-                  </div>
-                  <div className={styles.bolaoActions}>
-                    {b.resultado_conferencia?.status === 'ganhamos'     && <span className={styles.badgeGanhou}>🏆</span>}
-                    {b.resultado_conferencia?.status === 'nao_premiada' && <span className={styles.badgeNaoPremiada}>😔</span>}
-                    {b.resultado_conferencia?.status === 'nao_apurado'  && <span className={styles.badgeNaoApurado}>⏳</span>}
-                    {b.ativo
-                      ? <span className={styles.bolaoAtivo}>ATIVO</span>
-                      : <span className={styles.bolaoCancelado}>CANCELADO</span>
-                    }
-                    {b.ativo && (
-                      <button type="button" className={styles.btnSel}
-                        onClick={e => { e.stopPropagation(); copiarLink(b.slug) }}
-                        title="Copiar link">
-                        {linkCopiado ? '✓' : '🔗'}
-                      </button>
-                    )}
-                    <button type="button"
-                      className={b.ativo ? styles.btnCancelarBolao : styles.btnReativarBolao}
-                      onClick={e => { e.stopPropagation(); cancelarBolao(b) }}
-                      title={b.ativo ? 'Cancelar bolão' : 'Reativar bolão'}>
-                      {b.ativo ? '⊘' : '↺'}
-                    </button>
-                    {!b.ativo && (
-                      <button type="button" className={styles.btnExcluirBolao}
-                        onClick={e => { e.stopPropagation(); excluirBolao(b) }}
-                        title="Excluir permanentemente (só disponível para bolões cancelados sem participantes ativos)">
-                        🗑
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {!showCreate
-                ? <button type="button" className={styles.btnLoad} onClick={() => setShowCreate(true)}>+ Novo Bolão</button>
-                : (
-                  <div className={styles.createForm}>
-                    <input className={styles.createInput} placeholder="Nome do bolão"
-                      value={novoNome} onChange={e => setNovoNome(e.target.value)} />
-                    <input className={styles.createInput} placeholder="slug (ex: grupo-vip)"
-                      value={novoSlug}
-                      onChange={e => setNovoSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '').replace(/-{2,}/g, '-'))} />
-                    {criarErro && <div className={styles.loginErr}>{criarErro}</div>}
-                    <div className={styles.createBtns}>
-                      <button type="button" className={styles.btnCreate} onClick={criarBolao} disabled={criando || !novoNome.trim() || !novoSlug.trim()}>
-                        {criando ? 'Criando...' : 'Criar'}
-                      </button>
-                      <button type="button" className={styles.btnLoad}
-                        onClick={() => { setShowCreate(false); setNovoNome(''); setNovoSlug(''); setCriarErro('') }}>
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-                )
-              }
-            </div>
+            <BolaoList
+              boloes={boloes}
+              bolaoAtualId={bolaoAtual?.id ?? null}
+              linkCopiado={linkCopiado}
+              renamingId={renamingId}
+              renameVal={renameVal}
+              onRenameValChange={setRenameVal}
+              showCreate={showCreate}
+              novoNome={novoNome}
+              novoSlug={novoSlug}
+              criando={criando}
+              criarErro={criarErro}
+              onNovoNomeChange={setNovoNome}
+              onNovoSlugChange={setNovoSlug}
+              onShowCreateToggle={v => { setShowCreate(v); if (!v) { setNovoNome(''); setNovoSlug(''); setCriarErro('') } }}
+              actions={{
+                onSelecionar: selecionarBolao,
+                onCopiarLink: copiarLink,
+                onCancelar: cancelarBolao,
+                onExcluir: excluirBolao,
+                onRenomear: id => { setRenamingId(id); setRenameVal(boloes.find(b => b.id === id)?.nome ?? '') },
+                onRenomearConfirm: renomearBolao,
+                onRenomearCancel: () => setRenamingId(null),
+                onCriar: criarBolao,
+              }}
+            />
           </div>
 
           {/* ── DIREITA: DETALHE DO BOLÃO ou CONCURSOS ── */}
@@ -1646,30 +1525,7 @@ export default function AdminPage() {
         <EsporteAdmin />
 
         {/* ── SEGURANÇA ── */}
-        <div className={styles.panel}>
-          <div className={styles.panelTitle}>🔐 Segurança</div>
-          {!showSenha
-            ? <button type="button" className={styles.btnLoad} onClick={() => setShowSenha(true)}>🔑 Alterar senha do admin</button>
-            : (
-              <div className={styles.senhaForm}>
-                <input type="password" className={styles.createInput} placeholder="Senha atual"
-                  value={senhaAtual} onChange={e => setSenhaAtual(e.target.value)} />
-                <input type="password" className={styles.createInput} placeholder="Nova senha (mín. 6 caracteres)"
-                  value={novaSenha} onChange={e => setNovaSenha(e.target.value)} />
-                <input type="password" className={styles.createInput} placeholder="Confirmar nova senha"
-                  value={confirmSenha} onChange={e => setConfirmSenha(e.target.value)} />
-                {senhaMsg && <div className={styles.senhaMsg}>{senhaMsg}</div>}
-                <div className={styles.senhaActions}>
-                  <button type="button" className={styles.btnCreate} onClick={alterarSenha} disabled={salvandoSenha}>
-                    {salvandoSenha ? 'Salvando...' : 'Salvar nova senha'}
-                  </button>
-                  <button type="button" className={styles.btnLoad}
-                    onClick={() => { setShowSenha(false); setSenhaMsg('') }}>Cancelar</button>
-                </div>
-              </div>
-            )
-          }
-        </div>
+        <AdminSenha />
 
       </div>
     </div>
