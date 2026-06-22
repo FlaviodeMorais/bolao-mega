@@ -76,6 +76,7 @@ export default function AdminPage() {
           showApostasModal, setShowApostasModal, apostasTexto, setApostasTexto,
           uploadingApostas,
           showEncerrar, setShowEncerrar, encerrando, encerrarOk, setEncerrarOk } = parts
+  const carregarPartsBolao = parts.carregarPartsBolao
   const confirmarTodos    = parts.confirmarTodos
   const enviarLembrete    = parts.enviarLembrete
   const toggleSelecionado = parts.toggleSelecionado
@@ -231,7 +232,7 @@ export default function AdminPage() {
           concursoAtivo={concursoAtivo}
           dataAtiva={dataAtiva}
           premioAtivo={premioAtivo}
-          boloesAtivosCount={boloes.filter(b => b.ativo).length}
+          boloesAtivosCount={boloes.boloes.filter(b => b.ativo).length}
         />
 
         {/* ── GRID PRINCIPAL ── */}
@@ -240,7 +241,7 @@ export default function AdminPage() {
           {/* ── ESQUERDA: BOLÕES ── */}
           <div className={styles.leftPanel}>
             <BolaoList
-              boloes={boloes}
+              boloes={boloes.boloes}
               bolaoAtualId={bolaoAtual?.id ?? null}
               linkCopiado={linkCopiado}
               renamingId={renamingId}
@@ -253,13 +254,13 @@ export default function AdminPage() {
               criarErro={criarErro}
               onNovoNomeChange={setNovoNome}
               onNovoSlugChange={setNovoSlug}
-              onShowCreateToggle={v => { setShowCreate(v); if (!v) { setNovoNome(''); setNovoSlug(''); setCriarErro('') } }}
+              onShowCreateToggle={v => { setShowCreate(v); if (!v) { setNovoNome(''); setNovoSlug('') } }}
               actions={{
                 onSelecionar: selecionarBolao,
                 onCopiarLink: copiarLink,
                 onCancelar: cancelarBolao,
                 onExcluir: excluirBolao,
-                onRenomear: id => { setRenamingId(id); setRenameVal(boloes.find(b => b.id === id)?.nome ?? '') },
+                onRenomear: id => { setRenamingId(id); setRenameVal(boloes.boloes.find(b => b.id === id)?.nome ?? '') },
                 onRenomearConfirm: renomearBolao,
                 onRenomearCancel: () => setRenamingId(null),
                 onCriar: criarBolao,
@@ -318,7 +319,7 @@ export default function AdminPage() {
                 onEnviarLembrete={enviarLembrete}
                 onToggleSelecionado={toggleSelecionado}
                 onSelecionarTodosPagos={selecionarTodosPagos}
-                onLimparSelecao={() => setSelecionados(new Set())}
+                onLimparSelecao={() => parts.setSelecionados(new Set())}
                 onImprimirSelecionados={imprimirSelecionados}
                 onEnviarComprovante={enviarComprovante}
                 onConfirmarPagamento={confirmarPagamento}

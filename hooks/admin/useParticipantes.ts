@@ -4,6 +4,7 @@ export interface Participante {
   id: string; nome: string; cotas: string[]; total: number
   status: string; telefone?: string; criado_em?: string
   acrescimo?: number; acrescimo_pago?: boolean
+  [key: string]: unknown
 }
 
 interface BolaoRef { id: string; slug: string }

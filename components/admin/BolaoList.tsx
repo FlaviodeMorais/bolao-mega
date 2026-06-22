@@ -2,12 +2,8 @@
 
 import styles from '@/app/admin/admin.module.css'
 
-export interface Bolao {
-  id: string; nome: string; slug: string; valor_cota: number
-  total_cotas: number; ativo: boolean; dezenas: number; num_apostas: number
-  taxa_admin: number; encerrado: boolean
-  resultado_conferencia?: { status: string } | null
-}
+import type { Bolao } from '@/hooks/admin/useBoloes'
+export type { Bolao }
 
 interface BolaoListActions {
   onSelecionar: (b: Bolao) => void
