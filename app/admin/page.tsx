@@ -2,6 +2,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import styles from './admin.module.css'
 import EsporteAdmin from './EsporteAdmin'
+import AdminHeader from '@/components/admin/AdminHeader'
+import AdminLogin from '@/components/admin/AdminLogin'
 
 interface Participante {
   id: string; nome: string; cotas: string[]; total: number
@@ -656,35 +658,22 @@ export default function AdminPage() {
 
   // ── LOGIN ─────────────────────────────────────────────────────
   if (!logado) return (
-    <div className={styles.loginWrap}>
-      <div className={styles.loginBox}>
-        <div className={styles.loginTitle}>🍀 Admin</div>
-        <div className={styles.loginSub}>GRUPO MEGA 💯</div>
-        <input type="password" placeholder="SENHA ADMIN" value={senha}
-          onChange={e => setSenha(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && login()}
-          className={styles.loginInput} />
-        {errLogin && <div className={styles.loginErr}>{errLogin}</div>}
-        <button type="button" className={styles.loginBtn} onClick={login}>Entrar</button>
-      </div>
-    </div>
+    <AdminLogin
+      senha={senha}
+      errLogin={errLogin}
+      onSenhaChange={setSenha}
+      onLogin={login}
+    />
   )
 
   // ── MAIN ──────────────────────────────────────────────────────
   return (
     <div className={styles.wrap}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>⚙️ Painel Admin — Grupo Mega 💯</h1>
-        <div className={styles.headerRight}>
-          <span className={styles.headerConcurso}>{concursoAtivo ? `Concurso #${concursoAtivo}` : '—'}</span>
-          {waStatus && (
-            <span className={waStatus === 'ok' ? styles.waOk : styles.waErro} title={waMsg}>
-              {waStatus === 'ok' ? '📱 WA ●' : '📵 WA ●'}
-            </span>
-          )}
-          <a href="/" className={styles.linkForm}>← Formulário</a>
-        </div>
-      </div>
+      <AdminHeader
+        concursoAtivo={concursoAtivo}
+        waStatus={waStatus}
+        waMsg={waMsg}
+      />
 
       <div className={styles.content}>
 

@@ -5,11 +5,19 @@ export async function GET(req: NextRequest) {
   const paymentId = req.nextUrl.searchParams.get('paymentId')
   if (!paymentId) return NextResponse.json({ status: 'unknown' })
 
-  const { data } = await supabase
+  const { data: participanteMega } = await supabase
     .from('participantes')
     .select('id, nome, cotas, total, status, mp_payment_id, created_at')
     .eq('mp_payment_id', paymentId)
     .single()
 
-  return NextResponse.json(data || { status: 'unknown' })
+  if (participanteMega) return NextResponse.json(participanteMega)
+
+  const { data: participanteEsporte } = await supabase
+    .from('participantes_esporte')
+    .select('id, nome, total, status, mp_payment_id, created_at')
+    .eq('mp_payment_id', paymentId)
+    .single()
+
+  return NextResponse.json(participanteEsporte || { status: 'unknown' })
 }

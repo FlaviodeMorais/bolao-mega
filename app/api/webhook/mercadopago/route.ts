@@ -34,6 +34,20 @@ export async function POST(req: NextRequest) {
           ).catch(() => {})
         }
       } else {
+        const { data: partEsp } = await supabase
+          .from('participantes_esporte')
+          .select('id')
+          .eq('mp_payment_id', paymentId)
+          .single()
+
+        if (partEsp) {
+          await supabase
+            .from('participantes_esporte')
+            .update({ status: 'pago' })
+            .eq('mp_payment_id', paymentId)
+          return NextResponse.json({ ok: true })
+        }
+
         // Pagamento de acréscimo
         const { data: partAcr } = await supabase
           .from('participantes')
