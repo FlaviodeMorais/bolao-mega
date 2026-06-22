@@ -7,6 +7,9 @@ import AdminLogin from '@/components/admin/AdminLogin'
 import AdminStats from '@/components/admin/AdminStats'
 import AdminSenha from '@/components/admin/AdminSenha'
 import BolaoList from '@/components/admin/BolaoList'
+import ConcursoPanel from '@/components/admin/ConcursoPanel'
+import KpiDashboard from '@/components/admin/KpiDashboard'
+import HistoricoPanel from '@/components/admin/HistoricoPanel'
 
 interface Participante {
   id: string; nome: string; cotas: string[]; total: number
@@ -1150,376 +1153,57 @@ export default function AdminPage() {
               </div>
 
             ) : (
-
-              /* ── PRÓXIMOS CONCURSOS ── */
-              <div className={styles.panel}>
-                <div className={styles.panelTitle}>🎲 Próximos Concursos</div>
-                <div className={styles.helpBox}>
-                  <p>Selecione um bolão à esquerda para gerenciar participantes.</p>
-                  <p>Aqui você também pode definir qual concurso está ativo para as inscrições.</p>
-                </div>
-                <button type="button" className={styles.btnLoad} onClick={buscarCaixa} disabled={loadingCaixa}>
-                  {loadingCaixa ? '⟳ Carregando...' : '🔄 Buscar na Caixa'}
-                </button>
-                {proximos.length > 0 && (
-                  <p className={styles.ccAvisoData}>
-                    ⚠️ Data calculada = encerramento das apostas. Edite para a data/hora real do sorteio antes de selecionar.
-                  </p>
-                )}
-                {proximos.map(c => {
-                  const dataEditada = editDatas[c.num] ?? c.data
-                  return (
-                    <div key={c.num} className={`${styles.concursoCard} ${String(c.num) === concursoAtivo ? styles.ativo : ''}`}>
-                      <div className={styles.ccBody}>
-                        <div className={styles.ccNum}>#{c.num}</div>
-                        <div className={styles.ccEncerramento}>
-                          Encerramento apostas: {c.data}
-                        </div>
-                        <div className={styles.ccSorteioLabel}>Data/hora do sorteio:</div>
-                        <input
-                          type="text"
-                          className={styles.ccSorteioInput}
-                          placeholder="Ex: 24/05 · Dom · 11h00"
-                          value={dataEditada}
-                          onChange={e => setEditDatas(prev => ({...prev, [c.num]: e.target.value}))}
-                        />
-                        <div className={styles.ccPremio}>{c.premio}</div>
-                      </div>
-                      <button type="button"
-                        className={`${styles.btnSel} ${String(c.num) === concursoAtivo ? styles.btnSelAtivo : ''}`}
-                        onClick={() => selecionarConcurso({ ...c, data: dataEditada })}>
-                        {String(c.num) === concursoAtivo ? '✔ Ativo' : 'Selecionar'}
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
+              <ConcursoPanel
+                proximos={proximos}
+                concursoAtivo={concursoAtivo}
+                loadingCaixa={loadingCaixa}
+                editDatas={editDatas}
+                onEditData={(num, val) => setEditDatas(prev => ({ ...prev, [num]: val }))}
+                onBuscarCaixa={buscarCaixa}
+                onSelecionar={selecionarConcurso}
+              />
             )}
           </div>
         </div>
 
         {/* ── KPI DASHBOARD ── */}
-        <div className={styles.panel}>
-          <div className={styles.histHeader}>
-            <div>
-              <div className={styles.panelTitle}>📊 Insights & KPIs</div>
-              <div className={styles.histSubtitle}>Análise de desempenho dos bolões</div>
-            </div>
-            <button type="button" className={styles.btnAcao} onClick={carregarKpis} disabled={loadingKpi}>
-              {loadingKpi ? 'Carregando…' : showKpi ? '↻ Atualizar' : 'Ver Insights'}
-            </button>
-          </div>
-
-          {showKpi && kpiGeral && (
-            <div className={styles.kpiWrap}>
-
-              {/* Cards de visão geral */}
-              <div className={styles.kpiCards}>
-                <div className={styles.kpiCard}>
-                  <div className={styles.kpiCardLabel}>Total arrecadado</div>
-                  <div className={styles.kpiCardVal}>R$ {kpiGeral.totalArrecadado.toFixed(2).replace('.',',')}</div>
-                  <div className={styles.kpiCardSub}>{kpiGeral.totalConcursos} concursos</div>
-                </div>
-                <div className={styles.kpiCard}>
-                  <div className={styles.kpiCardLabel}>Participantes únicos</div>
-                  <div className={styles.kpiCardVal}>{kpiGeral.totalParticipantes}</div>
-                  <div className={styles.kpiCardSub}>{kpiGeral.totalCotas} cotas no total</div>
-                </div>
-                <div className={styles.kpiCard}>
-                  <div className={styles.kpiCardLabel}>Ticket médio</div>
-                  <div className={styles.kpiCardVal}>R$ {kpiGeral.ticketMedio.toFixed(2).replace('.',',')}</div>
-                  <div className={styles.kpiCardSub}>por participação paga</div>
-                </div>
-                <div className={`${styles.kpiCard} ${kpiGeral.taxaConversao >= 70 ? styles.kpiCardGreen : kpiGeral.taxaConversao >= 40 ? styles.kpiCardYellow : styles.kpiCardRed}`}>
-                  <div className={styles.kpiCardLabel}>Taxa de pagamento</div>
-                  <div className={styles.kpiCardVal}>{kpiGeral.taxaConversao.toFixed(0)}%</div>
-                  <div className={styles.kpiCardSub}>{kpiGeral.totalPagos} pagos · {kpiGeral.totalPendentes} pendentes</div>
-                </div>
-                <div className={styles.kpiCard}>
-                  <div className={styles.kpiCardLabel}>Retenção</div>
-                  <div className={styles.kpiCardVal}>{kpiGeral.taxaRetencao.toFixed(0)}%</div>
-                  <div className={styles.kpiCardSub}>voltam no próximo concurso</div>
-                </div>
-              </div>
-
-              {/* Arrecadação por concurso */}
-              {kpiConcursos.length > 0 && (
-                <div className={styles.kpiSection}>
-                  <div className={styles.kpiSectionTitle}>Arrecadação por concurso</div>
-                  <div className={styles.kpiBarChart}>
-                    {(() => {
-                      const max = Math.max(...kpiConcursos.map(c => c.arrecadado), 1)
-                      return kpiConcursos.map(c => (
-                        <div key={c.concurso} className={styles.kpiBarRow}>
-                          <div className={styles.kpiBarLabel}>#{c.concurso}</div>
-                          <div className={styles.kpiBarTrack}>
-                            <div className={styles.kpiBarFill} style={{ width: `${(c.arrecadado / max) * 100}%` }} />
-                          </div>
-                          <div className={styles.kpiBarVal}>R$ {c.arrecadado.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}</div>
-                          <div className={styles.kpiBarSub}>{c.pagos}/{c.total}</div>
-                        </div>
-                      ))
-                    })()}
-                  </div>
-                </div>
-              )}
-
-              {/* Tabs: Top participantes / Cotas */}
-              <div className={styles.kpiSection}>
-                <div className={styles.histSegmentado} style={{ marginBottom: 16 }}>
-                  <button type="button" className={kpiAba === 'freq' ? styles.histSegAtivo : styles.histSegBtn} onClick={() => setKpiAba('freq')}>Mais fiéis</button>
-                  <button type="button" className={kpiAba === 'gasto' ? styles.histSegAtivo : styles.histSegBtn} onClick={() => setKpiAba('gasto')}>Maior gasto</button>
-                  <button type="button" className={kpiAba === 'cotas' ? styles.histSegAtivo : styles.histSegBtn} onClick={() => setKpiAba('cotas')}>Cotas populares</button>
-                </div>
-
-                {kpiAba !== 'cotas' && (
-                  <div className={styles.kpiRanking}>
-                    {(kpiAba === 'freq' ? kpiFreq : kpiGasto).map((p, i) => (
-                      <div key={p.telefone || p.nome} className={styles.kpiRankRow}>
-                        <div className={`${styles.kpiRankPos} ${i === 0 ? styles.kpiRankGold : i === 1 ? styles.kpiRankSilver : i === 2 ? styles.kpiRankBronze : ''}`}>{i + 1}</div>
-                        <div className={styles.kpiRankInfo}>
-                          <div className={styles.kpiRankNome}>{p.nome}</div>
-                          <div className={styles.kpiRankMeta}>
-                            {p.telefone && <a href={whatsappUrl(p.telefone)} target="_blank" rel="noopener noreferrer" className={styles.crmTelBtn}>📱</a>}
-                            <span>{p.concursos} concurso{p.concursos !== 1 ? 's' : ''}</span>
-                            <span>·</span>
-                            <span>{p.totalCotas} cota{p.totalCotas !== 1 ? 's' : ''}</span>
-                          </div>
-                        </div>
-                        <div className={styles.kpiRankVal}>R$ {p.totalGasto.toFixed(2).replace('.',',')}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {kpiAba === 'cotas' && (
-                  <div className={styles.kpiBarChart}>
-                    {(() => {
-                      const max = Math.max(...kpiCotas.map(c => c.count), 1)
-                      return kpiCotas.map(c => (
-                        <div key={c.cota} className={styles.kpiBarRow}>
-                          <div className={styles.kpiBarLabel}>Nº {c.cota}</div>
-                          <div className={styles.kpiBarTrack}>
-                            <div className={styles.kpiBarFill} style={{ width: `${(c.count / max) * 100}%` }} />
-                          </div>
-                          <div className={styles.kpiBarVal}>{c.count}×</div>
-                        </div>
-                      ))
-                    })()}
-                  </div>
-                )}
-              </div>
-
-            </div>
-          )}
-        </div>
+        <KpiDashboard
+          showKpi={showKpi}
+          loadingKpi={loadingKpi}
+          kpiGeral={kpiGeral}
+          kpiConcursos={kpiConcursos}
+          kpiFreq={kpiFreq}
+          kpiGasto={kpiGasto}
+          kpiCotas={kpiCotas}
+          kpiAba={kpiAba}
+          onCarregar={carregarKpis}
+          onAbaChange={setKpiAba}
+          whatsappUrl={whatsappUrl}
+        />
 
         {/* ── HISTÓRICO ── */}
-        <div className={styles.panel}>
-          {/* Cabeçalho + toggle */}
-          <div className={styles.histHeader}>
-            <div>
-              <div className={styles.panelTitle}>Histórico</div>
-              <div className={styles.histSubtitle}>
-                {modoHistorico === 'resumo' ? 'Resumo por concurso' : `${histParticipantes.length > 0 ? histParticipantes.length + ' participantes' : 'Base de contatos'}`}
-              </div>
-            </div>
-            <div className={styles.histSegmentado}>
-              <button type="button"
-                className={modoHistorico === 'resumo' ? styles.histSegAtivo : styles.histSegBtn}
-                onClick={() => { setModoHistorico('resumo'); carregarHistorico() }}>
-                Resumo
-              </button>
-              <button type="button"
-                className={modoHistorico === 'participantes' ? styles.histSegAtivo : styles.histSegBtn}
-                onClick={() => { setModoHistorico('participantes'); carregarHistParticipantes() }}>
-                Participantes
-              </button>
-            </div>
-          </div>
-
-          {loadingHist && <div className={styles.empty}>Carregando...</div>}
-
-          {/* ── MODO RESUMO ── */}
-          {!loadingHist && modoHistorico === 'resumo' && (
-            <>
-              <button type="button" className={styles.btnLoad} onClick={carregarHistorico} style={{ marginBottom: 14 }}>
-                Carregar histórico
-              </button>
-              {showHistorico && (
-                historico.length === 0
-                  ? <div className={styles.empty}>Nenhum histórico encontrado</div>
-                  : <div className={styles.histTableWrap}><table className={styles.histTable}>
-                      <thead>
-                        <tr>
-                          <th>Concurso</th><th>Bolão</th>
-                          <th>Pagos</th><th>Pend.</th><th>Canc.</th><th>Arrecadado</th>
-                        </tr>
-                      </thead>
-                      {historico.map((h, i) => {
-                        const prev = i > 0 ? historico[i - 1].concurso : null
-                        const novo = h.concurso !== prev
-                        const rowKey = `${h.concurso}-${h.bolao_slug || 'main'}`
-                        return (
-                          <tbody key={rowKey}>
-                            {novo && i > 0 && <tr className={styles.histSep}><td colSpan={6} /></tr>}
-                            <tr className={novo ? styles.histRowFirst : styles.histRowSub}>
-                              <td>{novo ? `#${h.concurso}` : ''}</td>
-                              <td>
-                                <div className={styles.histBolaoNome}>{h.bolao_nome}</div>
-                                {h.bolao_slug && <div className={styles.histBolaoSlug}>/{h.bolao_slug}</div>}
-                              </td>
-                              <td className={styles.histPago}>{h.pagos}</td>
-                              <td className={h.pendentes > 0 ? styles.histPend : ''}>{h.pendentes || '—'}</td>
-                              <td className={h.cancelados > 0 ? styles.histCancel : ''}>{h.cancelados || '—'}</td>
-                              <td className={styles.histValor}>R$ {h.arrecadado.toFixed(2).replace('.', ',')}</td>
-                            </tr>
-                          </tbody>
-                        )
-                      })}
-                    </table></div>
-              )}
-            </>
-          )}
-
-          {/* ── MODO PARTICIPANTES ── */}
-          {!loadingHist && modoHistorico === 'participantes' && (() => {
-            const busca = histBusca.toLowerCase()
-            const lista = histParticipantes.filter(p =>
-              !busca || p.nome.toLowerCase().includes(busca) || (p.telefone || '').includes(busca)
-            )
-            const comTel = lista.filter(p => p.telefone).length
-            return (
-              <>
-                {/* Barra de filtros */}
-                <div className={styles.crmFiltros}>
-                  <div className={styles.crmBuscaWrap}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                    <input className={styles.crmBusca} placeholder="Buscar por nome ou telefone"
-                      value={histBusca} onChange={e => setHistBusca(e.target.value)} />
-                  </div>
-                  <select className={styles.crmSelect}
-                    value={histFiltroSlug} onChange={e => { setHistFiltroSlug(e.target.value); }}>
-                    <option value="">Todos os bolões</option>
-                    {boloes.map(b => <option key={b.slug} value={b.slug}>{b.nome}</option>)}
-                  </select>
-                  <input className={styles.crmInputConc} placeholder="Concurso"
-                    value={histFiltroConc} onChange={e => setHistFiltroConc(e.target.value)} />
-                  <button type="button" className={styles.crmBtnFiltrar} onClick={carregarHistParticipantes}>
-                    Filtrar
-                  </button>
-                </div>
-
-                {/* Stats rápidas */}
-                {lista.length > 0 && (
-                  <div className={styles.crmStats}>
-                    <div className={styles.crmStat}>
-                      <span className={styles.crmStatNum}>{lista.length}</span>
-                      <span className={styles.crmStatLabel}>participantes</span>
-                    </div>
-                    <div className={styles.crmStatDiv} />
-                    <div className={styles.crmStat}>
-                      <span className={styles.crmStatNum}>{comTel}</span>
-                      <span className={styles.crmStatLabel}>com WhatsApp</span>
-                    </div>
-                    <div className={styles.crmStatDiv} />
-                    <div className={styles.crmStat}>
-                      <span className={`${styles.crmStatNum} ${styles.crmStatGreen}`}>
-                        R$ {lista.filter(p => p.status === 'pago').reduce((s, p) => s + Number(p.total), 0).toFixed(2).replace('.', ',')}
-                      </span>
-                      <span className={styles.crmStatLabel}>arrecadado</span>
-                    </div>
-                    {comTel > 0 && (
-                      <>
-                        <div className={styles.crmStatDiv} />
-                        <button type="button" className={styles.crmBtnMassivo}
-                          onClick={() => {
-                            const comTelefone = lista.filter(p => p.telefone)
-                            if (comTelefone.length === 0) return
-                            if (!confirm(`Abrir WhatsApp para ${comTelefone.length} contatos?`)) return
-                            comTelefone.forEach((p, i) => {
-                              setTimeout(() => enviarConviteNovoBolao(p.telefone!, p.nome), i * 600)
-                            })
-                          }}>
-                          Enviar convite para todos ({comTel})
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {/* Modelo de mensagem */}
-                {lista.length > 0 && (
-                  <div className={styles.crmMsgArea}>
-                    <label className={styles.crmMsgLabel}>Mensagem de convite personalizada</label>
-                    <textarea className={styles.crmMsgTextarea} rows={2}
-                      placeholder={`🍀 Olá {nome}! Temos um novo bolão disponível. Participe: {link}`}
-                      value={msgConvite} onChange={e => setMsgConvite(e.target.value)} />
-                  </div>
-                )}
-
-                {/* Lista */}
-                {lista.length === 0
-                  ? <div className={styles.empty}>Nenhum participante encontrado</div>
-                  : <div className={styles.crmLista}>
-                      {lista.map(p => (
-                        <div key={p.id} className={styles.crmCard}>
-                          {/* Indicador lateral de status */}
-                          <div className={`${styles.crmCardBar} ${p.status === 'pago' ? styles.crmBarPago : p.status === 'cancelado' ? styles.crmBarCancel : styles.crmBarPend}`} />
-
-                          <div className={styles.crmCardBody}>
-                            {/* Linha 1: nome + valor */}
-                            <div className={styles.crmCardTop}>
-                              <span className={styles.crmNome}>{p.nome}</span>
-                              <span className={styles.crmValor}>R$ {Number(p.total).toFixed(2).replace('.', ',')}</span>
-                            </div>
-
-                            {/* Linha 2: concurso · bolão · cotas · status */}
-                            <div className={styles.crmCardMeta}>
-                              <span className={styles.crmTag}># {p.concurso}</span>
-                              <span className={styles.crmTagNeutro}>{p.bolao_nome}</span>
-                              {Array.isArray(p.cotas) && p.cotas.length > 0 && (
-                                <span className={styles.crmTagNeutro}>
-                                  {p.cotas.length} cota{p.cotas.length !== 1 ? 's' : ''}
-                                </span>
-                              )}
-                              <span className={`${styles.crmStatus} ${p.status === 'pago' ? styles.crmStatusPago : p.status === 'cancelado' ? styles.crmStatusCancel : styles.crmStatusPend}`}>
-                                {p.status === 'pago' ? 'Pago' : p.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
-                              </span>
-                            </div>
-
-                            {/* Linha 3: telefone + ações */}
-                            {p.telefone && (
-                              <div className={styles.crmCardAcoes}>
-                                <a href={whatsappUrl(p.telefone)} target="_blank" rel="noopener noreferrer"
-                                  className={styles.crmTelBtn}>
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M5.337 7.407a12 12 0 1 0 11.29 0A12 12 0 0 0 5.337 7.407z" fill="none" stroke="currentColor" strokeWidth="1.5" opacity=".3"/></svg>
-                                  {formatTel(p.telefone)}
-                                </a>
-                                <button type="button" className={styles.crmAcaoBtnWA}
-                                  onClick={() => enviarConviteNovoBolao(p.telefone!, p.nome)}>
-                                  Convidar
-                                </button>
-                                {p.status === 'pago' && (
-                                  <button type="button" className={styles.crmAcaoBtnComp}
-                                    onClick={() => {
-                                      const url = `/comprovante?id=${p.id}&pub=1&bolao=${p.bolao_slug || ''}&concurso=${p.concurso}`
-                                      window.open(url, '_blank')
-                                    }}>
-                                    Ver comprovante
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                }
-              </>
-            )
-          })()}
-        </div>
+        <HistoricoPanel
+          modo={modoHistorico}
+          loadingHist={loadingHist}
+          showHistorico={showHistorico}
+          historico={historico}
+          histParticipantes={histParticipantes}
+          histBusca={histBusca}
+          histFiltroSlug={histFiltroSlug}
+          histFiltroConc={histFiltroConc}
+          msgConvite={msgConvite}
+          boloes={boloes}
+          onModoChange={setModoHistorico}
+          onCarregarResumo={carregarHistorico}
+          onCarregarParticipantes={carregarHistParticipantes}
+          onBuscaChange={setHistBusca}
+          onFiltroSlugChange={setHistFiltroSlug}
+          onFiltroConcChange={setHistFiltroConc}
+          onMsgConviteChange={setMsgConvite}
+          onEnviarConvite={enviarConviteNovoBolao}
+          formatTel={formatTel}
+          whatsappUrl={whatsappUrl}
+        />
 
         {/* ── BOLÕES ESPORTIVOS ── */}
         <EsporteAdmin />
