@@ -1,5 +1,8 @@
 ﻿'use client'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useKpis } from '@/hooks/admin/useKpis'
+import { useHistorico } from '@/hooks/admin/useHistorico'
+import { useConferencia } from '@/hooks/admin/useConferencia'
 import styles from './admin.module.css'
 import EsporteAdmin from './EsporteAdmin'
 import AdminHeader from '@/components/admin/AdminHeader'
@@ -33,17 +36,6 @@ interface Bolao       {
     apostas_premiadas?: { idx: number; dezenas: number[]; acertos: number; premio: string }[]
     apostas_invalidas?: number
   } | null
-}
-interface HistoricoItem {
-  concurso: number; bolao_slug: string | null; bolao_nome: string
-  total: number; pagos: number; pendentes: number; cancelados: number; arrecadado: number
-}
-interface HistoricoParticipante {
-  id: string; nome: string; telefone?: string; cotas: string[]
-  total: number; status: string; concurso: number
-  bolao_slug: string | null; bolao_nome: string
-  acrescimo?: number | null; acrescimo_pago?: boolean
-  created_at: string
 }
 
 const CAIXA_PRECOS: Record<number, number> = {
@@ -172,87 +164,16 @@ export default function AdminPage() {
     window.open(`/comprovante?ids=${ids}&bolao=${bolao}&concurso=${conc}`, '_blank')
   }
 
-  // Resultado do sorteio
-
-
-  // Conferência do sorteio
-  const [showConferir, setShowConferir]         = useState(false)
-  const [conferindoRes, setConferindoRes]       = useState(false)
-  const [conferirMsg, setConferirMsg]           = useState('')
-  const [dezenasInput, setDezenasInput]         = useState('')
-  const [conferindoManual, setConferindoManual] = useState(false)
-  const [conferirResult, setConferirResult]     = useState<{
-    status: string; dezenas_sorteadas: number[];
-    resumo: { senas: number; quinas: number; quadras: number };
-    maior_premio: string | null; total_premiadas: number;
-    apostas_premiadas: { idx: number; dezenas: number[]; acertos: number; premio: string }[]
-  } | null>(null)
-  const conferirAutoRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  async function conferirSorteio(silencioso = false) {
-    if (!bolaoAtual || !concursoAtivo) return
-    if (!silencioso) { setConferindoRes(true); setConferirMsg('') }
-    const res = await fetch(
-      `/api/admin/conferir-sorteio?bolao_id=${bolaoAtual.id}&concurso=${concursoAtivo}`
-    ).then(r => r.json())
-    if (!silencioso) setConferindoRes(false)
-    if (res.error) { if (!silencioso) setConferirMsg(`❌ ${res.error}`); return }
-    setConferirResult(res)
-    const msgs: Record<string, string> = {
-      ganhamos:     `🏆 GANHAMOS! ${res.maior_premio} — ${res.total_premiadas} aposta(s) premiada(s)`,
-      nao_premiada: `😔 Não premiada — nenhuma aposta com 4 ou mais acertos`,
-      nao_apurado:  res.message || `⏳ Sorteio #${concursoAtivo} ainda não apurado.`,
-    }
-    setConferirMsg(msgs[res.status] || res.message || `Status: ${res.status}`)
-
-    // Auto-sync: quando ainda não apurado, recheck a cada 5 minutos
-    if (res.status === 'nao_apurado') {
-      if (!conferirAutoRef.current) {
-        conferirAutoRef.current = setInterval(() => conferirSorteio(true), 5 * 60 * 1000)
-      }
-    } else {
-      if (conferirAutoRef.current) { clearInterval(conferirAutoRef.current); conferirAutoRef.current = null }
-      // Resultado final — sincroniza card do bolão (badge) com o que foi salvo no banco
-      carregarBoloes()
-    }
-  }
-
-  async function resetarConferencia() {
-    if (!bolaoAtual || !confirm('Resetar conferência do sorteio?')) return
-    await fetch('/api/admin/conferir-sorteio', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bolao_id: bolaoAtual.id }),
-    })
-    setConferirResult(null)
-    setConferirMsg('✅ Conferência resetada.')
-    if (conferirAutoRef.current) { clearInterval(conferirAutoRef.current); conferirAutoRef.current = null }
-    setTimeout(() => setConferirMsg(''), 3000)
-  }
-
-  async function conferirManual() {
-    if (!bolaoAtual) return
-    const nums = dezenasInput.trim().split(/[\s,;]+/).map(Number).filter(n => n >= 1 && n <= 60)
-    if (nums.length !== 6) { setConferirMsg('❌ Informe exatamente 6 dezenas (1–60)'); return }
-    setConferindoManual(true); setConferirMsg('')
-    const res = await fetch('/api/admin/conferir-sorteio', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bolao_id: bolaoAtual.id, dezenas_sorteadas: nums }),
-    }).then(r => r.json())
-    setConferindoManual(false)
-    if (res.error) { setConferirMsg(`❌ ${res.error}`); return }
-    setConferirResult(res)
-    if (conferirAutoRef.current) { clearInterval(conferirAutoRef.current); conferirAutoRef.current = null }
-    const msgs: Record<string, string> = {
-      ganhamos:     `🏆 GANHAMOS! ${res.maior_premio} — ${res.total_premiadas} aposta(s) premiada(s)`,
-      nao_premiada: `😔 Não premiada — nenhuma aposta com 4 ou mais acertos`,
-    }
-    setConferirMsg(msgs[res.status] || `Status: ${res.status}`)
-    carregarBoloes()
-  }
-
-  useEffect(() => () => { if (conferirAutoRef.current) clearInterval(conferirAutoRef.current) }, [])
+  // Conferência do sorteio — via useConferencia hook
+  const {
+    showConferir, setShowConferir,
+    conferindoRes, conferirMsg, setConferirMsg,
+    dezenasInput, setDezenasInput,
+    conferindoManual,
+    conferirResult, setConferirResult,
+    conferirSorteio, resetarConferencia, conferirManual,
+    restaurarResultadoSalvo, limparAutoRef,
+  } = useConferencia(bolaoAtual, concursoAtivo, carregarBoloes)
 
   // Configurador
   const [showConfig, setShowConfig]   = useState(false)
@@ -264,46 +185,25 @@ export default function AdminPage() {
   const [salvando, setSalvando]       = useState(false)
   const [configSalva, setConfigSalva] = useState(false)
 
-  // Histórico
-  const [historico, setHistorico]               = useState<HistoricoItem[]>([])
-  const [showHistorico, setShowHistorico]       = useState(false)
-  const [modoHistorico, setModoHistorico]       = useState<'resumo'|'participantes'>('resumo')
-  const [histParticipantes, setHistParticipantes] = useState<HistoricoParticipante[]>([])
-  const [histFiltroConc, setHistFiltroConc]     = useState('')
-  const [histFiltroSlug, setHistFiltroSlug]     = useState('')
-  const [histBusca, setHistBusca]               = useState('')
-  const [loadingHist, setLoadingHist]           = useState(false)
-  const [msgConvite, setMsgConvite]             = useState('')
+  // Histórico — via useHistorico hook
+  const {
+    historico, showHistorico,
+    modoHistorico, setModoHistorico,
+    histParticipantes,
+    histFiltroConc, setHistFiltroConc,
+    histFiltroSlug, setHistFiltroSlug,
+    histBusca, setHistBusca,
+    loadingHist,
+    msgConvite, setMsgConvite,
+    carregarHistorico, carregarHistParticipantes, enviarConviteNovoBolao,
+  } = useHistorico(boloes, concursoAtivo)
 
-  // KPIs
-  interface KpiVisaoGeral {
-    totalArrecadado: number; totalParticipantes: number; ticketMedio: number
-    taxaConversao: number; totalCotas: number; totalPagos: number
-    totalPendentes: number; totalConcursos: number; taxaRetencao: number
-  }
-  interface KpiConcurso { concurso: number; arrecadado: number; pagos: number; total: number }
-  interface KpiPart { nome: string; telefone?: string; concursos: number; totalGasto: number; totalCotas: number; pagamentos: number }
-  interface KpiCota  { cota: string; count: number }
-  const [showKpi, setShowKpi]               = useState(false)
-  const [loadingKpi, setLoadingKpi]         = useState(false)
-  const [kpiGeral, setKpiGeral]             = useState<KpiVisaoGeral | null>(null)
-  const [kpiConcursos, setKpiConcursos]     = useState<KpiConcurso[]>([])
-  const [kpiFreq, setKpiFreq]               = useState<KpiPart[]>([])
-  const [kpiGasto, setKpiGasto]             = useState<KpiPart[]>([])
-  const [kpiCotas, setKpiCotas]             = useState<KpiCota[]>([])
-  const [kpiAba, setKpiAba]                 = useState<'freq'|'gasto'|'cotas'>('freq')
-
-  async function carregarKpis() {
-    setLoadingKpi(true)
-    const d = await fetch('/api/admin/kpis').then(r => r.json())
-    setKpiGeral(d.visaoGeral)
-    setKpiConcursos(d.porConcurso || [])
-    setKpiFreq(d.topFrequencia || [])
-    setKpiGasto(d.topGasto || [])
-    setKpiCotas(d.cotasPopulares || [])
-    setLoadingKpi(false)
-    setShowKpi(true)
-  }
+  // KPIs — via useKpis hook
+  const {
+    showKpi, loadingKpi,
+    kpiGeral, kpiConcursos, kpiFreq, kpiGasto, kpiCotas, kpiAba,
+    carregarKpis, setKpiAba,
+  } = useKpis()
 
   // ── AUTH ──────────────────────────────────────────────────────
   async function login() {
@@ -368,22 +268,8 @@ export default function AdminPage() {
     setConfigSalva(false)
     setShowConfig(false)
     setPartsBolao([])
-    if (conferirAutoRef.current) { clearInterval(conferirAutoRef.current); conferirAutoRef.current = null }
-
-    // Restaura resultado salvo no banco ao trocar de bolão
-    const rc = b.resultado_conferencia
-    if (rc && rc.status !== 'nao_apurado') {
-      setConferirResult(rc as Parameters<typeof setConferirResult>[0])
-      const msgs: Record<string, string> = {
-        ganhamos:     `🏆 GANHAMOS! ${rc.maior_premio} — ${rc.total_premiadas ?? rc.apostas_premiadas?.length ?? 0} aposta(s) premiada(s)`,
-        nao_premiada: '😔 Não premiada — nenhuma aposta com 4 ou mais acertos',
-      }
-      setConferirMsg(msgs[rc.status] || '')
-    } else {
-      setConferirResult(null)
-      setConferirMsg('')
-    }
-
+    limparAutoRef()
+    restaurarResultadoSalvo(b.resultado_conferencia)
     if (concursoAtivo) carregarPartsBolao(b.slug, concursoAtivo)
   }
 
@@ -597,35 +483,6 @@ export default function AdminPage() {
     if (bolaoAtual) carregarPartsBolao(bolaoAtual.slug, String(c.num))
   }
 
-  async function carregarHistorico() {
-    setLoadingHist(true)
-    const res = await fetch('/api/historico').then(r => r.json())
-    setHistorico(res.historico || [])
-    setShowHistorico(true); setLoadingHist(false)
-  }
-
-  async function carregarHistParticipantes() {
-    setLoadingHist(true)
-    const params = new URLSearchParams({ detalhes: '1' })
-    if (histFiltroConc) params.set('concurso', histFiltroConc)
-    if (histFiltroSlug) params.set('bolao', histFiltroSlug)
-    const res = await fetch(`/api/historico?${params}`).then(r => r.json())
-    setHistParticipantes(res.participantes || [])
-    setLoadingHist(false)
-  }
-
-  async function enviarConviteNovoBolao(tel: string, nome: string) {
-    if (!tel) return
-    const n = tel.replace(/\D/g, '')
-    const num = n.startsWith('55') ? n : `55${n}`
-    const bolaoAtivo = boloes.find(b => b.ativo)
-    const origem = typeof window !== 'undefined' ? window.location.origin : ''
-    const link = bolaoAtivo ? `${origem}/${bolaoAtivo.slug}` : origem
-    const trevo = '\u{1F340}'
-    const msg = msgConvite ||
-      `${trevo} Olá ${nome}! Temos um novo bolão disponível para o concurso #${concursoAtivo}.\n\nAcesse: ${link}\n\nBoa sorte!`
-    window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank')
-  }
 
   // ── COMPUTED ──────────────────────────────────────────────────
   const pagosLista    = partsBolao.filter(p => p.status === 'pago')
