@@ -181,6 +181,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
   const [nome, setNome]         = useState('')
   const [telefone, setTelefone] = useState('')
   const [email, setEmail]       = useState('')
+  const [chavePix, setChavePix] = useState('')
   const [palpites, setPalpites] = useState<Record<string, Palpite>>({})
   const [enviando, setEnviando] = useState(false)
   const [pixData, setPixData]   = useState<{ pixCode: string; qrCodeBase64: string; paymentId: string } | null>(null)
@@ -202,10 +203,11 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
     const salvo = localStorage.getItem('bolao_participante')
     if (salvo) {
       try {
-        const { nome: n, telefone: t, email: e } = JSON.parse(salvo)
+        const { nome: n, telefone: t, email: e, chavePix: p } = JSON.parse(salvo)
         if (n) setNome(n)
         if (t) setTelefone(t)
         if (e) setEmail(e)
+        if (p) setChavePix(p)
         setLogado(true)
         setCadastrando(true)
       } catch {}
@@ -213,11 +215,11 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
   }, [])
 
   function salvarCadastro() {
-    if (!nome.trim() || telefone.replace(/\D/g,'').length < 11 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      alert('⚠️ Preencha nome, WhatsApp e e-mail corretamente para salvar.')
+    if (!nome.trim() || telefone.replace(/\D/g,'').length < 11 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !chavePix.trim()) {
+      alert('⚠️ Preencha nome, WhatsApp, e-mail e Chave PIX corretamente para salvar.')
       return
     }
-    localStorage.setItem('bolao_participante', JSON.stringify({ nome: nome.trim().toUpperCase(), telefone, email: email.trim().toLowerCase() }))
+    localStorage.setItem('bolao_participante', JSON.stringify({ nome: nome.trim().toUpperCase(), telefone, email: email.trim().toLowerCase(), chavePix: chavePix.trim() }))
     setLogado(true)
     alert('✅ Cadastro salvo! Seus dados serão lembrados neste dispositivo.')
   }
@@ -228,6 +230,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
     setNome('')
     setTelefone('')
     setEmail('')
+    setChavePix('')
     setCadastrando(false)
   }
 
@@ -252,7 +255,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
   const preenchidos      = Object.keys(palpites).filter(id => !jogoIniciado(jogosAbertos.find(j => j.id === id)!)).length
   const jogosDisponiveis = jogosAbertos.filter(j => !jogoIniciado(j))
   const todosPreenchidos = jogosDisponiveis.length === 0 || jogosDisponiveis.every(j => palpites[j.id])
-  const podeContinuar    = nome.trim().length >= 3 && telefone.replace(/\D/g,'').length === 11 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  const podeContinuar    = nome.trim().length >= 3 && telefone.replace(/\D/g,'').length === 11 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && chavePix.trim().length > 0
 
   function setPalpite(jogo_id: string, campo: 'gol_casa'|'gol_fora', val: string) {
     const n = Math.max(0, Math.min(99, parseInt(val) || 0))
@@ -270,6 +273,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
     if (!nome.trim() || nome.trim().length < 3) { alert('⚠️ Informe seu nome completo!'); return }
     if (telefone.replace(/\D/g,'').length < 11)  { alert('⚠️ Informe seu WhatsApp com DDD!'); return }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('⚠️ Informe um e-mail válido!'); return }
+    if (!chavePix.trim()) { alert('⚠️ Informe sua Chave PIX!'); return }
     if (!todosPreenchidos) { alert('⚠️ Preencha os palpites de todos os jogos!'); return }
     setEnviando(true)
     try {
@@ -280,6 +284,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
           nome: nome.trim().toUpperCase(),
           telefone: '55' + telefone.replace(/\D/g,''),
           email: email.trim().toLowerCase(),
+          chave_pix: chavePix.trim(),
           palpites: Object.values(palpites).filter(p => !jogoIniciado(jogosAbertos.find(j => j.id === p.jogo_id)!)),
         }),
       }).then(r => r.json())
@@ -301,7 +306,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
       if (pollRef.current) clearInterval(pollRef.current)
       pollRef.current = setInterval(async () => {
         const st = await fetch(`/api/status?paymentId=${res.paymentId}`).then(r => r.json())
-        if (st.status === 'approved') {
+        if (st.status === 'pago' || st.status === 'approved') {
           setPayStatus('pago')
           clearInterval(pollRef.current!)
           clearInterval(timerRef.current!)
@@ -445,6 +450,10 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
             <div className={styles.field}>
               <label className={styles.label}>E-mail *</label>
               <input className={styles.input} type="email" value={email} onChange={e => { setEmail(e.target.value); setLogado(false) }} placeholder="seu@email.com" autoComplete="email" />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>Chave PIX *</label>
+              <input className={styles.input} type="text" value={chavePix} onChange={e => { setChavePix(e.target.value); setLogado(false) }} placeholder="CPF, e-mail, telefone ou chave aleatória" autoComplete="off" />
             </div>
             <div className={styles.cadastroBtns}>
               <button type="button" className={styles.btnSalvar} onClick={salvarCadastro}>
