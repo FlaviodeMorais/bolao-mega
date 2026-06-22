@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import styles from './admin.module.css'
 import EsporteAdmin from './EsporteAdmin'
@@ -10,6 +10,7 @@ import BolaoList from '@/components/admin/BolaoList'
 import ConcursoPanel from '@/components/admin/ConcursoPanel'
 import KpiDashboard from '@/components/admin/KpiDashboard'
 import HistoricoPanel from '@/components/admin/HistoricoPanel'
+import BolaoDetailPanel from '@/components/admin/BolaoDetailPanel'
 
 interface Participante {
   id: string; nome: string; cotas: string[]; total: number
@@ -709,448 +710,77 @@ export default function AdminPage() {
             {bolaoAtual ? (
 
               /* ── DETALHE DO BOLÃO ── */
-              <div className={styles.panel}>
-
-                {/* Header */}
-                <div className={styles.detHeader}>
-                  <div>
-                    <div className={styles.detNome}>{bolaoAtual.nome}</div>
-                    <div className={styles.detSub}>
-                      #{concursoAtivo || '?'} · {typeof window !== 'undefined' ? window.location.host : ''}/<wbr/>{bolaoAtual.slug}
-                    </div>
-                  </div>
-                  <button type="button" className={styles.btnFechar} onClick={fecharBolao} title="Fechar">✕</button>
-                </div>
-
-                {/* Stats do bolão */}
-                <div className={styles.detStatsRow}>
-                  <div className={styles.detStat}>
-                    <div className={styles.detStatVal}>{cotasLivres}/{bolaoAtual.total_cotas || 20}</div>
-                    <div className={styles.detStatLbl}>Cotas Livres</div>
-                  </div>
-                  <div className={styles.detStat}>
-                    <div className={styles.detStatVal}>{pagosLista.length}</div>
-                    <div className={styles.detStatLbl}>Pagos</div>
-                  </div>
-                  <div className={`${styles.detStat} ${pendentesLista.length > 0 ? styles.detStatWarn : ''}`}>
-                    <div className={styles.detStatVal}>{pendentesLista.length}</div>
-                    <div className={styles.detStatLbl}>Pendentes</div>
-                  </div>
-                  <div className={styles.detStat}>
-                    <div className={styles.detStatVal}>R$ {arrecadado.toFixed(2).replace('.',',')}</div>
-                    <div className={styles.detStatLbl}>Arrecadado</div>
-                  </div>
-                </div>
-
-                {/* Ações rápidas */}
-                <div className={styles.detActions}>
-                  <button type="button" className={styles.btnLoad}
-                    onClick={() => carregarPartsBolao(bolaoAtual.slug, concursoAtivo)}
-                    disabled={loadingParts}>
-                    {loadingParts ? '⟳' : '🔄'} Atualizar
-                  </button>
-                  {pendentesLista.length > 0 && (
-                    <button type="button" className={styles.btnConfirmAll}
-                      onClick={confirmarTodos} disabled={confirmandoTodos}>
-                      {confirmandoTodos ? 'Confirmando...' : `✔ Confirmar todos (${pendentesLista.length})`}
-                    </button>
-                  )}
-                  <button type="button" className={styles.btnWhatsapp} onClick={enviarLembrete}>
-                    📱 Lembrete
-                  </button>
-                  <button type="button" className={styles.btnConferir}
-                    onClick={() => { setShowConferir(!showConferir); setConferirMsg('') }}>
-                    🔍 Conferir
-                  </button>
-                  {/* Apostas */}
-                  <button type="button" className={styles.btnUploadApostas}
-                    onClick={() => setShowApostasModal(true)}
-                    title="Colar texto das apostas">
-                    {bolaoAtual?.apostas_data ? '📊 Apostas ✅' : '📊 Carregar Apostas'}
-                  </button>
-                  {bolaoAtual?.apostas_data && (
-                    <button type="button" className={styles.btnRemoverApostas} onClick={removerApostas} title="Remover apostas">✕</button>
-                  )}
-                </div>
-                {apostasMsg && <div className={styles.lembreteMsg}>{apostasMsg}</div>}
-
-                {/* Modal apostas */}
-                {showApostasModal && (
-                  <div className={styles.apostasModal}>
-                    <div className={styles.apostasModalBox}>
-                      <div className={styles.apostasModalTitle}>📊 Carregar Apostas</div>
-                      <p className={styles.apostasModalDesc}>
-                        Cole abaixo o texto com os números das apostas.<br />
-                        Formato aceito: <strong>{bolaoAtual?.dezenas ?? 6} números por linha</strong>, separados por espaço — ex:{' '}
-                        <code>{Array.from({length: bolaoAtual?.dezenas ?? 6}, (_, i) => String(i + 1).padStart(2, '0')).join(' ')}</code>
-                      </p>
-                      <textarea
-                        className={styles.apostasTextarea}
-                        placeholder="Cole aqui os números das apostas..."
-                        value={apostasTexto}
-                        onChange={e => setApostasTexto(e.target.value)}
-                        rows={8}
-                      />
-                      <div className={styles.apostasModalActions}>
-                        <button type="button" className={styles.btnLoad}
-                          onClick={() => { setShowApostasModal(false); setApostasTexto('') }}>
-                          Cancelar
-                        </button>
-                        <button type="button" className={styles.btnConfirmAll}
-                          onClick={salvarApostas} disabled={uploadingApostas || !apostasTexto.trim()}>
-                          {uploadingApostas ? '⟳ Processando...' : '✔ Confirmar'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Panel conferência do sorteio — automático via API Caixa */}
-                {showConferir && (
-                  <div className={styles.resultadoPanel}>
-                    <div className={styles.resultadoTitle}>🔍 Conferir Resultado — Concurso #{concursoAtivo}</div>
-                    {bolaoAtual.apostas_data ? (
-                      <p className={styles.resultadoInfo}>
-                        ✅ {bolaoAtual.apostas_data.total_apostas} apostas carregadas · O resultado será buscado automaticamente na Caixa.
-                      </p>
-                    ) : (
-                      <p className={styles.resultadoInfo}>
-                        ⚠️ Nenhuma aposta carregada. Use &quot;📊 Carregar Apostas&quot; primeiro.
-                      </p>
-                    )}
-                    <div className={styles.resultadoBtns}>
-                      {/* Oculta busca quando já há resultado final para evitar sobrescrever */}
-                      {(!conferirResult || conferirResult.status === 'nao_apurado') && (
-                        <button type="button" className={styles.btnGanhou}
-                          onClick={() => conferirSorteio()}
-                          disabled={conferindoRes || !bolaoAtual.apostas_data}>
-                          {conferindoRes ? '⟳ Buscando na Caixa...' : '🔍 Buscar e Conferir'}
-                        </button>
-                      )}
-                      {conferirResult && conferirResult.status !== 'nao_apurado' && (
-                        <button type="button" className={styles.btnNaoGanhou} onClick={resetarConferencia}>
-                          ↺ Resetar resultado
-                        </button>
-                      )}
-                    </div>
-                    {conferirResult?.dezenas_sorteadas && (
-                      <div className={styles.conferirDezenas}>
-                        <span className={styles.conferirResumoTitle}>Dezenas sorteadas:</span>
-                        <div className={styles.conferirDezGrid}>
-                          {conferirResult.dezenas_sorteadas.map((n: number) => (
-                            <span key={n} className={styles.conferirDezBall}>{String(n).padStart(2,'0')}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {conferirMsg && (
-                      <div className={conferirResult?.status === 'ganhamos' ? styles.resultadoMsgBox : styles.resultadoInfo}>
-                        {conferirMsg}
-                      </div>
-                    )}
-                    {/* Entrada manual — usada quando API Caixa não responde (ex: Vercel fora do Brasil) */}
-                    {(!conferirResult || conferirResult.status === 'nao_apurado') && bolaoAtual.apostas_data && (
-                      <div className={styles.manualEntry}>
-                        <div className={styles.manualLabel}>Inserir dezenas manualmente:</div>
-                        <div className={styles.manualRow}>
-                          <input
-                            type="text"
-                            className={styles.manualInput}
-                            placeholder="Ex: 03 30 33 35 45 47"
-                            value={dezenasInput}
-                            onChange={e => setDezenasInput(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && conferirManual()}
-                          />
-                          <button type="button" className={styles.btnGanhou}
-                            onClick={conferirManual}
-                            disabled={conferindoManual || !dezenasInput.trim()}>
-                            {conferindoManual ? '⟳' : '✓ Conferir'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    {conferirResult && conferirResult.total_premiadas > 0 && (
-                      <div className={styles.conferirResumo}>
-                        <div className={styles.conferirResumoTitle}>Apostas premiadas:</div>
-                        {(['SENA','QUINA','QUADRA'] as const).map(p => {
-                          const key = p === 'SENA' ? 'senas' : p === 'QUINA' ? 'quinas' : 'quadras'
-                          const count = conferirResult.resumo[key as keyof typeof conferirResult.resumo]
-                          return count > 0 ? (
-                            <div key={p} className={styles.conferirPremio}>
-                              {p === 'SENA' ? '🥇' : p === 'QUINA' ? '🥈' : '🥉'} {p}: {count} aposta{count !== 1 ? 's' : ''}
-                            </div>
-                          ) : null
-                        })}
-                        <div className={styles.conferirApostas}>
-                          {conferirResult.apostas_premiadas.slice(0,10).map(a => (
-                            <div key={a.idx} className={styles.conferirAposta}>
-                              <span className={styles.conferirIdx}>#{a.idx}</span>
-                              <span className={styles.conferirDez}>{a.dezenas.map((n: number) => String(n).padStart(2,'0')).join(' ')}</span>
-                              <span className={styles.conferirPremioTag}>{a.acertos}✓ {a.premio}</span>
-                            </div>
-                          ))}
-                          {conferirResult.apostas_premiadas.length > 10 && (
-                            <div className={styles.conferirInfo}>…e mais {conferirResult.apostas_premiadas.length - 10} apostas premiadas</div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {!bolaoAtual.encerrado && cotasLivres > 0 && pagosLista.length > 0 && (
-                  <button type="button" className={styles.btnEncerrar}
-                    onClick={() => { setShowEncerrar(!showEncerrar); setEncerrarOk(null) }}>
-                    ⛔ Encerrar Bolão
-                  </button>
-                )}
-                {lembreteMsg && <div className={styles.lembreteMsg}>{lembreteMsg}</div>}
-                {compMsg && <div className={styles.lembreteMsg}>{compMsg}</div>}
-
-                {/* Banner encerrado */}
-                {bolaoAtual.encerrado && (
-                  <div className={styles.encerradoBanner}>
-                    ⛔ Bolão encerrado — complemento de pagamento enviado via WhatsApp
-                  </div>
-                )}
-
-                {/* Encerramento confirmado */}
-                {encerrarOk && (
-                  <div className={styles.encerrarSucesso}>
-                    ✅ Encerrado com sucesso!&nbsp;
-                    Acréscimo de <strong>R$ {encerrarOk.acrescimo.toFixed(2).replace('.',',')}</strong>&nbsp;
-                    enviado para {encerrarOk.participantes} participante(s) via WhatsApp.
-                  </div>
-                )}
-
-                {/* Painel de confirmação de encerramento */}
-                {showEncerrar && !bolaoAtual.encerrado && (
-                  <div className={styles.encerrarPanel}>
-                    <div className={styles.encerrarTitle}>⚠️ Encerrar Bolão com Rateio</div>
-                    <div className={styles.encerrarCalc}>
-                      <div className={styles.encerrarRow}>
-                        <span>Cotas não vendidas</span>
-                        <span>{cotasLivres} de {bolaoAtual.total_cotas || 20}</span>
-                      </div>
-                      <div className={styles.encerrarRow}>
-                        <span>Valor das cotas restantes</span>
-                        <span>R$ {(cotasLivres * Number(bolaoAtual.valor_cota)).toFixed(2).replace('.',',')}</span>
-                      </div>
-                      <div className={styles.encerrarRow}>
-                        <span>Participantes pagos</span>
-                        <span>{pagosLista.length}</span>
-                      </div>
-                      <div className={`${styles.encerrarRow} ${styles.encerrarDestaque}`}>
-                        <span>Acréscimo por participante</span>
-                        <span>R$ {pagosLista.length > 0
-                          ? ((cotasLivres * Number(bolaoAtual.valor_cota)) / pagosLista.length).toFixed(2).replace('.',',')
-                          : '0,00'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className={styles.encerrarInfo}>
-                      ✅ Cada participante receberá um PIX com o complemento via WhatsApp.<br/>
-                      ✅ O bolão será marcado como encerrado.<br/>
-                      ⛔ Novos cadastros serão bloqueados.
-                    </div>
-                    <div className={styles.encerrarActions}>
-                      <button type="button" className={styles.btnEncerrarConfirm}
-                        onClick={encerrarBolao} disabled={encerrando}>
-                        {encerrando ? '⟳ Processando...' : '⛔ Confirmar Encerramento'}
-                      </button>
-                      <button type="button" className={styles.btnLoad}
-                        onClick={() => setShowEncerrar(false)}>Cancelar</button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Lista de participantes */}
-                <div className={styles.partSectionHeader}>
-                  <div className={styles.partSectionTitle}>
-                    👥 Participantes — {partsBolao.length} cadastrado{partsBolao.length !== 1 ? 's' : ''}
-                  </div>
-                  {partsBolao.some(p => p.status === 'pago') && (
-                    <button type="button" className={styles.btnSelAll}
-                      onClick={selecionarTodosPagos}
-                      title="Selecionar todos os participantes pagos">
-                      ☑ Selecionar pagos
-                    </button>
-                  )}
-                </div>
-
-                {/* Barra de seleção */}
-                {selecionados.size > 0 && (
-                  <div className={styles.selecaoBar}>
-                    <span className={styles.selecaoCount}>
-                      {selecionados.size} selecionado{selecionados.size !== 1 ? 's' : ''}
-                    </span>
-                    <button type="button" className={styles.btnImprimirSel}
-                      onClick={imprimirSelecionados}>
-                      🖨️ Imprimir / PDF
-                    </button>
-                    <button type="button" className={styles.btnLimparSel}
-                      onClick={() => setSelecionados(new Set())}>
-                      ✕ Limpar seleção
-                    </button>
-                  </div>
-                )}
-
-                {loadingParts ? (
-                  <div className={styles.empty}>Carregando...</div>
-                ) : partsBolao.length === 0 ? (
-                  <div className={styles.empty}>Nenhum participante neste bolão para o concurso #{concursoAtivo || '?'}</div>
-                ) : partsBolao.map(p => (
-                  <div key={p.id} className={`${styles.partCard} ${p.status === 'pago' ? styles.partCardPago : p.status === 'cancelado' ? styles.partCardCancel : ''} ${selecionados.has(p.id) ? styles.partCardSelecionado : ''}`}>
-                    {p.status === 'pago' && (
-                      <input
-                        type="checkbox"
-                        className={styles.partCardCheck}
-                        checked={selecionados.has(p.id)}
-                        onChange={() => toggleSelecionado(p.id)}
-                        title="Selecionar para imprimir"
-                      />
-                    )}
-                    <div className={styles.partCardLeft}>
-                      <div className={styles.partCardNome}>{p.nome}</div>
-                      <div className={styles.partCardTel}>
-                        {p.telefone ? (
-                          <a href={whatsappUrl(p.telefone)} target="_blank" rel="noopener noreferrer"
-                             title={`Abrir WhatsApp — ${formatTel(p.telefone)}`}
-                             className={styles.whatsappLink}>
-                            📱 {formatTel(p.telefone)}
-                          </a>
-                        ) : '—'}
-                      </div>
-                      <div className={styles.partCardInfo}>
-                        <span className={styles.partCardCotas}>
-                          🎟️ {Array.isArray(p.cotas) ? p.cotas.join(', ') : p.cotas}
-                        </span>
-                        <span className={styles.partCardTotal}>
-                          R$ {Number(p.total).toFixed(2).replace('.',',')}
-                        </span>
-                      </div>
-                    </div>
-                    <div className={styles.partCardRight}>
-                      <div className={styles.partCardStatusCol}>
-                        {/* Comprovante */}
-                        {p.status === 'pago' && (
-                          <button type="button" className={styles.btnImprimir}
-                            onClick={() => window.open(`/comprovante?id=${p.id}`, '_blank')}
-                            title="Imprimir comprovante">
-                            🖨️
-                          </button>
-                        )}
-                        {p.status === 'pago' && p.telefone && (
-                          <button type="button" className={styles.btnComprovante}
-                            onClick={() => enviarComprovante(p.id)}
-                            disabled={enviandoComp === p.id}
-                            title="Enviar comprovante via WhatsApp">
-                            {enviandoComp === p.id ? '⟳' : '📋'}
-                          </button>
-                        )}
-                        {/* Status principal */}
-                        {p.status === 'pago'
-                          ? <span className={styles.statusPago}>✅ Pago</span>
-                          : p.status === 'cancelado'
-                            ? <span className={styles.statusCancel}>✕ Excluído</span>
-                            : <>
-                                <span className={styles.statusPend}>⏳ Pendente</span>
-                                <button type="button" className={styles.btnConfirm}
-                                  onClick={() => confirmarPagamento(p.id)}>✔ Pago</button>
-                              </>
-                        }
-                        {/* Acréscimo */}
-                        {p.acrescimo != null && (
-                          <div className={styles.acrescimoRow}>
-                            <span className={styles.acrescimoLbl}>
-                              +R$ {Number(p.acrescimo).toFixed(2).replace('.',',')} complemento
-                            </span>
-                            {p.acrescimo_pago
-                              ? <span className={styles.statusPago}>✅ Pago</span>
-                              : <>
-                                  <span className={styles.statusPend}>⏳</span>
-                                  <button type="button" className={styles.btnConfirm}
-                                    onClick={() => confirmarAcrescimo(p.id)}>✔ Confirmar</button>
-                                </>
-                            }
-                          </div>
-                        )}
-                      </div>
-                      {p.status !== 'cancelado' && (
-                        <button type="button" className={styles.btnExcluir}
-                          onClick={() => excluir(p.id, p.nome)}>✕</button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-
-                {/* Configurador colapsável */}
-                <button type="button" className={styles.configToggle} onClick={() => setShowConfig(!showConfig)}>
-                  ⚙️ Configurar Bolão <span>{showConfig ? '▲' : '▼'}</span>
-                </button>
-
-                {showConfig && (
-                  <div className={styles.configurador}>
-                    <div className={styles.configGrid3}>
-                      <div className={styles.configField}>
-                        <label className={styles.configLabel}>Dezenas / Aposta</label>
-                        <select className={styles.configSelect} value={editDezenas}
-                          title="Dezenas por aposta" onChange={e => setEditDezenas(Number(e.target.value))}>
-                          {Object.entries(CAIXA_PRECOS).map(([d, p]) => (
-                            <option key={d} value={d}>{d} dez — R$ {p.toLocaleString('pt-BR')},00</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className={styles.configField}>
-                        <label className={styles.configLabel}>Apostas</label>
-                        <input type="number" min={1} max={999} className={styles.configInput}
-                          title="Apostas no bolão" placeholder="Ex: 100"
-                          value={editApostas} onChange={e => setEditApostas(Math.max(1, Number(e.target.value)))} />
-                      </div>
-                      <div className={styles.configField}>
-                        <label className={styles.configLabel}>Total de Cotas</label>
-                        <input type="number" min={1} max={200} className={styles.configInput}
-                          title="Total de cotas" placeholder="Ex: 20"
-                          value={editCotas} onChange={e => setEditCotas(Math.max(1, Number(e.target.value)))} />
-                      </div>
-                    </div>
-                    <div className={styles.configFieldNarrow}>
-                      <label className={styles.configLabel}>Taxa de Administração (R$)</label>
-                      <input type="number" min={0} step={0.01} className={styles.configInput}
-                        title="Taxa admin" placeholder="0,00"
-                        value={editTaxa} onChange={e => setEditTaxa(Math.max(0, Number(e.target.value)))} />
-                    </div>
-                    <div className={styles.configCalc}>
-                      <div className={styles.calcRow}>
-                        <span>Preço Caixa — {editDezenas} dezenas</span>
-                        <span>R$ {precoCaixa.toLocaleString('pt-BR')},00 / aposta</span>
-                      </div>
-                      <div className={styles.calcRow}>
-                        <span>{editApostas} × R$ {precoCaixa.toLocaleString('pt-BR')},00</span>
-                        <span>R$ {custoApostas.toLocaleString('pt-BR', {minimumFractionDigits:2})}</span>
-                      </div>
-                      {editTaxa > 0 && (
-                        <div className={styles.calcRow}>
-                          <span>Taxa de administração</span>
-                          <span>+ R$ {editTaxa.toLocaleString('pt-BR', {minimumFractionDigits:2})}</span>
-                        </div>
-                      )}
-                      <div className={`${styles.calcRow} ${styles.calcSeparator}`}>
-                        <span>Total do bolão</span>
-                        <span>R$ {totalBolao.toLocaleString('pt-BR', {minimumFractionDigits:2})}</span>
-                      </div>
-                      <div className={`${styles.calcRow} ${styles.calcDestaque}`}>
-                        <span>Valor por cota ({editCotas} cotas)</span>
-                        <span>R$ {valorPorCota.toLocaleString('pt-BR', {minimumFractionDigits:2})}</span>
-                      </div>
-                    </div>
-                    {configSalva && <div className={styles.configOk}>✅ Configuração salva!</div>}
-                    <button type="button" className={styles.btnCreate} onClick={salvarConfig} disabled={salvando}>
-                      {salvando ? 'Salvando...' : '💾 Salvar Configuração'}
-                    </button>
-                  </div>
-                )}
-              </div>
+              <BolaoDetailPanel
+                bolao={bolaoAtual}
+                concursoAtivo={concursoAtivo}
+                partsBolao={partsBolao}
+                pagosLista={pagosLista}
+                pendentesLista={pendentesLista}
+                cotasLivres={cotasLivres}
+                arrecadado={arrecadado}
+                loadingParts={loadingParts}
+                confirmandoTodos={confirmandoTodos}
+                selecionados={selecionados}
+                enviandoComp={enviandoComp}
+                lembreteMsg={lembreteMsg}
+                compMsg={compMsg}
+                apostasMsg={apostasMsg}
+                showApostasModal={showApostasModal}
+                apostasTexto={apostasTexto}
+                uploadingApostas={uploadingApostas}
+                showConferir={showConferir}
+                conferirResult={conferirResult}
+                conferirMsg={conferirMsg}
+                conferindoRes={conferindoRes}
+                conferindoManual={conferindoManual}
+                dezenasInput={dezenasInput}
+                showEncerrar={showEncerrar}
+                encerrando={encerrando}
+                encerrarOk={encerrarOk}
+                showConfig={showConfig}
+                editDezenas={editDezenas}
+                editApostas={editApostas}
+                editCotas={editCotas}
+                editTaxa={editTaxa}
+                precoCaixa={precoCaixa}
+                custoApostas={custoApostas}
+                totalBolao={totalBolao}
+                valorPorCota={valorPorCota}
+                configSalva={configSalva}
+                salvando={salvando}
+                formatTel={formatTel}
+                whatsappUrl={whatsappUrl}
+                onFechar={fecharBolao}
+                onAtualizarParts={() => carregarPartsBolao(bolaoAtual.slug, concursoAtivo)}
+                onConfirmarTodos={confirmarTodos}
+                onEnviarLembrete={enviarLembrete}
+                onToggleSelecionado={toggleSelecionado}
+                onSelecionarTodosPagos={selecionarTodosPagos}
+                onLimparSelecao={() => setSelecionados(new Set())}
+                onImprimirSelecionados={imprimirSelecionados}
+                onEnviarComprovante={enviarComprovante}
+                onConfirmarPagamento={confirmarPagamento}
+                onConfirmarAcrescimo={confirmarAcrescimo}
+                onExcluir={excluir}
+                onOpenApostas={() => setShowApostasModal(true)}
+                onCloseApostas={() => { setShowApostasModal(false); setApostasTexto('') }}
+                onApostasTextoChange={setApostasTexto}
+                onSalvarApostas={salvarApostas}
+                onRemoverApostas={removerApostas}
+                onToggleConferir={() => { setShowConferir(v => !v); setConferirMsg('') }}
+                onConferirSorteio={() => conferirSorteio()}
+                onConferirManual={conferirManual}
+                onResetarConferencia={resetarConferencia}
+                onDezenasInputChange={setDezenasInput}
+                onToggleEncerrar={() => { setShowEncerrar(v => !v); setEncerrarOk(null) }}
+                onEncerrarBolao={encerrarBolao}
+                onToggleConfig={() => setShowConfig(v => !v)}
+                onEditDezenasChange={setEditDezenas}
+                onEditApostasChange={setEditApostas}
+                onEditCotasChange={setEditCotas}
+                onEditTaxaChange={setEditTaxa}
+                onSalvarConfig={salvarConfig}
+              />
 
             ) : (
               <ConcursoPanel
