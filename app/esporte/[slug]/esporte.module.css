@@ -99,6 +99,37 @@
   color: #FFB81C;
 }
 
+/* ── SISTEMA DE PONTUAÇÃO ────────────────── */
+.pontuacaoInfo {
+  display: flex;
+  flex-direction: row;
+  gap: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 2px 24px;
+  margin: 20px auto;
+  max-width: 100%;
+  justify-content: center;
+  align-items: center;
+  height: 25px;
+}
+.pontuacaoRegra {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255,255,255,0.8);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.pontuacaoTextoRegra {
+  font-weight: 500;
+}
+.pontuacaoTextoRegra strong {
+  color: #FFB81C;
+  font-weight: 800;
+}
+
 /* ── PONTUAÇÃO BAR ───────────────────────── */
 .pontuacaoBar {
   display: flex;

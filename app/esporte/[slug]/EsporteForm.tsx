@@ -355,6 +355,19 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
         {bolao.descricao && <p className={styles.headerDesc}>{bolao.descricao}</p>}
       </div>
 
+      {/* ── Sistema de Pontuação ── */}
+      <div className={styles.pontuacaoInfo}>
+        <div className={styles.pontuacaoRegra}>
+          <span className={styles.pontuacaoTextoRegra}>Acertou o Vencedor e o Placar do Jogo = <strong>5 Pontos</strong></span>
+        </div>
+        <div className={styles.pontuacaoRegra}>
+          <span className={styles.pontuacaoTextoRegra}>Acertou o Vencedor do Jogo = <strong>3 Pontos</strong></span>
+        </div>
+        <div className={styles.pontuacaoRegra}>
+          <span className={styles.pontuacaoTextoRegra}>Acertou o Placar do Jogo = <strong>2 Pontos</strong></span>
+        </div>
+      </div>
+
       {/* ── Momentos FIFA ── */}
       <MomentosCarousel />
 
@@ -370,7 +383,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
             <div className={styles.pontuacaoItem}>
               <TacaFifa variant="gold" />
               <div className={styles.pontuacaoTextos}>
-                <span className={styles.pontuacaoTxt}>Acertou o vencedor e o placar da partida, leva o 1º Prêmio!</span>
+                <span className={styles.pontuacaoTxt}>A maior soma de pontos, leva o 1º Premio!</span>
                 <span className={styles.pontuacaoValor} style={{color:'#FFB81C'}}>{formatReal(p1)}</span>
               </div>
             </div>
@@ -378,7 +391,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
             <div className={styles.pontuacaoItem}>
               <TacaFifa variant="silver" />
               <div className={styles.pontuacaoTextos}>
-                <span className={styles.pontuacaoTxt}>Acertou o vencedor, leva o 2º Prêmio!</span>
+                <span className={styles.pontuacaoTxt}>A segunda maior soma de pontos, leva o 2º Premio!</span>
                 <span className={styles.pontuacaoValor} style={{color:'#C0C0C0'}}>{formatReal(p2)}</span>
               </div>
             </div>
@@ -386,7 +399,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
             <div className={styles.pontuacaoItem}>
               <TacaFifa variant="bronze" />
               <div className={styles.pontuacaoTextos}>
-                <span className={styles.pontuacaoTxt}>Acertou o placar da partida, leva o 3º Prêmio!</span>
+                <span className={styles.pontuacaoTxt}>A terceira maior soma de pontos, leva o 3º Premio!</span>
                 <span className={styles.pontuacaoValor} style={{color:'#CD7F32'}}>{formatReal(p3)}</span>
               </div>
             </div>
