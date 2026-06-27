@@ -109,6 +109,8 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
   const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null)
   const statusRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  const [apostasData, setApostasData] = useState<{ bets: number[][] } | null>(null)
+
   // Comprovante self-service
   const [resultadoConf, setResultadoConf]     = useState<ResultadoConf | null>(null)
   const [modalPart, setModalPart]             = useState<Participante | null>(null)
@@ -166,6 +168,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
         setBolaoNome(b.nome || bolaoNomeProp)
         setEncerrado(!!b.encerrado)
         setResultadoConf(b.resultado_conferencia || null)
+        setApostasData(b.apostas_data || null)
       }
 
       // 3. Cotas e participantes — usa concurso já confirmado (sem depender de state)
@@ -201,6 +204,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
         setBolaoNome(b.nome || bolaoNomeProp)
         setEncerrado(!!b.encerrado)
         setResultadoConf(b.resultado_conferencia || null)
+        setApostasData(b.apostas_data || null)
       }).catch(() => {})
     }
     window.addEventListener('focus', atualizar)
@@ -328,6 +332,29 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
                 <div className="mega-stat"><div className="mega-stat-val">{numApostas}</div><div className="mega-stat-lbl">Apostas</div></div>
                 <div className="mega-stat-sep" />
                 <div className="mega-stat"><div className="mega-stat-val">{dezenas}</div><div className="mega-stat-lbl">Dezenas</div></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Apostas do bolão ── */}
+        {apostasData?.bets && apostasData.bets.length > 0 && (
+          <div className="card">
+            <div className="form-body">
+              <div className="apostas-section">
+                <div className="apostas-section-title">🎯 Apostas do Bolão</div>
+                <div className="apostas-lista">
+                  {apostasData.bets.map((aposta, i) => (
+                    <div key={i} className="aposta-row">
+                      <span className="aposta-idx">{i + 1}</span>
+                      <div className="aposta-bolas">
+                        {aposta.map(n => (
+                          <span key={n} className="aposta-bola">{String(n).padStart(2, '0')}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
