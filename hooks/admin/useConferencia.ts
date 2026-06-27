@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
+import { getLoteria } from '@/lib/loterias'
 
-interface Bolao { id: string; apostas_data?: unknown }
+interface Bolao { id: string; loteria?: string; apostas_data?: unknown }
 
 export interface ConferirResult {
   status: string
@@ -71,8 +72,11 @@ export function useConferencia(
 
   async function conferirManual() {
     if (!bolaoAtual) return
-    const nums = dezenasInput.trim().split(/[\s,;]+/).map(Number).filter(n => n >= 1 && n <= 60)
-    if (nums.length !== 6) { setConferirMsg('❌ Informe exatamente 6 dezenas (1–60)'); return }
+    const cfg  = getLoteria(bolaoAtual.loteria)
+    const maxN = cfg.totalNumeros
+    const drawn = cfg.totalNumeros <= 25 ? 15 : cfg.totalNumeros <= 60 ? 6 : 5
+    const nums = dezenasInput.trim().split(/[\s,;]+/).map(Number).filter(n => n >= 1 && n <= maxN)
+    if (nums.length !== drawn) { setConferirMsg(`❌ Informe exatamente ${drawn} dezenas (1–${maxN}) para ${cfg.label}`); return }
     setConferindoManual(true); setConferirMsg('')
     const res = await fetch('/api/admin/conferir-sorteio', {
       method: 'POST',

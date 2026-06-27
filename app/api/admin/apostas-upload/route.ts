@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verificarToken } from '@/lib/auth'
+import { getLoteria } from '@/lib/loterias'
 
 export const runtime = 'nodejs'
 
-// Parser dinâmico — respeita a quantidade de dezenas configurada no bolão
-function parseBets(text: string, dezenas: number): number[][] {
+// Parser dinâmico — respeita a quantidade de dezenas e o range válido da loteria
+function parseBets(text: string, dezenas: number, maxNum: number): number[][] {
   const bets: number[][] = []
-  // Divide por linhas e extrai todos os números de 2 dígitos de cada linha
   const lines = text.split(/[\r\n]+/)
   for (const line of lines) {
-    const nums = (line.match(/\b\d{2}\b/g) || [])
+    const nums = (line.match(/\b\d{1,2}\b/g) || [])
       .map(Number)
-      .filter(n => n >= 1 && n <= 60)
+      .filter(n => n >= 1 && n <= maxNum)
     if (nums.length === dezenas) {
       bets.push(nums)
     }
@@ -72,17 +72,19 @@ export async function POST(req: NextRequest) {
   if (!bolaoId) return NextResponse.json({ error: 'bolao_id obrigatório' }, { status: 400 })
   if (!text.trim()) return NextResponse.json({ error: 'Texto vazio' }, { status: 400 })
 
-  // Busca configuração do bolão para saber quantas dezenas por aposta
+  // Busca configuração do bolão para saber quantas dezenas e a loteria
   const { data: bolao } = await supabase
-    .from('boloes').select('dezenas, num_apostas').eq('id', bolaoId).single()
+    .from('boloes').select('dezenas, num_apostas, loteria').eq('id', bolaoId).single()
 
   const dezenasPorAposta = bolao?.dezenas || 6
+  const cfg              = getLoteria(bolao?.loteria)
+  const maxNum           = cfg.totalNumeros
 
-  const bets = parseBets(text, dezenasPorAposta)
+  const bets = parseBets(text, dezenasPorAposta, maxNum)
   if (bets.length === 0) {
     return NextResponse.json({
-      error: `Nenhuma aposta encontrada com ${dezenasPorAposta} dezenas por linha. `
-           + `Verifique se cada linha contém exatamente ${dezenasPorAposta} números (1–60) separados por espaço.`,
+      error: `Nenhuma aposta encontrada com ${dezenasPorAposta} dezenas por linha (${cfg.label}, números 1–${maxNum}). `
+           + `Verifique se cada linha contém exatamente ${dezenasPorAposta} números separados por espaço.`,
     }, { status: 422 })
   }
 

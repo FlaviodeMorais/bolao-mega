@@ -271,7 +271,7 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
               <div className={styles.manualLabel}>Inserir dezenas manualmente:</div>
               <div className={styles.manualRow}>
                 <input type="text" className={styles.manualInput}
-                  placeholder="Ex: 03 30 33 35 45 47"
+                  placeholder={bolao.loteria === 'lotofacil' ? 'Ex: 01 03 05 08 11 12 14 15 17 19 20 21 22 24 25' : bolao.loteria === 'quina' ? 'Ex: 05 22 41 63 77' : 'Ex: 03 30 33 35 45 47'}
                   value={p.dezenasInput}
                   onChange={e => p.onDezenasInputChange(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && p.onConferirManual()}
