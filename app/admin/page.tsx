@@ -17,6 +17,7 @@ import ConcursoPanel from '@/components/admin/ConcursoPanel'
 import KpiDashboard from '@/components/admin/KpiDashboard'
 import HistoricoPanel from '@/components/admin/HistoricoPanel'
 import BolaoDetailPanel from '@/components/admin/BolaoDetailPanel'
+import IngerirHistorico from '@/components/admin/IngerirHistorico'
 
 import type { Bolao } from '@/hooks/admin/useBoloes'
 import type { Concurso } from '@/hooks/admin/useConcurso'
@@ -400,6 +401,9 @@ export default function AdminPage() {
 
         {/* ── BOLÕES ESPORTIVOS ── */}
         <EsporteAdmin />
+
+        {/* ── FERRAMENTAS ── */}
+        <IngerirHistorico />
 
         {/* ── SEGURANÇA ── */}
         <AdminSenha />
