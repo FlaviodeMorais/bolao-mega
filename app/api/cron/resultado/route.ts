@@ -40,12 +40,19 @@ export async function GET(req: NextRequest) {
     // Envia notificação no WhatsApp
     await notificarResultado(concurso, numeros, premio)
 
-    // Salva concurso notificado
-    await supabase.from('config').upsert({
-      key: 'ultimo_resultado_notificado',
-      value: String(concurso),
-      updated_at: new Date().toISOString(),
-    })
+    // Salva concurso notificado + dezenas do último resultado
+    await supabase.from('config').upsert([
+      { key: 'ultimo_resultado_notificado', value: String(concurso), updated_at: new Date().toISOString() },
+      { key: 'ultimo_resultado_dezenas',    value: JSON.stringify(numeros), updated_at: new Date().toISOString() },
+      { key: 'ultimo_resultado_concurso',   value: String(concurso), updated_at: new Date().toISOString() },
+    ])
+
+    // Upsert no histórico
+    await supabase.from('mega_historico').upsert({
+      concurso: Number(concurso),
+      dezenas: numeros.map(Number),
+      data_sorteio: data.dataApuracao || null,
+    }, { onConflict: 'concurso' })
 
     return NextResponse.json({ ok: true, concurso, numeros })
   } catch (err) {

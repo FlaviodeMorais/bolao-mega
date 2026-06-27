@@ -5,10 +5,14 @@ import { verificarToken } from '@/lib/auth'
 export async function GET() {
   const { data } = await supabase.from('config').select('key, value')
   const map = Object.fromEntries((data || []).map(r => [r.key, r.value]))
+  let ultimoDezenas: number[] = []
+  try { ultimoDezenas = JSON.parse(map['ultimo_resultado_dezenas'] || '[]') } catch { ultimoDezenas = [] }
   return NextResponse.json({
-    concurso: map['concurso_ativo'] || '',
-    data:     map['data_ativo']     || '',
-    premio:   map['premio_ativo']   || '',
+    concurso:          map['concurso_ativo']          || '',
+    data:              map['data_ativo']               || '',
+    premio:            map['premio_ativo']             || '',
+    ultimoConcurso:    map['ultimo_resultado_concurso'] || '',
+    ultimoDezenas,
   })
 }
 

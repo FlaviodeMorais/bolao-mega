@@ -325,6 +325,48 @@ body::before {
   margin-top: 2px;
 }
 .mega-countdown span { color: var(--error); font-weight: 700; }
+
+/* draw row com countdown */
+.mega-draw-row {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  margin-bottom: var(--s3);
+}
+.mega-countdown-box { text-align: right; }
+.mega-countdown-val {
+  font-size: 14px; font-weight: 700; color: var(--error);
+  font-family: var(--f-mono);
+}
+
+/* bolinhas último resultado */
+.ultimo-resultado {
+  border-top: 1px solid var(--glass-bd); padding-top: var(--s3); margin-top: var(--s2);
+}
+.ultimo-resultado-label {
+  font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+  color: rgba(255,255,255,.28); margin-bottom: var(--s2); text-align: left;
+}
+.ultimo-resultado-balls {
+  display: flex; gap: 6px; justify-content: center;
+}
+.result-ball {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--green); color: #fff;
+  font-size: 13px; font-weight: 800; font-family: var(--f-mono);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,166,81,.4);
+}
+
+/* link estatísticas na home */
+.home-links { margin: var(--s4) 0 var(--s2); }
+.home-link-stat {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.09);
+  border-radius: var(--r8); padding: 10px 14px;
+  font-size: 13px; font-weight: 500; color: rgba(255,255,255,.65);
+  text-decoration: none; transition: all .15s;
+}
+.home-link-stat:hover { border-color: var(--green); color: var(--green); background: rgba(0,166,81,.06); }
+
 .mega-divider { border: none; border-top: 1px solid var(--glass-bd); margin: var(--s3) 0; }
 .mega-stats   { display: flex; }
 .mega-stat    { flex: 1; text-align: center; padding: 4px 0; }
@@ -489,6 +531,33 @@ input[type="text"], input[type="password"], input[type="tel"] { -webkit-appearan
 }
 .disponivel-bar span { color: var(--green); font-weight: 700; }
 
+/* ── BARRA DE PROGRESSO DE COTAS ── */
+.cotas-progress-wrap { margin-bottom: var(--s3); }
+.cotas-progress-info {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 5px;
+}
+.cotas-progress-label {
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 1px; color: rgba(255,255,255,.35);
+}
+.cotas-progress-nums {
+  font-size: 12px; color: rgba(255,255,255,.45); font-family: var(--f-mono);
+}
+.cotas-progress-nums strong { color: var(--green); }
+.cotas-progress-bar {
+  height: 6px; background: rgba(255,255,255,.08); border-radius: 3px; overflow: hidden;
+}
+.cotas-progress-fill {
+  height: 100%; background: var(--green); border-radius: 3px;
+  transition: width .4s ease;
+  background: linear-gradient(90deg, #00A651, #00cc66);
+}
+.cotas-progress-urgente {
+  font-size: 11px; font-weight: 700; color: var(--error);
+  margin-top: 4px; text-align: right;
+}
+
 /* ── QUANTIDADE DE COTAS ── */
 .qtd-cotas-wrap {
   display: flex; align-items: center; justify-content: space-between;
@@ -545,6 +614,62 @@ input[type="text"], input[type="password"], input[type="tel"] { -webkit-appearan
   font-size: 22px; font-weight: 800; color: var(--green);
   font-family: var(--f-mono); letter-spacing: -.5px;
 }
+
+/* ── ESTATÍSTICAS ── */
+.estat-hero {
+  text-align: center; padding: var(--s5) var(--s4) var(--s3);
+}
+.estat-hero-title {
+  font-size: 20px; font-weight: 800; color: var(--white);
+}
+.estat-hero-sub {
+  font-size: 12px; color: rgba(255,255,255,.35); margin-top: 4px;
+}
+.estat-tabs {
+  display: flex; gap: 8px; padding: 0 16px var(--s3); overflow-x: auto;
+  scrollbar-width: none;
+}
+.estat-tabs::-webkit-scrollbar { display: none; }
+.estat-tab {
+  flex-shrink: 0; padding: 6px 14px; border-radius: var(--pill);
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10);
+  color: rgba(255,255,255,.55); font-size: 13px; font-weight: 500;
+  cursor: pointer; white-space: nowrap; transition: all .15s;
+}
+.estat-tab.ativo {
+  background: var(--green); border-color: var(--green); color: #fff; font-weight: 700;
+}
+.estat-section-title {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.5px; color: rgba(255,255,255,.35); margin-bottom: 16px;
+}
+.estat-balls-wrap { padding: 0 16px var(--s3); }
+.estat-balls-grid {
+  display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px;
+}
+.estat-ball-item { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.estat-ball {
+  width: 32px; height: 32px; border-radius: 50%;
+  font-size: 11px; font-weight: 800; font-family: var(--f-mono); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+.estat-ball-count {
+  font-size: 9px; color: rgba(255,255,255,.35); font-family: var(--f-mono);
+}
+.estat-rank-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+}
+.estat-rank-pos { font-size: 11px; color: rgba(255,255,255,.30); width: 22px; text-align: right; }
+.estat-rank-ball {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  font-size: 10px; font-weight: 800; font-family: var(--f-mono); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+.estat-rank-bar-wrap {
+  flex: 1; height: 6px; background: rgba(255,255,255,.06); border-radius: 3px; overflow: hidden;
+}
+.estat-rank-bar { height: 100%; border-radius: 3px; transition: width .4s ease; }
+.estat-rank-val { font-size: 11px; color: rgba(255,255,255,.45); font-family: var(--f-mono); width: 80px; text-align: right; }
 
 /* ── PIX CARD (hidden — payment handled in modal) ── */
 .pix-card { display: none; }

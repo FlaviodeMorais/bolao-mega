@@ -3,7 +3,30 @@ import { useEffect, useState, useCallback } from 'react'
 
 interface Bolao { id: string; nome: string; slug: string; ativo: boolean; dezenas: number; num_apostas: number }
 interface BolaoEsporte { id: string; nome: string; slug: string; descricao?: string; valor_cota: number }
-interface ConcursoAtivo { concurso: string; data: string; premio: string }
+interface ConcursoAtivo { concurso: string; data: string; premio: string; ultimoConcurso?: string; ultimoDezenas?: number[] }
+
+function useCountdown(dataStr: string) {
+  const [texto, setTexto] = useState('')
+  useEffect(() => {
+    if (!dataStr) return
+    const m = dataStr.match(/(\d{1,2})\/(\d{2})/)
+    if (!m) return
+    const hm = dataStr.match(/(\d{1,2})h(\d{2})?/)
+    const hora = hm ? parseInt(hm[1]) : 20
+    const min  = hm?.[2] ? parseInt(hm[2]) : 0
+    const draw = new Date(new Date().getFullYear(), parseInt(m[2]) - 1, parseInt(m[1]), hora, min, 0)
+    const tick = () => {
+      const diff = draw.getTime() - Date.now()
+      if (diff <= 0) { setTexto('Encerrado'); return }
+      const d = Math.floor(diff / 86400000)
+      const h = Math.floor((diff % 86400000) / 3600000)
+      const mn = Math.floor((diff % 3600000) / 60000)
+      setTexto(d > 0 ? `${d}d ${h}h ${mn}min` : `${h}h ${mn}min`)
+    }
+    tick(); const id = setInterval(tick, 30000); return () => clearInterval(id)
+  }, [dataStr])
+  return texto
+}
 
 export default function Home() {
   const [boloes, setBoloes]               = useState<Bolao[]>([])
@@ -11,6 +34,8 @@ export default function Home() {
   const [concursoAtivo, setConcursoAtivo] = useState<ConcursoAtivo | null>(null)
   const [loading, setLoading]             = useState(true)
   const [host, setHost]                   = useState('')
+
+  const countdown = useCountdown(concursoAtivo?.data || '')
 
   const carregar = useCallback((inicial = false) => {
     Promise.all([
@@ -34,14 +59,14 @@ export default function Home() {
     return () => { clearInterval(id); window.removeEventListener('focus', onFocus) }
   }, [carregar])
 
+  const dezenas = concursoAtivo?.ultimoDezenas || []
+
   return (
     <div className="page-wrap">
       {/* Header */}
       <div className="site-header">
         <span className="logo">🍀</span>
-        <div className="header-brand">
-          <span className="brand">MEGA-SENA</span>
-        </div>
+        <div className="header-brand"><span className="brand">MEGA-SENA</span></div>
         <a href="/admin" className="header-link">
           <span className="material-icons-round">settings</span>
         </a>
@@ -60,10 +85,35 @@ export default function Home() {
               ? <div className="mega-prize">{concursoAtivo.premio}</div>
               : <div className="mega-prize mega-prize-acc">Acumulando</div>
             }
-            <div className="mega-prize-label">Prêmio estimado do concurso #{concursoAtivo.concurso}</div>
+            <div className="mega-prize-label">Prêmio estimado</div>
+
             {concursoAtivo.data && (
-              <><div className="mega-draw-label">Sorteio</div>
-              <div className="mega-draw-date">{concursoAtivo.data}</div></>
+              <div className="mega-draw-row">
+                <div>
+                  <div className="mega-draw-label">Sorteio</div>
+                  <div className="mega-draw-date">{concursoAtivo.data}</div>
+                </div>
+                {countdown && (
+                  <div className="mega-countdown-box">
+                    <div className="mega-draw-label">Faltam</div>
+                    <div className="mega-countdown-val">{countdown}</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Último resultado */}
+            {dezenas.length === 6 && (
+              <div className="ultimo-resultado">
+                <div className="ultimo-resultado-label">
+                  Último resultado — Concurso #{concursoAtivo.ultimoConcurso}
+                </div>
+                <div className="ultimo-resultado-balls">
+                  {dezenas.map(n => (
+                    <span key={n} className="result-ball">{String(n).padStart(2, '0')}</span>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -76,7 +126,7 @@ export default function Home() {
 
           {loading && <div className="p-empty">Carregando...</div>}
 
-          {!loading && boloes.length === 0 && (
+          {!loading && boloes.filter(b => b.ativo).length === 0 && (
             <div className="p-empty">
               Nenhum bolão disponível no momento.<br/>
               Aguarde o administrador criar um.
@@ -95,6 +145,10 @@ export default function Home() {
               <span className="material-icons-round blc-arrow">arrow_forward_ios</span>
             </a>
           ))}
+
+          <div className="home-links">
+            <a href="/estatisticas" className="home-link-stat">📊 Análises &amp; Estatísticas da Mega-Sena</a>
+          </div>
 
           <div className="footer footer-index">
             <strong>Boa sorte a todos! 🍀</strong><br/>

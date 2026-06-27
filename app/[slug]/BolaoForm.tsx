@@ -368,7 +368,16 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
             )}
             {configOk && VALOR_COTA > 0 && (
               <>
-                <div className="disponivel-bar">Disponíveis: <span>{disp}/{TOTAL_COTAS}</span></div>
+                <div className="cotas-progress-wrap">
+                  <div className="cotas-progress-info">
+                    <span className="cotas-progress-label">Cotas vendidas</span>
+                    <span className="cotas-progress-nums"><strong>{cotasOcupadas.length}</strong>/{TOTAL_COTAS}</span>
+                  </div>
+                  <div className="cotas-progress-bar">
+                    <div className="cotas-progress-fill" style={{ width: `${Math.round((cotasOcupadas.length / TOTAL_COTAS) * 100)}%` }} />
+                  </div>
+                  {disp <= 2 && disp > 0 && <div className="cotas-progress-urgente">⚡ Últimas {disp} cota{disp !== 1 ? 's' : ''}!</div>}
+                </div>
                 <div className="qtd-cotas-wrap">
                   <div>
                     <label className="qtd-cotas-label" htmlFor="qtd-cotas">Quantidade de cotas</label>
