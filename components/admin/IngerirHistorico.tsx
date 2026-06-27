@@ -24,7 +24,10 @@ export default function IngerirHistorico() {
   // Busca UM concurso diretamente do browser (IP residencial → sem bloqueio da Caixa)
   async function buscarConcurso(n: number): Promise<Linha | null> {
     try {
-      const r = await fetch(`${BASE}/${n}`, { cache: 'no-store' })
+      const ctrl = new AbortController()
+      const timer = setTimeout(() => ctrl.abort(), 8000)
+      const r = await fetch(`${BASE}/${n}`, { cache: 'no-store', signal: ctrl.signal })
+      clearTimeout(timer)
       if (!r.ok) return null
       const d = await r.json()
       const dezenas = (d.listaDezenas || d.dezenas || []).map(Number)
@@ -37,12 +40,16 @@ export default function IngerirHistorico() {
 
   // Envia lote de resultados para o backend inserir no Supabase
   async function salvarLote(linhas: Linha[]): Promise<{ ok: boolean; erro?: string }> {
-    const r = await fetch('/api/admin/salvar-historico', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ linhas }),
-    }).then(r => r.json()).catch(e => ({ ok: false, erro: String(e) }))
-    return r
+    try {
+      const r = await fetch('/api/admin/salvar-historico', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ linhas }),
+      })
+      return await r.json()
+    } catch (e) {
+      return { ok: false, erro: String(e) }
+    }
   }
 
   async function iniciarIngestao() {
@@ -52,40 +59,47 @@ export default function IngerirHistorico() {
     let inseridosTotal = 0
     let errosTotal = 0
 
-    const LOTE_FETCH = 15   // busca 15 concursos em paralelo no browser
-    const LOTE_SALVAR = 100 // acumula 100 antes de salvar no Supabase
+    const LOTE_FETCH = 8    // menos paralelo = mais estável
+    const LOTE_SALVAR = 80  // salva a cada 80 concursos
 
     let buffer: Linha[] = []
 
-    for (let inicio = 1; inicio <= TOTAL_CONCURSOS; inicio += LOTE_FETCH) {
-      const nums = Array.from(
-        { length: Math.min(LOTE_FETCH, TOTAL_CONCURSOS - inicio + 1) },
-        (_, i) => inicio + i
-      )
+    try {
+      for (let inicio = 1; inicio <= TOTAL_CONCURSOS; inicio += LOTE_FETCH) {
+        const nums = Array.from(
+          { length: Math.min(LOTE_FETCH, TOTAL_CONCURSOS - inicio + 1) },
+          (_, i) => inicio + i
+        )
 
-      const resultados = await Promise.all(nums.map(buscarConcurso))
+        const resultados = await Promise.all(nums.map(buscarConcurso))
 
-      for (const r of resultados) {
-        if (r) buffer.push(r)
-        else errosTotal++
-      }
-
-      // Salva quando buffer atinge 100 ou chegou ao fim
-      if (buffer.length >= LOTE_SALVAR || inicio + LOTE_FETCH > TOTAL_CONCURSOS) {
-        if (buffer.length > 0) {
-          const save = await salvarLote(buffer)
-          if (save.ok) {
-            inseridosTotal += buffer.length
-            setLog(l => [...l, `✅ ${buffer[0].concurso}–${buffer[buffer.length-1].concurso}: ${buffer.length} salvos`])
-          } else {
-            errosTotal += buffer.length
-            setLog(l => [...l, `❌ Erro ao salvar lote: ${save.erro}`])
-          }
-          buffer = []
+        for (const r of resultados) {
+          if (r) buffer.push(r)
+          else errosTotal++
         }
-      }
 
-      setProgresso(Math.round((Math.min(inicio + LOTE_FETCH - 1, TOTAL_CONCURSOS) / TOTAL_CONCURSOS) * 100))
+        const isUltimoLote = inicio + LOTE_FETCH > TOTAL_CONCURSOS
+        if (buffer.length >= LOTE_SALVAR || isUltimoLote) {
+          if (buffer.length > 0) {
+            const save = await salvarLote(buffer)
+            if (save.ok) {
+              inseridosTotal += buffer.length
+              setLog(l => [...l, `✅ ${buffer[0].concurso}–${buffer[buffer.length-1].concurso}: ${buffer.length} salvos`])
+            } else {
+              errosTotal += buffer.length
+              setLog(l => [...l, `❌ Lote ${buffer[0].concurso}–${buffer[buffer.length-1].concurso}: ${save.erro}`])
+            }
+            buffer = []
+          }
+        }
+
+        setProgresso(Math.round((Math.min(inicio + LOTE_FETCH - 1, TOTAL_CONCURSOS) / TOTAL_CONCURSOS) * 100))
+
+        // Pequena pausa para não sobrecarregar o browser
+        await new Promise(res => setTimeout(res, 100))
+      }
+    } catch (err) {
+      setLog(l => [...l, `💥 Erro inesperado: ${String(err)}`])
     }
 
     setLog(l => [...l, `🏁 Concluído: ${inseridosTotal} inseridos, ${errosTotal} erros.`])
