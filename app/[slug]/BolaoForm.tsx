@@ -181,8 +181,9 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
   // Countdown — usa hora do campo data se vier no formato "DD/MM · Dia · HHhMM", senão 20h00
   useEffect(() => {
     if (!concursoAtivo?.data) return
-    const dataPart = concursoAtivo.data.split(' · ')
-    const [dd, mm] = dataPart[0].split('/').map(Number)
+    const dateMatch = concursoAtivo.data.match(/(\d{1,2})\/(\d{2})/)
+    if (!dateMatch) return
+    const [, dd, mm] = dateMatch.map(Number)
     const horaMatch = concursoAtivo.data.match(/(\d{1,2})h(\d{2})?/)
     const hora = horaMatch ? parseInt(horaMatch[1]) : 20
     const min  = horaMatch?.[2] ? parseInt(horaMatch[2]) : 0
