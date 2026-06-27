@@ -144,7 +144,8 @@ export async function enviarComprovante(
   )
 }
 
-export async function notificarPagamento(nome: string, cotas: string[], concurso: number, total: number, telefone?: string) {
+export async function notificarPagamento(nome: string, cotas: string[], concurso: number, total: number, telefone?: string, participanteId?: string) {
+  const linkComprovante = participanteId ? `\n🔗 Comprovante: https://bolao-mega-zeta.vercel.app/p/${participanteId}` : ''
   const msg =
     `💚 *PAGAMENTO CONFIRMADO*\n\n` +
     `👤 *${nome}*\n` +
@@ -160,7 +161,8 @@ export async function notificarPagamento(nome: string, cotas: string[], concurso
       `✅ *Seu pagamento foi confirmado!*\n\n` +
       `🎟️ Cotas: *${cotas.join(', ')}*\n` +
       `💰 R$ ${total.toFixed(2).replace('.', ',')}\n` +
-      `🎯 Concurso: #${concurso}\n\n` +
+      `🎯 Concurso: #${concurso}` +
+      linkComprovante + `\n\n` +
       `Boa sorte! 🍀`
     )
   }

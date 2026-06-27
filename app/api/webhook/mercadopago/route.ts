@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
       if (part) {
         await supabase.from('participantes').update({ status: 'pago' }).eq('mp_payment_id', paymentId)
-        notificarPagamento(part.nome, part.cotas, part.concurso, Number(part.total), part.telefone).catch(() => {})
+        notificarPagamento(part.nome, part.cotas, part.concurso, Number(part.total), part.telefone, part.id).catch(() => {})
 
         if (part.email) {
           const { data: bolaoInfo } = await supabase

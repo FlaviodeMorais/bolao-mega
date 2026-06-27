@@ -1,5 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
+import dynamic from 'next/dynamic'
+const LoteriasCards = dynamic(() => import('@/components/LoteriasCards'), { ssr: false })
 
 interface Bolao { id: string; nome: string; slug: string; ativo: boolean; dezenas: number; num_apostas: number }
 interface BolaoEsporte { id: string; nome: string; slug: string; descricao?: string; valor_cota: number }
@@ -156,6 +158,9 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Últimos resultados Caixa */}
+      <LoteriasCards />
 
       {/* Bolões Esportivos */}
       {boloesEsporte.map(b => (

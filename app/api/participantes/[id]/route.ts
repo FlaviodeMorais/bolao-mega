@@ -36,7 +36,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (part && fields.status === 'pago' && part.status !== 'pago') {
     await notificarPagamento(
       part.nome, part.cotas, part.concurso,
-      Number(part.total), part.telefone
+      Number(part.total), part.telefone, params.id
     )
   }
 
