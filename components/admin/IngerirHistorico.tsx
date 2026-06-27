@@ -100,17 +100,28 @@ export default function IngerirHistorico() {
       <div className={styles.panelTitle}>🗄️ Histórico Estatístico</div>
 
       {/* Status por loteria */}
+      <div className={styles.detStatsRow} style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 14 }}>
+        {LOTERIA_LIST.map(l => {
+          const val    = info[l.id]
+          const vazio  = val?.includes('vazio')
+          const carregado = val && !vazio
+          return (
+            <div key={l.id} className={`${styles.detStat} ${vazio ? styles.detStatWarn : ''}`}>
+              <div className={styles.detStatVal}
+                style={{ fontSize: 14, color: carregado ? '#007A45' : vazio ? '#D97706' : '#94A3B8' }}>
+                {l.emoji} {l.label}
+              </div>
+              <span className={styles.detStatLbl} style={{ color: carregado ? '#007A45' : vazio ? '#D97706' : '#94A3B8', textTransform: 'none', letterSpacing: 0, fontFamily: 'inherit' }}>
+                {val ?? '—'}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
       <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-        {LOTERIA_LIST.map(l => (
-          <div key={l.id} style={{ fontSize: 11, background: '#F8FAFB', border: '1px solid #E2E8F0', borderRadius: 8, padding: '6px 12px' }}>
-            <span style={{ fontWeight: 700, color: l.cor }}>{l.emoji} {l.label}: </span>
-            <span style={{ color: info[l.id]?.includes('vazio') ? '#D97706' : info[l.id] ? '#007A45' : '#94A3B8' }}>
-              {info[l.id] ?? '—'}
-            </span>
-          </div>
-        ))}
         <button className={styles.btnLoad} onClick={verificar} disabled={verificando} style={{ marginBottom: 0 }}>
-          {verificando ? '⟳' : '🔍'} Verificar
+          {verificando ? '⟳' : '🔍'} Verificar banco
         </button>
         <a href="/estatisticas" target="_blank" className={styles.btnLoad} style={{ marginBottom: 0, textDecoration: 'none' }}>
           📊 Ver Estatísticas
