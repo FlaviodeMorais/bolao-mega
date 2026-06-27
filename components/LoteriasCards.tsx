@@ -1,8 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
 
-const BASE = 'https://servicebus2.caixa.gov.br/portaldeloterias/api'
-
 interface LotResult {
   numero: number
   dataApuracao: string
@@ -58,10 +56,7 @@ export default function LoteriasCards() {
   useEffect(() => {
     LOTERIAS.map(async (lot) => {
       try {
-        const ctrl = new AbortController()
-        const t = setTimeout(() => ctrl.abort(), 8000)
-        const r = await fetch(`${BASE}/${lot.id}`, { cache: 'no-store', signal: ctrl.signal })
-        clearTimeout(t)
+        const r = await fetch(`/api/resultados/${lot.id}`)
         if (r.ok) {
           const json: LotResult = await r.json()
           setDados(prev => ({ ...prev, [lot.id]: json }))
