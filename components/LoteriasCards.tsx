@@ -27,14 +27,14 @@ const HEART = 'M0,-13 C-2,-21 -14,-27 -22,-19 C-30,-11 -28,1 0,22 C28,1 30,-11 2
 function Trevo({ corA, corB }: { corA: string; corB: string }) {
   return (
     <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
-      {/* ↖ topo-esq: corA escura — coração rotacionado +45° (ponta aponta para centro ↘) */}
-      <g transform="translate(32,32) rotate(45)"><path d={HEART} fill={corA}/></g>
-      {/* ↗ topo-dir: corB clara — coração rotacionado -45° (ponta aponta para centro ↙) */}
-      <g transform="translate(68,32) rotate(-45)"><path d={HEART} fill={corB}/></g>
-      {/* ↙ baixo-esq: corB clara — coração rotacionado +135° (ponta aponta para centro ↗) */}
-      <g transform="translate(32,68) rotate(135)"><path d={HEART} fill={corB}/></g>
-      {/* ↘ baixo-dir: corA escura — coração rotacionado -135° (ponta aponta para centro ↖) */}
-      <g transform="translate(68,68) rotate(-135)"><path d={HEART} fill={corA}/></g>
+      {/* ↖ topo-esq: corA escura — ponta aponta para centro ↘ */}
+      <g transform="translate(32,32) rotate(-45)"><path d={HEART} fill={corA}/></g>
+      {/* ↗ topo-dir: corB clara — ponta aponta para centro ↙ */}
+      <g transform="translate(68,32) rotate(45)"><path d={HEART} fill={corB}/></g>
+      {/* ↙ baixo-esq: corB clara — ponta aponta para centro ↗ */}
+      <g transform="translate(32,68) rotate(-135)"><path d={HEART} fill={corB}/></g>
+      {/* ↘ baixo-dir: corA escura — ponta aponta para centro ↖ */}
+      <g transform="translate(68,68) rotate(135)"><path d={HEART} fill={corA}/></g>
     </svg>
   )
 }

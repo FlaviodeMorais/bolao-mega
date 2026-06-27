@@ -23,13 +23,13 @@ export default function TrevoIcon({ size = 28, corA = '#009B63', corB = '#00AB67
       aria-hidden="true"
     >
       {/* ↖ topo-esq: corA escura — ponta aponta para centro ↘ */}
-      <g transform="translate(32,32) rotate(45)"><path d={HEART} fill={corA}/></g>
+      <g transform="translate(32,32) rotate(-45)"><path d={HEART} fill={corA}/></g>
       {/* ↗ topo-dir: corB clara — ponta aponta para centro ↙ */}
-      <g transform="translate(68,32) rotate(-45)"><path d={HEART} fill={corB}/></g>
+      <g transform="translate(68,32) rotate(45)"><path d={HEART} fill={corB}/></g>
       {/* ↙ baixo-esq: corB clara — ponta aponta para centro ↗ */}
-      <g transform="translate(32,68) rotate(135)"><path d={HEART} fill={corB}/></g>
+      <g transform="translate(32,68) rotate(-135)"><path d={HEART} fill={corB}/></g>
       {/* ↘ baixo-dir: corA escura — ponta aponta para centro ↖ */}
-      <g transform="translate(68,68) rotate(-135)"><path d={HEART} fill={corA}/></g>
+      <g transform="translate(68,68) rotate(135)"><path d={HEART} fill={corA}/></g>
     </svg>
   )
 }
