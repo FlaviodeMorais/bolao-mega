@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from('participantes')
-    .select('id, nome, cotas, total, status, telefone, acrescimo, acrescimo_pago, created_at')
+    .select('id, nome, cotas, total, status, telefone, email, acrescimo, acrescimo_pago, created_at')
     .eq('concurso', parseInt(concurso))
     .neq('status', 'cancelado')
     .order('created_at', { ascending: true })

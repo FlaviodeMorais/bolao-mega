@@ -7,7 +7,7 @@ import { getLoteria } from '@/lib/loterias'
 /* ── Tipos ── */
 interface Participante {
   id: string; nome: string; cotas: string[]; total: number
-  status: string; telefone?: string; criado_em?: string
+  status: string; telefone?: string; email?: string; criado_em?: string
   acrescimo?: number; acrescimo_pago?: boolean
 }
 interface Bolao {
@@ -336,14 +336,14 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
 
       {bolao.encerrado && (
         <div className={styles.encerradoBanner}>
-          ⛔ Bolão encerrado — complemento de pagamento enviado via WhatsApp
+          ⛔ Bolão encerrado — complemento de pagamento enviado por e-mail
         </div>
       )}
       {p.encerrarOk && (
         <div className={styles.encerrarSucesso}>
           ✅ Encerrado com sucesso!&nbsp;
           Acréscimo de <strong>R$ {p.encerrarOk.acrescimo.toFixed(2).replace('.', ',')}</strong>&nbsp;
-          enviado para {p.encerrarOk.participantes} participante(s) via WhatsApp.
+          enviado para {p.encerrarOk.participantes} participante(s) por e-mail.
         </div>
       )}
       {p.showEncerrar && !bolao.encerrado && (
@@ -371,7 +371,7 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
             </div>
           </div>
           <div className={styles.encerrarInfo}>
-            ✅ Cada participante receberá um PIX com o complemento via WhatsApp.<br />
+            ✅ Cada participante receberá um PIX com o complemento por e-mail.<br />
             ✅ O bolão será marcado como encerrado.<br />
             ⛔ Novos cadastros serão bloqueados.
           </div>
@@ -451,12 +451,12 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
                   onClick={() => window.open(`/comprovante?id=${pt.id}`, '_blank')}
                   title="Imprimir comprovante">🖨️</button>
               )}
-              {pt.status === 'pago' && pt.telefone && (
+              {pt.status === 'pago' && (
                 <button type="button" className={styles.btnComprovante}
                   onClick={() => p.onEnviarComprovante(pt.id)}
                   disabled={p.enviandoComp === pt.id}
-                  title="Enviar comprovante via WhatsApp">
-                  {p.enviandoComp === pt.id ? '⟳' : '📋'}
+                  title={pt.email ? `Enviar comprovante por e-mail — ${pt.email}` : 'Participante sem e-mail cadastrado'}>
+                  {p.enviandoComp === pt.id ? '⟳' : '📧'}
                 </button>
               )}
               {pt.status === 'pago'

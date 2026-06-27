@@ -25,31 +25,32 @@ async function send(to: string, subject: string, html: string) {
   }
 }
 
-function layout(titulo: string, corpo: string) {
+// ── Layout padrão — tema claro, brand Caixa ─────────────────────────────
+function layout(titulo: string, corpo: string, loteriaLabel = 'Mega-Sena') {
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${titulo}</title></head>
-<body style="margin:0;padding:0;background:#0d1117;font-family:'Segoe UI',Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#0d1117;padding:32px 0;">
+<body style="margin:0;padding:0;background:#F4F6F8;font-family:'Segoe UI',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F6F8;padding:32px 0;">
 <tr><td align="center">
-<table width="560" cellpadding="0" cellspacing="0" style="background:#161b22;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 24px rgba(0,0,0,.07);">
 
   <!-- Header -->
-  <tr><td style="background:linear-gradient(135deg,#00A651,#007a3d);padding:28px 32px;text-align:center;">
+  <tr><td style="background:linear-gradient(135deg,#00AB67,#005DA9);padding:28px 32px;text-align:center;">
     <div style="font-size:32px;margin-bottom:8px;">🍀</div>
-    <div style="color:#fff;font-size:22px;font-weight:800;letter-spacing:-0.5px;">GRUPO MEGA</div>
-    <div style="color:rgba(255,255,255,0.7);font-size:13px;margin-top:4px;">${titulo}</div>
+    <div style="color:#fff;font-size:22px;font-weight:800;letter-spacing:-0.5px;">BOLÃO ${loteriaLabel.toUpperCase()}</div>
+    <div style="color:rgba(255,255,255,0.85);font-size:13px;margin-top:4px;">${titulo}</div>
   </td></tr>
 
   <!-- Corpo -->
-  <tr><td style="padding:32px;">${corpo}</td></tr>
+  <tr><td style="padding:32px;color:#0D1B2A;">${corpo}</td></tr>
 
   <!-- Footer -->
-  <tr><td style="padding:20px 32px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;">
-    <div style="color:rgba(255,255,255,0.25);font-size:11px;line-height:1.6;">
-      Bolão Mega — Grupo de apostas na Mega-Sena<br>
-      Você recebeu este e-mail porque participa do nosso bolão.
+  <tr><td style="padding:20px 32px;border-top:1px solid #E2E8F0;text-align:center;background:#F8FAFB;">
+    <div style="color:#94A3B8;font-size:11px;line-height:1.6;">
+      Você recebeu este e-mail porque participa do nosso bolão.<br>
+      Dúvidas? Fale com o administrador do grupo.
     </div>
   </td></tr>
 
@@ -58,10 +59,10 @@ function layout(titulo: string, corpo: string) {
 </body></html>`
 }
 
-function stat(label: string, valor: string, cor = '#00A651') {
+function stat(label: string, valor: string, cor = '#00AB67') {
   return `<tr>
-    <td style="color:rgba(255,255,255,0.45);font-size:12px;padding:6px 0 2px;text-transform:uppercase;letter-spacing:0.8px;">${label}</td>
-    <td style="color:${cor};font-size:15px;font-weight:700;text-align:right;padding:6px 0 2px;">${valor}</td>
+    <td style="color:#64748B;font-size:12px;padding:7px 0 2px;text-transform:uppercase;letter-spacing:0.8px;border-bottom:1px solid #F1F5F9;">${label}</td>
+    <td style="color:${cor};font-size:14px;font-weight:700;text-align:right;padding:7px 0 2px;border-bottom:1px solid #F1F5F9;">${valor}</td>
   </tr>`
 }
 
@@ -72,45 +73,43 @@ export async function enviarPixEmail(
   valor: number,
   pixCode: string,
   bolaoNome: string,
-  cotas: string[]
+  cotas: string[],
+  loteriaLabel = 'Mega-Sena'
 ) {
   const valorStr = `R$ ${valor.toFixed(2).replace('.', ',')}`
   const corpo = `
-    <p style="color:rgba(255,255,255,0.75);font-size:15px;margin:0 0 24px;">
-      Olá <strong style="color:#fff;">${nome}</strong>! Sua inscrição foi registrada.<br>
+    <p style="color:#475569;font-size:15px;margin:0 0 24px;">
+      Olá <strong style="color:#0D1B2A;">${nome}</strong>! Sua inscrição foi registrada.<br>
       Efetue o pagamento via PIX para confirmar sua participação.
     </p>
 
-    <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(0,166,81,0.08);border:1px solid rgba(0,166,81,0.2);border-radius:12px;padding:20px;margin-bottom:24px;">
-      <tr><td>
-        <div style="color:rgba(255,255,255,0.5);font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Valor a pagar</div>
-        <div style="color:#00A651;font-size:28px;font-weight:800;">${valorStr}</div>
-      </td></tr>
-    </table>
-
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
-      ${stat('Bolão', bolaoNome)}
-      ${stat('Suas cotas', cotas.map(c => `Nº ${c}`).join(' · '))}
-      ${stat('Concurso', 'Mega-Sena')}
-    </table>
-
-    <div style="background:#0d1117;border-radius:10px;padding:16px;margin-bottom:24px;">
-      <div style="color:rgba(255,255,255,0.4);font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Código PIX — Copia e Cola</div>
-      <div style="color:#e6edf3;font-size:11px;word-break:break-all;font-family:monospace;line-height:1.6;">${pixCode}</div>
+    <div style="background:#F0FDF4;border:1.5px solid #00AB67;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
+      <div style="color:#64748B;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Valor a pagar</div>
+      <div style="color:#00AB67;font-size:28px;font-weight:800;">${valorStr}</div>
     </div>
 
-    <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:14px;">
-      <div style="color:#F59E0B;font-size:13px;font-weight:600;">⚠️ Atenção</div>
-      <div style="color:rgba(255,255,255,0.6);font-size:13px;margin-top:6px;line-height:1.5;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      ${stat('Bolão', bolaoNome, '#0D1B2A')}
+      ${stat('Suas cotas', cotas.map(c => `Nº ${c}`).join(' · '), '#0D1B2A')}
+    </table>
+
+    <div style="background:#F8FAFB;border:1px solid #E2E8F0;border-radius:10px;padding:16px;margin-bottom:24px;">
+      <div style="color:#94A3B8;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Código PIX — Copia e Cola</div>
+      <div style="color:#0D1B2A;font-size:11px;word-break:break-all;font-family:monospace;line-height:1.6;">${pixCode}</div>
+    </div>
+
+    <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:14px;">
+      <div style="color:#D97706;font-size:13px;font-weight:600;">⚠️ Atenção</div>
+      <div style="color:#78716C;font-size:13px;margin-top:6px;line-height:1.5;">
         Após o pagamento, aguarde a confirmação do administrador.
         Sua participação só é efetivada após a confirmação do PIX.
       </div>
     </div>
   `
-  return send(email, `🔑 PIX gerado — ${bolaoNome}`, layout('Código PIX para pagamento', corpo))
+  return send(email, `🔑 PIX gerado — ${bolaoNome}`, layout('Código PIX para pagamento', corpo, loteriaLabel))
 }
 
-// ── Pagamento confirmado ───────────────────────────────────────────────────
+// ── Pagamento confirmado / Comprovante ────────────────────────────────────
 export async function enviarConfirmacaoPagamento(
   email: string,
   nome: string,
@@ -119,33 +118,34 @@ export async function enviarConfirmacaoPagamento(
   concurso: number,
   bolaoNome: string,
   numApostas: number,
-  dezenas: number
+  dezenas: number,
+  loteriaLabel = 'Mega-Sena'
 ) {
   const valorStr = `R$ ${total.toFixed(2).replace('.', ',')}`
   const corpo = `
     <div style="text-align:center;margin-bottom:28px;">
-      <div style="display:inline-block;background:rgba(0,166,81,0.15);border-radius:50%;width:64px;height:64px;line-height:64px;font-size:28px;">✅</div>
-      <h2 style="color:#fff;margin:12px 0 4px;font-size:20px;">Pagamento confirmado!</h2>
-      <p style="color:rgba(255,255,255,0.5);margin:0;font-size:14px;">Você está participando do bolão. Boa sorte!</p>
+      <div style="display:inline-flex;align-items:center;justify-content:center;background:#F0FDF4;border-radius:50%;width:64px;height:64px;font-size:28px;">✅</div>
+      <h2 style="color:#0D1B2A;margin:12px 0 4px;font-size:20px;">Pagamento confirmado!</h2>
+      <p style="color:#64748B;margin:0;font-size:14px;">Você está participando do bolão. Boa sorte!</p>
     </div>
 
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border-top:1px solid rgba(255,255,255,0.06);">
-      ${stat('Participante', nome, '#e6edf3')}
-      ${stat('Bolão', bolaoNome, '#e6edf3')}
-      ${stat('Concurso', `#${concurso}`)}
-      ${stat('Cotas adquiridas', cotas.map(c => `Nº ${c}`).join(' · '), '#e6edf3')}
-      ${stat('Apostas', `${numApostas} apostas · ${dezenas} dezenas`, '#e6edf3')}
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      ${stat('Participante', nome, '#0D1B2A')}
+      ${stat('Bolão', bolaoNome, '#0D1B2A')}
+      ${stat('Concurso', `#${concurso}`, '#0D1B2A')}
+      ${stat('Cotas adquiridas', cotas.map(c => `Nº ${c}`).join(' · '), '#0D1B2A')}
+      ${stat('Apostas', `${numApostas} apostas · ${dezenas} dezenas`, '#0D1B2A')}
       ${stat('Valor pago', valorStr)}
     </table>
 
-    <div style="background:rgba(0,166,81,0.08);border:1px solid rgba(0,166,81,0.15);border-radius:10px;padding:14px;text-align:center;">
-      <div style="color:rgba(255,255,255,0.6);font-size:13px;line-height:1.6;">
+    <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px;text-align:center;">
+      <div style="color:#475569;font-size:13px;line-height:1.6;">
         🏆 Em caso de premiação, você será notificado por e-mail.<br>
         O prêmio é dividido proporcionalmente ao número de cotas adquiridas.
       </div>
     </div>
   `
-  return send(email, `✅ Pagamento confirmado — ${bolaoNome}`, layout('Comprovante de Participação', corpo))
+  return send(email, `✅ Comprovante de participação — ${bolaoNome}`, layout('Comprovante de Participação', corpo, loteriaLabel))
 }
 
 // ── Resultado do sorteio ──────────────────────────────────────────────────
@@ -156,39 +156,40 @@ export async function enviarResultado(
   numeros: string[],
   ganhou: boolean,
   bolaoNome: string,
-  premioIndividual?: number
+  premioIndividual?: number,
+  loteriaLabel = 'Mega-Sena'
 ) {
   const corpo = ganhou && premioIndividual ? `
     <div style="text-align:center;margin-bottom:28px;">
       <div style="font-size:40px;margin-bottom:8px;">🏆</div>
-      <h2 style="color:#00A651;margin:0 0 8px;font-size:24px;">GANHAMOS!</h2>
-      <p style="color:rgba(255,255,255,0.6);margin:0;">Concurso #${concurso} — ${bolaoNome}</p>
+      <h2 style="color:#00AB67;margin:0 0 8px;font-size:24px;">GANHAMOS!</h2>
+      <p style="color:#64748B;margin:0;">Concurso #${concurso} — ${bolaoNome}</p>
     </div>
-    <div style="background:rgba(0,166,81,0.12);border:1px solid rgba(0,166,81,0.25);border-radius:12px;padding:20px;text-align:center;margin-bottom:24px;">
-      <div style="color:rgba(255,255,255,0.5);font-size:12px;text-transform:uppercase;letter-spacing:1px;">Seu prêmio, ${nome}</div>
-      <div style="color:#00A651;font-size:32px;font-weight:800;margin:8px 0;">R$ ${premioIndividual.toFixed(2).replace('.', ',')}</div>
-      <div style="color:rgba(255,255,255,0.4);font-size:12px;">O administrador entrará em contato para efetuar o pagamento.</div>
+    <div style="background:#F0FDF4;border:1.5px solid #00AB67;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px;">
+      <div style="color:#64748B;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Seu prêmio, ${nome}</div>
+      <div style="color:#00AB67;font-size:32px;font-weight:800;margin:8px 0;">R$ ${premioIndividual.toFixed(2).replace('.', ',')}</div>
+      <div style="color:#94A3B8;font-size:12px;">O administrador entrará em contato para efetuar o pagamento.</div>
     </div>
     <div style="text-align:center;">
-      <div style="color:rgba(255,255,255,0.5);font-size:12px;margin-bottom:8px;">Dezenas sorteadas</div>
-      <div style="font-size:20px;font-weight:800;color:#fff;letter-spacing:4px;">${numeros.join('  ')}</div>
+      <div style="color:#64748B;font-size:12px;margin-bottom:8px;">Dezenas sorteadas</div>
+      <div style="font-size:20px;font-weight:800;color:#005DA9;letter-spacing:4px;">${numeros.join('  ')}</div>
     </div>
   ` : `
     <div style="text-align:center;margin-bottom:28px;">
       <div style="font-size:40px;margin-bottom:8px;">🎲</div>
-      <h2 style="color:#fff;margin:0 0 8px;font-size:20px;">Resultado do Concurso #${concurso}</h2>
-      <p style="color:rgba(255,255,255,0.5);margin:0;">${bolaoNome}</p>
+      <h2 style="color:#0D1B2A;margin:0 0 8px;font-size:20px;">Resultado do Concurso #${concurso}</h2>
+      <p style="color:#64748B;margin:0;">${bolaoNome}</p>
     </div>
     <div style="text-align:center;margin-bottom:24px;">
-      <div style="color:rgba(255,255,255,0.5);font-size:12px;margin-bottom:12px;">Dezenas sorteadas</div>
-      <div style="font-size:24px;font-weight:800;color:#1D6EA6;letter-spacing:4px;">${numeros.join('  ')}</div>
+      <div style="color:#64748B;font-size:12px;margin-bottom:12px;">Dezenas sorteadas</div>
+      <div style="font-size:24px;font-weight:800;color:#005DA9;letter-spacing:4px;">${numeros.join('  ')}</div>
     </div>
-    <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);border-radius:10px;padding:14px;text-align:center;">
-      <div style="color:rgba(255,255,255,0.6);font-size:14px;">😔 Não foi desta vez, ${nome}.<br>Mas a sorte está chegando! Participe do próximo bolão.</div>
+    <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:14px;text-align:center;">
+      <div style="color:#64748B;font-size:14px;">😔 Não foi desta vez, ${nome}.<br>Mas a sorte está chegando! Participe do próximo bolão.</div>
     </div>
   `
   const assunto = ganhou ? `🏆 GANHAMOS! Concurso #${concurso}` : `🎲 Resultado — Concurso #${concurso}`
-  return send(email, assunto, layout('Resultado do Sorteio', corpo))
+  return send(email, assunto, layout('Resultado do Sorteio', corpo, loteriaLabel))
 }
 
 // ── Lembrete de pagamento pendente ─────────────────────────────────────────
@@ -198,27 +199,28 @@ export async function enviarLembrete(
   cotas: string[],
   concurso: number,
   bolaoNome: string,
-  pixCode?: string
+  pixCode?: string,
+  loteriaLabel = 'Mega-Sena'
 ) {
   const corpo = `
-    <p style="color:rgba(255,255,255,0.75);font-size:15px;margin:0 0 20px;">
-      Olá <strong style="color:#fff;">${nome}</strong>! Seu pagamento ainda está pendente.
+    <p style="color:#475569;font-size:15px;margin:0 0 20px;">
+      Olá <strong style="color:#0D1B2A;">${nome}</strong>! Seu pagamento ainda está pendente.
     </p>
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border-top:1px solid rgba(255,255,255,0.06);">
-      ${stat('Bolão', bolaoNome, '#e6edf3')}
-      ${stat('Concurso', `#${concurso}`)}
-      ${stat('Suas cotas', cotas.map(c => `Nº ${c}`).join(' · '), '#e6edf3')}
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      ${stat('Bolão', bolaoNome, '#0D1B2A')}
+      ${stat('Concurso', `#${concurso}`, '#0D1B2A')}
+      ${stat('Suas cotas', cotas.map(c => `Nº ${c}`).join(' · '), '#0D1B2A')}
     </table>
     ${pixCode ? `
-    <div style="background:#0d1117;border-radius:10px;padding:16px;margin-bottom:16px;">
-      <div style="color:rgba(255,255,255,0.4);font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Código PIX</div>
-      <div style="color:#e6edf3;font-size:11px;word-break:break-all;font-family:monospace;line-height:1.6;">${pixCode}</div>
+    <div style="background:#F8FAFB;border:1px solid #E2E8F0;border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div style="color:#94A3B8;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Código PIX</div>
+      <div style="color:#0D1B2A;font-size:11px;word-break:break-all;font-family:monospace;line-height:1.6;">${pixCode}</div>
     </div>` : ''}
-    <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:14px;">
-      <div style="color:#F59E0B;font-size:13px;">⏰ Pague antes do sorteio para garantir sua participação!</div>
+    <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:14px;">
+      <div style="color:#D97706;font-size:13px;font-weight:600;">⏰ Pague antes do sorteio para garantir sua participação!</div>
     </div>
   `
-  return send(email, `⏰ Lembrete — pagamento pendente #${concurso}`, layout('Lembrete de Pagamento', corpo))
+  return send(email, `⏰ Lembrete — pagamento pendente #${concurso}`, layout('Lembrete de Pagamento', corpo, loteriaLabel))
 }
 
 // ── Acréscimo (encerramento com cotas sobrando) ────────────────────────────
@@ -228,30 +230,29 @@ export async function enviarAcrescimo(
   cotas: string[],
   acrescimo: number,
   pixCode: string,
-  bolaoNome: string
+  bolaoNome: string,
+  loteriaLabel = 'Mega-Sena'
 ) {
   const valorStr = `R$ ${acrescimo.toFixed(2).replace('.', ',')}`
   const corpo = `
-    <p style="color:rgba(255,255,255,0.75);font-size:15px;margin:0 0 20px;">
-      Olá <strong style="color:#fff;">${nome}</strong>! O bolão foi encerrado com cotas não vendidas.
+    <p style="color:#475569;font-size:15px;margin:0 0 20px;">
+      Olá <strong style="color:#0D1B2A;">${nome}</strong>! O bolão foi encerrado com cotas não vendidas.
       O saldo foi dividido entre os participantes.
     </p>
-    <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(0,166,81,0.08);border:1px solid rgba(0,166,81,0.2);border-radius:12px;padding:20px;margin-bottom:24px;">
-      <tr><td>
-        <div style="color:rgba(255,255,255,0.5);font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Seu complemento</div>
-        <div style="color:#00A651;font-size:28px;font-weight:800;">${valorStr}</div>
-      </td></tr>
+    <div style="background:#F0FDF4;border:1.5px solid #00AB67;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
+      <div style="color:#64748B;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Seu complemento</div>
+      <div style="color:#00AB67;font-size:28px;font-weight:800;">${valorStr}</div>
+    </div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      ${stat('Bolão', bolaoNome, '#0D1B2A')}
+      ${stat('Suas cotas', cotas.map(c => `Nº ${c}`).join(' · '), '#0D1B2A')}
     </table>
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border-top:1px solid rgba(255,255,255,0.06);">
-      ${stat('Bolão', bolaoNome, '#e6edf3')}
-      ${stat('Suas cotas', cotas.map(c => `Nº ${c}`).join(' · '), '#e6edf3')}
-    </table>
-    <div style="background:#0d1117;border-radius:10px;padding:16px;">
-      <div style="color:rgba(255,255,255,0.4);font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Código PIX para pagamento</div>
-      <div style="color:#e6edf3;font-size:11px;word-break:break-all;font-family:monospace;line-height:1.6;">${pixCode}</div>
+    <div style="background:#F8FAFB;border:1px solid #E2E8F0;border-radius:10px;padding:16px;">
+      <div style="color:#94A3B8;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Código PIX para pagamento</div>
+      <div style="color:#0D1B2A;font-size:11px;word-break:break-all;font-family:monospace;line-height:1.6;">${pixCode}</div>
     </div>
   `
-  return send(email, `🔔 Complemento de pagamento — ${bolaoNome}`, layout('Complemento de Pagamento', corpo))
+  return send(email, `🔔 Complemento de pagamento — ${bolaoNome}`, layout('Complemento de Pagamento', corpo, loteriaLabel))
 }
 
 // ── Notifica admin sobre nova inscrição ───────────────────────────────────
@@ -264,15 +265,15 @@ export async function notificarAdminInscricao(
 ) {
   if (!ADMIN) return { ok: false, erro: 'EMAIL_ADMIN não configurado' }
   const corpo = `
-    <div style="background:rgba(0,166,81,0.08);border:1px solid rgba(0,166,81,0.2);border-radius:12px;padding:20px;margin-bottom:20px;">
-      <div style="color:rgba(255,255,255,0.5);font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Nova inscrição</div>
-      <div style="color:#fff;font-size:20px;font-weight:700;">${nome}</div>
+    <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:20px;margin-bottom:20px;">
+      <div style="color:#64748B;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Nova inscrição</div>
+      <div style="color:#0D1B2A;font-size:20px;font-weight:700;">${nome}</div>
     </div>
-    <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid rgba(255,255,255,0.06);">
-      ${stat('Telefone', telefone, '#e6edf3')}
-      ${stat('Cotas', cotas.map(c => `Nº ${c}`).join(' · '), '#e6edf3')}
+    <table width="100%" cellpadding="0" cellspacing="0">
+      ${stat('Telefone', telefone, '#0D1B2A')}
+      ${stat('Cotas', cotas.map(c => `Nº ${c}`).join(' · '), '#0D1B2A')}
       ${stat('Total', `R$ ${total.toFixed(2).replace('.', ',')}` )}
-      ${stat('Concurso', `#${concurso}`)}
+      ${stat('Concurso', `#${concurso}`, '#0D1B2A')}
     </table>
   `
   return send(ADMIN, `✅ Nova inscrição — ${nome}`, layout('Nova Inscrição', corpo))
