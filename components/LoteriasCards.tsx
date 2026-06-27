@@ -11,37 +11,30 @@ interface LotResult {
   listaRateioPremio: { numeroDeGanhadores: number }[]
 }
 
-// Cores exatas dos logos oficiais da Caixa
+// Cores RGB exatas do Manual de Identidade Visual Loterias CAIXA
 const LOTERIAS = [
-  { id: 'megasena',  nome: 'mega-sena',  corA: '#1a7c4f', corB: '#6abf95', glow: 'rgba(26,124,79,.30)',   ballStyle: 'circle' as const, cols: 6 },
-  { id: 'lotofacil', nome: 'lotofácil',  corA: '#8b008b', corB: '#c87ec8', glow: 'rgba(139,0,139,.25)',   ballStyle: 'plain'  as const, cols: 5 },
-  { id: 'quina',     nome: 'quina',      corA: '#1a0080', corB: '#8080c0', glow: 'rgba(26,0,128,.25)',    ballStyle: 'circle' as const, cols: 5 },
-  { id: 'lotomania', nome: 'lotomania',  corA: '#e07000', corB: '#f5b87a', glow: 'rgba(224,112,0,.25)',   ballStyle: 'plain'  as const, cols: 5 },
+  { id: 'megasena',  nome: 'mega-sena',  corA: '#009B63', corB: '#00AB67', glow: 'rgba(0,155,99,.30)',    ballStyle: 'circle' as const, cols: 6 },
+  { id: 'lotofacil', nome: 'lotofácil',  corA: '#702A82', corB: '#803594', glow: 'rgba(112,42,130,.25)',  ballStyle: 'plain'  as const, cols: 5 },
+  { id: 'quina',     nome: 'quina',      corA: '#00508F', corB: '#005DA4', glow: 'rgba(0,80,143,.25)',    ballStyle: 'circle' as const, cols: 5 },
+  { id: 'lotomania', nome: 'lotomania',  corA: '#F58220', corB: '#F99D1C', glow: 'rgba(245,130,32,.25)',  ballStyle: 'plain'  as const, cols: 5 },
 ]
 
-// Trevo 4 folhas — réplica fiel do logo Caixa
-// Cada pétala = círculo grande clipado ao seu quadrante
-// diagonal principal (↖ + ↘) = corA (escura), secundária (↗ + ↙) = corB (clara)
-function Trevo({ corA, corB, id }: { corA: string; corB: string; id: string }) {
-  const uid = `trevo-${id}`
+// Trevo 4 folhas — pétalas em forma de coração (réplica fiel do logo Caixa)
+// Coração com ponto voltado para o centro. Diagonal ↖+↘ = corA (escura), ↗+↙ = corB (clara)
+// Path do coração centrado em (0,0) com ponta apontando para baixo (para o centro da folha)
+const HEART = 'M0,-13 C-2,-21 -14,-27 -22,-19 C-30,-11 -28,1 0,22 C28,1 30,-11 22,-19 C14,-27 2,-21 0,-13Z'
+
+function Trevo({ corA, corB }: { corA: string; corB: string }) {
   return (
-    <svg width="30" height="30" viewBox="0 0 100 100" fill="none">
-      <defs>
-        <clipPath id={`${uid}-tl`}><rect x="0"  y="0"  width="52" height="52"/></clipPath>
-        <clipPath id={`${uid}-tr`}><rect x="48" y="0"  width="52" height="52"/></clipPath>
-        <clipPath id={`${uid}-bl`}><rect x="0"  y="48" width="52" height="52"/></clipPath>
-        <clipPath id={`${uid}-br`}><rect x="48" y="48" width="52" height="52"/></clipPath>
-      </defs>
-      {/* ↖ topo-esquerda — cor escura */}
-      <circle cx="36" cy="36" r="30" fill={corA} clipPath={`url(#${uid}-tl)`}/>
-      {/* ↗ topo-direita — cor clara */}
-      <circle cx="64" cy="36" r="30" fill={corB} clipPath={`url(#${uid}-tr)`}/>
-      {/* ↙ baixo-esquerda — cor clara */}
-      <circle cx="36" cy="64" r="30" fill={corB} clipPath={`url(#${uid}-bl)`}/>
-      {/* ↘ baixo-direita — cor escura */}
-      <circle cx="64" cy="64" r="30" fill={corA} clipPath={`url(#${uid}-br)`}/>
-      {/* haste central */}
-      <rect x="47" y="78" width="6" height="16" rx="3" fill={corA}/>
+    <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
+      {/* ↖ topo-esq: corA escura — coração rotacionado +45° (ponta aponta para centro ↘) */}
+      <g transform="translate(32,32) rotate(45)"><path d={HEART} fill={corA}/></g>
+      {/* ↗ topo-dir: corB clara — coração rotacionado -45° (ponta aponta para centro ↙) */}
+      <g transform="translate(68,32) rotate(-45)"><path d={HEART} fill={corB}/></g>
+      {/* ↙ baixo-esq: corB clara — coração rotacionado +135° (ponta aponta para centro ↗) */}
+      <g transform="translate(32,68) rotate(135)"><path d={HEART} fill={corB}/></g>
+      {/* ↘ baixo-dir: corA escura — coração rotacionado -135° (ponta aponta para centro ↖) */}
+      <g transform="translate(68,68) rotate(-135)"><path d={HEART} fill={corA}/></g>
     </svg>
   )
 }
@@ -94,7 +87,7 @@ export default function LoteriasCards() {
               {/* Topo: logo + nome + prêmio próximo */}
               <div className="lot-card-top">
                 <div className="lot-card-logo">
-                  <Trevo corA={lot.corA} corB={lot.corB} id={lot.id} />
+                  <Trevo corA={lot.corA} corB={lot.corB} />
                   <span className="lot-card-nome" style={{ color: lot.corA }}>{lot.nome}</span>
                 </div>
                 {d && (
