@@ -321,8 +321,20 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
             <div className="mega-body">
               {concursoAtivo.premio ? <div className="mega-prize">{concursoAtivo.premio}</div> : <div className="mega-prize">—</div>}
               <div className="mega-prize-label">Prêmio estimado</div>
-              {concursoAtivo.data && (<><div className="mega-draw-label">Sorteio</div><div className="mega-draw-date">{concursoAtivo.data}</div></>)}
-              {countdown && <div className="mega-countdown">Apostas se encerram em <span>{countdown}</span></div>}
+              {concursoAtivo.data && (
+                <div className="mega-draw-row">
+                  <div>
+                    <div className="mega-draw-label">Sorteio</div>
+                    <div className="mega-draw-date">{concursoAtivo.data}</div>
+                  </div>
+                  {countdown && (
+                    <div className="mega-countdown-box">
+                      <div className="mega-draw-label">Faltam</div>
+                      <div className="mega-countdown-val">{countdown}</div>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="mega-divider" />
               <div className="mega-stats">
                 <div className="mega-stat"><div className="mega-stat-val">{disp}/{TOTAL_COTAS}</div><div className="mega-stat-lbl">Cotas Livres</div></div>
