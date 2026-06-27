@@ -61,7 +61,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
   const [telefone, setTelefone]           = useState('')
   const [email, setEmail]                 = useState('')
   const [cotasOcupadas, setCotasOcupadas] = useState<string[]>([])
-  const [selecionadas, setSelecionadas]   = useState<string[]>([])
+  const [qtdCotas, setQtdCotas]          = useState(1)
   const [participantes, setParticipantes] = useState<Participante[]>([])
   const [concursoAtivo, setConcursoAtivo] = useState<ConcursoAtivo | null>(null)
   const [pix, setPix]                     = useState<PixData | null>(null)
@@ -145,7 +145,6 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
         ]).then(([c, p]) => {
           setCotasOcupadas(c.cotas || [])
           setParticipantes(p.participantes || [])
-          setSelecionadas(prev => prev.filter(s => !(c.cotas || []).includes(s)))
           setConfigOk(true)
         })
       } else {
@@ -205,7 +204,6 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
     ])
     setCotasOcupadas(c.cotas || [])
     setParticipantes(p.participantes || [])
-    setSelecionadas(prev => prev.filter(s => !(c.cotas || []).includes(s)))
   }, [concursoAtivo?.concurso, bolaoSlug])
 
   useEffect(() => {
@@ -215,10 +213,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [recarregar, concursoAtivo?.concurso])
 
-  function toggleCota(num: string) {
-    if (cotasOcupadas.includes(num)) return
-    setSelecionadas(prev => prev.includes(num) ? prev.filter(c => c !== num) : [...prev, num])
-  }
+
 
   async function confirmar() {
     if (!nome.trim())            { alert('⚠️ Informe seu nome completo!'); return }
@@ -240,7 +235,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
       if (reg.error) { alert('⚠️ ' + reg.error); return }
       const cotasSalvas = [...selecionadas].sort()
       setPix({ ...pixRes, nome: nome.trim().toUpperCase(), cotas: cotasSalvas, total: cotasSalvas.length * VALOR_COTA })
-      setNome(''); setTelefone(''); setEmail(''); setSelecionadas([]); recarregar()
+      setNome(''); setTelefone(''); setEmail(''); setQtdCotas(1); recarregar()
       let secs = 30 * 60
       if (timerRef.current) clearInterval(timerRef.current)
       timerRef.current = setInterval(() => { secs--; const m = String(Math.floor(secs/60)).padStart(2,'0'); const s = String(secs%60).padStart(2,'0'); setPayTimer(`${m}:${s}`); if (secs<=0) clearInterval(timerRef.current!) }, 1000)
@@ -260,6 +255,9 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
     alert('✅ Código PIX copiado!')
   }
 
+  const todasCotas = Array.from({ length: TOTAL_COTAS }, (_, i) => String(i + 1).padStart(2, '0'))
+  const disponiveisList = todasCotas.filter(c => !cotasOcupadas.includes(c))
+  const selecionadas = disponiveisList.slice(0, Math.min(qtdCotas, disponiveisList.length))
   const total = selecionadas.length * VALOR_COTA
   const disp  = TOTAL_COTAS - cotasOcupadas.length
 
@@ -377,16 +375,22 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
             {configOk && VALOR_COTA > 0 && (
               <>
                 <div className="disponivel-bar">Disponíveis: <span>{disp}/{TOTAL_COTAS}</span></div>
-                <div className="cotas-grid">
-                  {Array.from({ length: TOTAL_COTAS }, (_, i) => {
-                    const num = String(i + 1).padStart(2, '0')
-                    return (
-                      <div key={num} className={`cota${selecionadas.includes(num) ? ' ativo' : ''}${cotasOcupadas.includes(num) ? ' ocupada' : ''}`} onClick={() => toggleCota(num)}>
-                        <span className="c-num">{num}</span>
-                        <span className="c-lbl">{cotasOcupadas.includes(num) ? 'OCUPADA' : 'COTA'}</span>
-                      </div>
-                    )
-                  })}
+                <div className="qtd-cotas-wrap">
+                  <label className="qtd-cotas-label" htmlFor="qtd-cotas">Quantidade de cotas</label>
+                  <div className="qtd-cotas-row">
+                    <button type="button" className="qtd-btn" onClick={() => setQtdCotas(q => Math.max(1, q - 1))} aria-label="Diminuir">−</button>
+                    <input
+                      id="qtd-cotas"
+                      type="number"
+                      min={1}
+                      max={disp}
+                      value={qtdCotas}
+                      onChange={e => setQtdCotas(Math.min(disp, Math.max(1, parseInt(e.target.value) || 1)))}
+                      className="qtd-input"
+                    />
+                    <button type="button" className="qtd-btn" onClick={() => setQtdCotas(q => Math.min(disp, q + 1))} aria-label="Aumentar">+</button>
+                  </div>
+                  <div className="qtd-cota-preco">R$ {VALOR_COTA.toFixed(2).replace('.', ',')} por cota</div>
                 </div>
                 <div className="total-bar">
                   <div><div className="t-label">Total a pagar</div><div className="t-cotas">{selecionadas.length} cota{selecionadas.length !== 1 ? 's' : ''}</div></div>
