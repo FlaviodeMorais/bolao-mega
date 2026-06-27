@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { ShareButton } from './ShareButton'
+import TrevoIcon from '@/components/TrevoIcon'
 
 interface Props { params: { id: string } }
 
@@ -64,7 +65,7 @@ export default async function ComprovantePage({ params }: Props) {
 
         {/* Cabeçalho */}
         <div className="comprov-share-header">
-          <div className="comprov-share-clover">🍀</div>
+          <div className="comprov-share-clover"><TrevoIcon size={40} /></div>
           <div className="comprov-share-nome">{p.nome}</div>
           <div className="comprov-share-sub">Concurso #{p.concurso} · {p.bolao?.nome}</div>
         </div>

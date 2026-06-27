@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
+import TrevoIcon from '@/components/TrevoIcon'
 
 function mascaraNome(nome: string): string {
   const words = nome.trim().split(/\s+/)
@@ -306,7 +307,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
         {concursoAtivo?.concurso && (
           <div className="mega-card">
             <div className="mega-header">
-              <span className="mega-clover">🍀</span>
+              <TrevoIcon size={24} />
               <span className="mega-title">MEGA-SENA</span>
               <span className="mega-concurso">Concurso #{concursoAtivo.concurso}</span>
             </div>

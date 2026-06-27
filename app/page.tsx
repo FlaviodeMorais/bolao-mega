@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
+import TrevoIcon from '@/components/TrevoIcon'
 const LoteriasCards = dynamic(() => import('@/components/LoteriasCards'), { ssr: false })
 
 interface Bolao { id: string; nome: string; slug: string; ativo: boolean; dezenas: number; num_apostas: number }
@@ -67,7 +68,7 @@ export default function Home() {
     <div className="page-wrap">
       {/* Header */}
       <div className="site-header">
-        <span className="logo">🍀</span>
+        <TrevoIcon size={28} />
         <div className="header-brand"><span className="brand">MEGA-SENA</span></div>
         <a href="/admin" className="header-link">
           <span className="material-icons-round">settings</span>
@@ -78,7 +79,7 @@ export default function Home() {
       {concursoAtivo?.concurso && (
         <div className="mega-card">
           <div className="mega-header">
-            <span className="mega-clover">🍀</span>
+            <TrevoIcon size={26} />
             <span className="mega-title">MEGA-SENA</span>
             <span className="mega-concurso">Concurso #{concursoAtivo.concurso}</span>
           </div>

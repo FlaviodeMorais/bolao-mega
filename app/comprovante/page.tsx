@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import styles from './comprovante.module.css'
+import TrevoIcon from '@/components/TrevoIcon'
 
 interface ApostasData {
   bets: number[][]
@@ -188,7 +189,7 @@ function ComprovanteContent() {
 
                   <div className={styles.cartaoHeader}>
                     <div className={styles.cartaoHeaderLeft}>
-                      <span className={styles.cartaoLogo}>🍀</span>
+                      <TrevoIcon size={32} className={styles.cartaoLogo} />
                       <div>
                         <div className={styles.cartaoGrupo}>GRUPO MEGA 💯</div>
                         <div className={styles.cartaoBolao}>{bolao?.nome}</div>
