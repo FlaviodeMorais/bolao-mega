@@ -16,7 +16,7 @@ async function getParticipante(id: string) {
 
   const { data: b } = await supabase
     .from('boloes')
-    .select('nome, dezenas, num_apostas, apostas_data')
+    .select('nome, dezenas, num_apostas, apostas_data, loteria')
     .eq('slug', p.bolao_slug)
     .single()
 
@@ -65,7 +65,7 @@ export default async function ComprovantePage({ params }: Props) {
 
         {/* Cabeçalho */}
         <div className="comprov-share-header">
-          <div className="comprov-share-clover"><TrevoIcon size={40} /></div>
+          <div className="comprov-share-clover"><TrevoIcon size={40} loteria={p.bolao?.loteria ?? 'mega'} /></div>
           <div className="comprov-share-nome">{p.nome}</div>
           <div className="comprov-share-sub">Concurso #{p.concurso} · {p.bolao?.nome}</div>
         </div>

@@ -33,6 +33,7 @@ interface Bolao {
   dezenas: number
   num_apostas: number
   encerrado: boolean
+  loteria?: string
   apostas_data?: ApostasData | null
   resultado_conferencia?: ResultadoConf | null
 }
@@ -189,7 +190,7 @@ function ComprovanteContent() {
 
                   <div className={styles.cartaoHeader}>
                     <div className={styles.cartaoHeaderLeft}>
-                      <TrevoIcon size={32} className={styles.cartaoLogo} />
+                      <TrevoIcon size={32} loteria={bolao?.loteria ?? 'mega'} className={styles.cartaoLogo} />
                       <div>
                         <div className={styles.cartaoGrupo}>GRUPO MEGA 💯</div>
                         <div className={styles.cartaoBolao}>{bolao?.nome}</div>

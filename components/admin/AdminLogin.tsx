@@ -1,6 +1,7 @@
 'use client'
 
 import styles from '@/app/admin/admin.module.css'
+import TrevoIcon from '@/components/TrevoIcon'
 
 interface AdminLoginProps {
   senha: string
@@ -17,7 +18,8 @@ export default function AdminLogin({ senha, errLogin, onSenhaChange, onLogin }: 
   return (
     <div className={styles.loginWrap}>
       <div className={styles.loginBox}>
-        <div className={styles.loginTitle}>🍀 Admin</div>
+        <div className={styles.loginLogo}><TrevoIcon loteria="mega" size={48} /></div>
+        <div className={styles.loginTitle}>Admin</div>
         <div className={styles.loginSub}>GRUPO MEGA 💯</div>
         <input type="password" placeholder="SENHA ADMIN" value={senha}
           onChange={e => onSenhaChange(e.target.value)}

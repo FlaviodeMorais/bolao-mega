@@ -314,7 +314,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
         {concursoAtivo?.concurso && (
           <div className="mega-card">
             <div className="mega-header">
-              <TrevoIcon size={24} />
+              <TrevoIcon size={24} loteria={loteria ?? 'mega'} />
               <span className="mega-title">MEGA-SENA</span>
               <span className="mega-concurso">Concurso #{concursoAtivo.concurso}</span>
             </div>
@@ -353,7 +353,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
         {apostasData?.bets && apostasData.bets.length > 0 && (
           <div className="mega-card">
             <div className="mega-header">
-              <TrevoIcon size={24} />
+              <TrevoIcon size={24} loteria={loteria ?? 'mega'} />
               <span className="mega-title">{loteriaLabel.toUpperCase()}</span>
               <span className="mega-concurso">{apostasData.bets.length} apostas · {apostasData.bets[0]?.length} dezenas</span>
             </div>

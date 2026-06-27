@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import TrevoIcon from '@/components/TrevoIcon'
 
 interface LotResult {
   numero: number
@@ -19,25 +20,6 @@ const LOTERIAS = [
   { id: 'lotomania', nome: 'lotomania',  corA: '#F58220', corB: '#F99D1C', glow: 'rgba(245,130,32,.25)',  ballStyle: 'plain'  as const, cols: 5 },
 ]
 
-// Trevo 4 folhas — pétalas em forma de coração (réplica fiel do logo Caixa)
-// Coração com ponto voltado para o centro. Diagonal ↖+↘ = corA (escura), ↗+↙ = corB (clara)
-// Path do coração centrado em (0,0) com ponta apontando para baixo (para o centro da folha)
-const HEART = 'M0,-13 C-2,-21 -14,-27 -22,-19 C-30,-11 -28,1 0,22 C28,1 30,-11 22,-19 C14,-27 2,-21 0,-13Z'
-
-function Trevo({ corA, corB }: { corA: string; corB: string }) {
-  return (
-    <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
-      {/* ↖ topo-esq: corA escura — ponta aponta para centro ↘ */}
-      <g transform="translate(32,32) rotate(-45)"><path d={HEART} fill={corA}/></g>
-      {/* ↗ topo-dir: corB clara — ponta aponta para centro ↙ */}
-      <g transform="translate(68,32) rotate(45)"><path d={HEART} fill={corB}/></g>
-      {/* ↙ baixo-esq: corB clara — ponta aponta para centro ↗ */}
-      <g transform="translate(32,68) rotate(-135)"><path d={HEART} fill={corB}/></g>
-      {/* ↘ baixo-dir: corA escura — ponta aponta para centro ↖ */}
-      <g transform="translate(68,68) rotate(135)"><path d={HEART} fill={corA}/></g>
-    </svg>
-  )
-}
 
 const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
 
@@ -87,7 +69,7 @@ export default function LoteriasCards() {
               {/* Topo: logo + nome + prêmio próximo */}
               <div className="lot-card-top">
                 <div className="lot-card-logo">
-                  <Trevo corA={lot.corA} corB={lot.corB} />
+                  <TrevoIcon loteria={lot.id === 'megasena' ? 'mega' : lot.id} size={32} />
                   <span className="lot-card-nome" style={{ color: lot.corA }}>{lot.nome}</span>
                 </div>
                 {d && (
