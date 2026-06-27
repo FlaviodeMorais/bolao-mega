@@ -285,7 +285,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
             </div>
             <div className="mega-body">
               {concursoAtivo.premio ? <div className="mega-prize">{concursoAtivo.premio}</div> : <div className="mega-prize">—</div>}
-              <div className="mega-prize-label">Prêmio estimado do concurso #{concursoAtivo.concurso}</div>
+              <div className="mega-prize-label">Prêmio estimado</div>
               {concursoAtivo.data && (<><div className="mega-draw-label">Sorteio</div><div className="mega-draw-date">{concursoAtivo.data}</div></>)}
               {countdown && <div className="mega-countdown">Apostas se encerram em <span>{countdown}</span></div>}
               <div className="mega-divider" />
@@ -293,12 +293,10 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
                 <div className="mega-stat"><div className="mega-stat-val">{disp}/{TOTAL_COTAS}</div><div className="mega-stat-lbl">Cotas Livres</div></div>
                 <div className="mega-stat-sep" />
                 <div className="mega-stat"><div className="mega-stat-val">{participantes.length}</div><div className="mega-stat-lbl">Participantes</div></div>
-              </div>
-              <div className="mega-divider" />
-              <div className="mega-stats">
+                <div className="mega-stat-sep" />
                 <div className="mega-stat"><div className="mega-stat-val">{numApostas}</div><div className="mega-stat-lbl">Apostas</div></div>
                 <div className="mega-stat-sep" />
-                <div className="mega-stat"><div className="mega-stat-val">{dezenas}</div><div className="mega-stat-lbl">Dezenas / Aposta</div></div>
+                <div className="mega-stat"><div className="mega-stat-val">{dezenas}</div><div className="mega-stat-lbl">Dezenas</div></div>
               </div>
             </div>
           </div>
@@ -358,10 +356,6 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
                 autoComplete="email"
               />
             </div>
-            <div className="field">
-              <label className="field-label">Data / Hora do registro</label>
-              <div className="datetime-box">{relogio}</div>
-            </div>
             <hr />
             <div className="sec-title">🎟️ Selecionar Cotas</div>
             {!configOk && (
@@ -376,7 +370,10 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
               <>
                 <div className="disponivel-bar">Disponíveis: <span>{disp}/{TOTAL_COTAS}</span></div>
                 <div className="qtd-cotas-wrap">
-                  <label className="qtd-cotas-label" htmlFor="qtd-cotas">Quantidade de cotas</label>
+                  <div>
+                    <label className="qtd-cotas-label" htmlFor="qtd-cotas">Quantidade de cotas</label>
+                    <div className="qtd-cota-preco">R$ {VALOR_COTA.toFixed(2).replace('.', ',')} / cota</div>
+                  </div>
                   <div className="qtd-cotas-row">
                     <button type="button" className="qtd-btn" onClick={() => setQtdCotas(q => Math.max(1, q - 1))} aria-label="Diminuir">−</button>
                     <input
@@ -390,7 +387,6 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCo
                     />
                     <button type="button" className="qtd-btn" onClick={() => setQtdCotas(q => Math.min(disp, q + 1))} aria-label="Aumentar">+</button>
                   </div>
-                  <div className="qtd-cota-preco">R$ {VALOR_COTA.toFixed(2).replace('.', ',')} por cota</div>
                 </div>
                 <div className="total-bar">
                   <div><div className="t-label">Total a pagar</div><div className="t-cotas">{selecionadas.length} cota{selecionadas.length !== 1 ? 's' : ''}</div></div>
