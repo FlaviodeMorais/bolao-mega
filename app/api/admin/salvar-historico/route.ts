@@ -13,9 +13,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, erro: 'Nenhuma linha enviada' })
   }
 
+  // Converte data de DD/MM/YYYY para YYYY-MM-DD (formato PostgreSQL)
+  const linhasConvertidas = linhas.map((l: { concurso: number; dezenas: number[]; data_sorteio: string | null }) => ({
+    ...l,
+    data_sorteio: l.data_sorteio
+      ? l.data_sorteio.replace(/^(\d{2})\/(\d{2})\/(\d{4})$/, '$3-$2-$1')
+      : null,
+  }))
+
   const { error } = await supabase
     .from('mega_historico')
-    .upsert(linhas, { onConflict: 'concurso' })
+    .upsert(linhasConvertidas, { onConflict: 'concurso' })
 
   if (error) return NextResponse.json({ ok: false, erro: error.message })
   return NextResponse.json({ ok: true, inseridos: linhas.length })
