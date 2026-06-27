@@ -156,6 +156,25 @@ export function useParticipantes(
     setTimeout(() => setApostasMsg(''), 6000)
   }
 
+  async function salvarApostasDirecto(texto: string, bolaoId: string, onRefresh: () => Promise<void>) {
+    if (!texto.trim()) return
+    setUploadingApostas(true); setApostasMsg('')
+    const res = await fetch('/api/admin/apostas-upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: texto, bolao_id: bolaoId }),
+    })
+    const data = await res.json()
+    setUploadingApostas(false)
+    if (res.ok) {
+      setApostasMsg(`✅ ${data.total_apostas} apostas inseridas do gerador!`)
+      await onRefresh()
+    } else {
+      setApostasMsg(`❌ ${data.error}`)
+    }
+    setTimeout(() => setApostasMsg(''), 6000)
+  }
+
   async function removerApostas(bolaoId: string, onRefresh: () => Promise<void>) {
     if (!confirm('Remover dados das apostas?')) return
     await fetch('/api/admin/apostas-upload', {
@@ -203,7 +222,7 @@ export function useParticipantes(
     confirmarPagamento, confirmarTodos, excluir, confirmarAcrescimo,
     enviarLembrete, enviarComprovante,
     toggleSelecionado, selecionarTodosPagos, imprimirSelecionados,
-    salvarApostas, removerApostas,
+    salvarApostas, salvarApostasDirecto, removerApostas,
     encerrarBolao,
   }
 }

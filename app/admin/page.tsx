@@ -63,7 +63,7 @@ export default function AdminPage() {
   // BolaoList
   const { linkCopiado, renamingId, setRenamingId, renameVal, setRenameVal,
           showCreate, setShowCreate, novoNome, setNovoNome, novoSlug, setNovoSlug,
-          criando, criarErro } = boloes
+          novaLoteria, setNovaLoteria, criando, criarErro } = boloes
   const copiarLink     = boloes.copiarLink
   const renomearBolao  = boloes.renomearBolao
   const criarBolao     = boloes.criarBolao
@@ -89,6 +89,7 @@ export default function AdminPage() {
   const excluir                = parts.excluir
   const salvarApostas  = () => bolaoAtual && parts.salvarApostas(bolaoAtual.id, carregarBoloes)
   const removerApostas = () => bolaoAtual && parts.removerApostas(bolaoAtual.id, carregarBoloes)
+  const inserirApostasGeradas = (texto: string) => bolaoAtual && parts.salvarApostasDirecto(texto, bolaoAtual.id, carregarBoloes)
   const encerrarBolao  = () => bolaoAtual && parts.encerrarBolao(bolaoAtual.id, bolaoAtual.slug)
 
   // BolaoDetailPanel — conferência
@@ -269,11 +270,13 @@ export default function AdminPage() {
               showCreate={showCreate}
               novoNome={novoNome}
               novoSlug={novoSlug}
+              novaLoteria={novaLoteria}
               criando={criando}
               criarErro={criarErro}
               onNovoNomeChange={setNovoNome}
               onNovoSlugChange={setNovoSlug}
-              onShowCreateToggle={v => { setShowCreate(v); if (!v) { setNovoNome(''); setNovoSlug('') } }}
+              onNovaLoteriaChange={setNovaLoteria}
+              onShowCreateToggle={v => { setShowCreate(v); if (!v) { setNovoNome(''); setNovoSlug(''); setNovaLoteria('mega') } }}
               actions={{
                 onSelecionar: selecionarBolao,
                 onCopiarLink: copiarLink,
@@ -364,6 +367,7 @@ export default function AdminPage() {
                 onEditCotasChange={setEditCotas}
                 onEditTaxaChange={setEditTaxa}
                 onSalvarConfig={salvarConfig}
+                onInserirApostasGeradas={inserirApostasGeradas}
               />
 
             ) : (
@@ -372,6 +376,7 @@ export default function AdminPage() {
                 concursoAtivo={concursoAtivo}
                 loadingCaixa={loadingCaixa}
                 editDatas={editDatas}
+                loteriaAtual={'mega' as import('@/lib/loterias').LoteriaId}
                 onEditData={(num, val) => setEditDatas(prev => ({ ...prev, [num]: val }))}
                 onBuscarCaixa={buscarCaixa}
                 onSelecionar={selecionarConcurso}

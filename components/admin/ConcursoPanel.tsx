@@ -1,6 +1,7 @@
 'use client'
 
 import styles from '@/app/admin/admin.module.css'
+import { getLoteria, type LoteriaId } from '@/lib/loterias'
 
 interface Concurso { num: number; data: string; premio: string }
 
@@ -9,29 +10,29 @@ interface ConcursoPanelProps {
   concursoAtivo: string
   loadingCaixa: boolean
   editDatas: Record<number, string>
+  loteriaAtual: LoteriaId
   onEditData: (num: number, val: string) => void
-  onBuscarCaixa: () => void
+  onBuscarCaixa: (loteria: LoteriaId) => void
   onSelecionar: (c: Concurso & { data: string }) => void
 }
 
-/**
- * Painel de seleção de concurso Mega-Sena.
- * Exibido no painel direito quando nenhum bolão está selecionado.
- * Não chama APIs — delegado via onBuscarCaixa e onSelecionar.
- */
 export default function ConcursoPanel({
   proximos, concursoAtivo, loadingCaixa, editDatas,
-  onEditData, onBuscarCaixa, onSelecionar,
+  loteriaAtual, onEditData, onBuscarCaixa, onSelecionar,
 }: ConcursoPanelProps) {
+  const cfg = getLoteria(loteriaAtual)
   return (
     <div className={styles.panel}>
-      <div className={styles.panelTitle}>🎲 Próximos Concursos</div>
+      <div className={styles.panelTitle}>
+        {cfg.emoji} Próximos Concursos — {cfg.label}
+      </div>
       <div className={styles.helpBox}>
         <p>Selecione um bolão à esquerda para gerenciar participantes.</p>
-        <p>Aqui você também pode definir qual concurso está ativo para as inscrições.</p>
+        <p>Aqui você define qual concurso está ativo para as inscrições.</p>
       </div>
-      <button type="button" className={styles.btnLoad} onClick={onBuscarCaixa} disabled={loadingCaixa}>
-        {loadingCaixa ? '⟳ Carregando...' : '🔄 Buscar na Caixa'}
+      <button type="button" className={styles.btnLoad}
+        onClick={() => onBuscarCaixa(loteriaAtual)} disabled={loadingCaixa}>
+        {loadingCaixa ? '⟳ Carregando...' : `🔄 Buscar na Caixa (${cfg.label})`}
       </button>
       {proximos.length > 0 && (
         <p className={styles.ccAvisoData}>
@@ -41,18 +42,16 @@ export default function ConcursoPanel({
       {proximos.map(c => {
         const dataEditada = editDatas[c.num] ?? c.data
         return (
-          <div key={c.num} className={`${styles.concursoCard} ${String(c.num) === concursoAtivo ? styles.ativo : ''}`}>
+          <div key={c.num}
+            className={`${styles.concursoCard} ${String(c.num) === concursoAtivo ? styles.ativo : ''}`}>
             <div className={styles.ccBody}>
               <div className={styles.ccNum}>#{c.num}</div>
-              <div className={styles.ccEncerramento}>Encerramento apostas: {c.data}</div>
+              <div className={styles.ccEncerramento}>Encerramento: {c.data}</div>
               <div className={styles.ccSorteioLabel}>Data/hora do sorteio:</div>
-              <input
-                type="text"
-                className={styles.ccSorteioInput}
+              <input type="text" className={styles.ccSorteioInput}
                 placeholder="Ex: 24/05 · Dom · 11h00"
                 value={dataEditada}
-                onChange={e => onEditData(c.num, e.target.value)}
-              />
+                onChange={e => onEditData(c.num, e.target.value)} />
               <div className={styles.ccPremio}>{c.premio}</div>
             </div>
             <button type="button"

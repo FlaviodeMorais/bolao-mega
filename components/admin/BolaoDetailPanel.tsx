@@ -1,6 +1,8 @@
 'use client'
 
 import styles from '@/app/admin/admin.module.css'
+import GeradorApostas from '@/components/admin/GeradorApostas'
+import { getLoteria } from '@/lib/loterias'
 
 /* ── Tipos ── */
 interface Participante {
@@ -11,7 +13,7 @@ interface Participante {
 interface Bolao {
   id: string; nome: string; slug: string; valor_cota: number
   total_cotas: number; dezenas: number; num_apostas: number
-  taxa_admin: number; encerrado: boolean
+  taxa_admin: number; encerrado: boolean; loteria?: string
   apostas_data?: { bets: number[][]; total_apostas: number } | null
   resultado_conferencia?: Record<string, unknown> | null
 }
@@ -21,12 +23,6 @@ interface ConferirResult {
   maior_premio: string | null; total_premiadas: number
   apostas_premiadas: { idx: number; dezenas: number[]; acertos: number; premio: string }[]
 }
-const CAIXA_PRECOS: Record<number, number> = {
-  6: 6, 7: 42, 8: 168, 9: 504, 10: 1260,
-  11: 2772, 12: 5544, 13: 10296, 14: 18018, 15: 30030,
-  16: 48048, 17: 74256, 18: 111384, 19: 162792, 20: 232560,
-}
-
 /* ── Props agrupadas por responsabilidade ── */
 export interface BolaoDetailPanelProps {
   bolao: Bolao
@@ -122,6 +118,7 @@ export interface BolaoDetailPanelProps {
   onEditCotasChange: (v: number) => void
   onEditTaxaChange: (v: number) => void
   onSalvarConfig: () => void
+  onInserirApostasGeradas: (texto: string) => void
 }
 
 /**
@@ -132,6 +129,7 @@ export interface BolaoDetailPanelProps {
  */
 export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
   const { bolao } = p
+  const loteriaCfg = getLoteria(bolao.loteria)
   return (
     <div className={styles.panel}>
 
@@ -506,8 +504,8 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
               <label className={styles.configLabel}>Dezenas / Aposta</label>
               <select className={styles.configSelect} value={p.editDezenas}
                 title="Dezenas por aposta" onChange={e => p.onEditDezenasChange(Number(e.target.value))}>
-                {Object.entries(CAIXA_PRECOS).map(([d, pr]) => (
-                  <option key={d} value={d}>{d} dez — R$ {pr.toLocaleString('pt-BR')},00</option>
+                {Object.entries(loteriaCfg.precos).map(([d, pr]) => (
+                  <option key={d} value={d}>{d} dez — R$ {(pr as number).toLocaleString('pt-BR')},00</option>
                 ))}
               </select>
             </div>
@@ -558,6 +556,14 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
           <button type="button" className={styles.btnCreate} onClick={p.onSalvarConfig} disabled={p.salvando}>
             {p.salvando ? 'Salvando...' : '💾 Salvar Configuração'}
           </button>
+
+          {/* ── Gerador de Apostas & Estatísticas ── */}
+          <GeradorApostas
+            loteria={(bolao.loteria ?? 'mega') as import('@/lib/loterias').LoteriaId}
+            dezenasBolao={p.editDezenas}
+            uploadingApostas={p.uploadingApostas}
+            onInserirApostas={p.onInserirApostasGeradas}
+          />
         </div>
       )}
     </div>

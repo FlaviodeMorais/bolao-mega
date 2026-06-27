@@ -8,22 +8,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const { linhas } = await req.json()
+  const { linhas, loteria = 'mega' } = await req.json()
   if (!Array.isArray(linhas) || linhas.length === 0) {
     return NextResponse.json({ ok: false, erro: 'Nenhuma linha enviada' })
   }
 
-  // Converte data de DD/MM/YYYY para YYYY-MM-DD (formato PostgreSQL)
   const linhasConvertidas = linhas.map((l: { concurso: number; dezenas: number[]; data_sorteio: string | null }) => ({
-    ...l,
+    loteria,
+    concurso: l.concurso,
+    dezenas: l.dezenas,
     data_sorteio: l.data_sorteio
       ? l.data_sorteio.replace(/^(\d{2})\/(\d{2})\/(\d{4})$/, '$3-$2-$1')
       : null,
   }))
 
   const { error } = await supabase
-    .from('mega_historico')
-    .upsert(linhasConvertidas, { onConflict: 'concurso' })
+    .from('loteria_historico')
+    .upsert(linhasConvertidas, { onConflict: 'loteria,concurso' })
 
   if (error) return NextResponse.json({ ok: false, erro: error.message })
   return NextResponse.json({ ok: true, inseridos: linhas.length })

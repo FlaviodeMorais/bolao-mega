@@ -17,18 +17,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const { nome, slug, dezenas, num_apostas, taxa_admin, total_cotas, valor_cota } = await req.json()
+  const { nome, slug, loteria, dezenas, num_apostas, taxa_admin, total_cotas, valor_cota } = await req.json()
   if (!nome || !slug) return NextResponse.json({ error: 'Nome e slug obrigatórios' }, { status: 400 })
 
   const { data, error } = await supabase
     .from('boloes')
     .insert({
-      nome, slug, ativo: true,
-      dezenas:      dezenas     || 6,
-      num_apostas:  num_apostas || 1,
-      taxa_admin:   taxa_admin  || 0,
-      total_cotas:  total_cotas || 20,
-      valor_cota:   valor_cota  || 0,
+      nome, slug,
+      loteria:     loteria     || 'mega',
+      ativo:       true,
+      dezenas:     dezenas     || 6,
+      num_apostas: num_apostas || 1,
+      taxa_admin:  taxa_admin  || 0,
+      total_cotas: total_cotas || 20,
+      valor_cota:  valor_cota  || 0,
     })
     .select()
     .single()
@@ -55,6 +57,7 @@ export async function PATCH(req: NextRequest) {
   if ('valor_cota'  in body) fields.valor_cota  = body.valor_cota
   if ('ativo'       in body) fields.ativo       = body.ativo
   if ('nome'        in body) fields.nome        = body.nome
+  if ('loteria'     in body) fields.loteria     = body.loteria
 
   const { error } = await supabase.from('boloes').update(fields).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -70,11 +73,9 @@ export async function DELETE(req: NextRequest) {
   const { id, force } = await req.json()
   if (!id) return NextResponse.json({ error: 'ID obrigatório' }, { status: 400 })
 
-  // Busca slug e estado do banco para evitar bypass via cliente
   const { data: bolaoDb } = await supabase.from('boloes').select('slug, ativo, encerrado').eq('id', id).single()
   if (!bolaoDb) return NextResponse.json({ error: 'Bolão não encontrado' }, { status: 404 })
 
-  // Conta participantes não cancelados
   const { count } = await supabase
     .from('participantes')
     .select('id', { count: 'exact', head: true })
@@ -82,14 +83,12 @@ export async function DELETE(req: NextRequest) {
     .neq('status', 'cancelado')
 
   if (count && count > 0) {
-    // Permite exclusão forçada apenas se o bolão está inativo (cancelado/encerrado)
     if (!force || bolaoDb.ativo) {
       return NextResponse.json(
         { error: `Não é possível excluir: há ${count} participante(s) neste bolão.`, count },
-        { status: 409 }
+        { status: 409 },
       )
     }
-    // Exclusão com cascade: remove todos os participantes primeiro
     await supabase.from('participantes').delete().eq('bolao_slug', bolaoDb.slug)
   }
 

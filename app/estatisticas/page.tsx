@@ -140,9 +140,9 @@ export default function EstatisticasPage() {
 
   const corBola = (pos: number, total: number) => {
     const pct = 1 - pos / total
-    if (pct > 0.66) return '#00A651'
+    if (pct > 0.66) return '#00AB67'
     if (pct > 0.33) return '#1D6EA6'
-    return 'rgba(255,255,255,.2)'
+    return '#94A3B8'
   }
 
   return (

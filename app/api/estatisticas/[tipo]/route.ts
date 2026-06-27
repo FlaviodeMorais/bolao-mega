@@ -3,20 +3,32 @@ import { supabase } from '@/lib/supabase'
 
 export async function GET(req: NextRequest, { params }: { params: { tipo: string } }) {
   const { tipo } = params
-  const ultimos = req.nextUrl.searchParams.get('ultimos') // ex: 100 concursos recentes
+  const ultimos = req.nextUrl.searchParams.get('ultimos')
+  const loteria = req.nextUrl.searchParams.get('loteria') || 'mega'
+  const totalNums = loteria === 'lotofacil' ? 25 : loteria === 'quina' ? 80 : 60
 
   try {
     if (tipo === 'frequencia' || tipo === 'frequencia-geral' || tipo === 'frequencia-recente') {
-      let query = supabase.from('mega_historico').select('dezenas, concurso')
+      let query = supabase
+        .from('loteria_historico')
+        .select('dezenas, concurso')
+        .eq('loteria', loteria)
+
       if (ultimos) {
-        const { data: max } = await supabase.from('mega_historico').select('concurso').order('concurso', { ascending: false }).limit(1).single()
+        const { data: max } = await supabase
+          .from('loteria_historico')
+          .select('concurso')
+          .eq('loteria', loteria)
+          .order('concurso', { ascending: false })
+          .limit(1).single()
         if (max) query = query.gte('concurso', max.concurso - Number(ultimos))
       }
+
       const { data, error } = await query
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
       const freq: Record<number, number> = {}
-      for (let i = 1; i <= 60; i++) freq[i] = 0
+      for (let i = 1; i <= totalNums; i++) freq[i] = 0
       for (const row of data || []) {
         for (const n of row.dezenas || []) freq[n] = (freq[n] || 0) + 1
       }
@@ -27,22 +39,31 @@ export async function GET(req: NextRequest, { params }: { params: { tipo: string
         pct: Math.round((count / total) * 1000) / 10,
       })).sort((a, b) => b.count - a.count)
 
-      return NextResponse.json({ tipo, total_concursos: total, numeros: resultado }, { next: { revalidate: 3600 } } as never)
+      return NextResponse.json(
+        { tipo, loteria, total_concursos: total, numeros: resultado },
+        { next: { revalidate: 3600 } } as never,
+      )
     }
 
     if (tipo === 'atrasos') {
       const { data, error } = await supabase
-        .from('mega_historico')
+        .from('loteria_historico')
         .select('concurso, dezenas')
+        .eq('loteria', loteria)
         .order('concurso', { ascending: false })
         .limit(500)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-      const { data: maxRow } = await supabase.from('mega_historico').select('concurso').order('concurso', { ascending: false }).limit(1).single()
+      const { data: maxRow } = await supabase
+        .from('loteria_historico')
+        .select('concurso')
+        .eq('loteria', loteria)
+        .order('concurso', { ascending: false })
+        .limit(1).single()
       const concursoAtual = maxRow?.concurso || 0
 
       const ultimoApareceu: Record<number, number> = {}
-      for (let i = 1; i <= 60; i++) ultimoApareceu[i] = 0
+      for (let i = 1; i <= totalNums; i++) ultimoApareceu[i] = 0
       for (const row of data || []) {
         for (const n of row.dezenas || []) {
           if (!ultimoApareceu[n]) ultimoApareceu[n] = row.concurso
@@ -50,18 +71,36 @@ export async function GET(req: NextRequest, { params }: { params: { tipo: string
       }
       const resultado = Object.entries(ultimoApareceu).map(([num, ultimo]) => ({
         numero: Number(num),
+        count: 0,
+        pct: 0,
         ultimo_concurso: ultimo,
         atraso: ultimo ? concursoAtual - ultimo : 999,
       })).sort((a, b) => b.atraso - a.atraso)
 
-      return NextResponse.json({ tipo, concurso_atual: concursoAtual, numeros: resultado }, { next: { revalidate: 3600 } } as never)
+      return NextResponse.json(
+        { tipo, loteria, concurso_atual: concursoAtual, numeros: resultado },
+        { next: { revalidate: 3600 } } as never,
+      )
     }
 
     if (tipo === 'info') {
-      const { count } = await supabase.from('mega_historico').select('*', { count: 'exact', head: true })
-      const { data: max } = await supabase.from('mega_historico').select('concurso').order('concurso', { ascending: false }).limit(1).single()
-      const { data: min } = await supabase.from('mega_historico').select('concurso').order('concurso', { ascending: true }).limit(1).single()
-      return NextResponse.json({ total: count || 0, primeiro: min?.concurso, ultimo: max?.concurso })
+      const { count } = await supabase
+        .from('loteria_historico')
+        .select('*', { count: 'exact', head: true })
+        .eq('loteria', loteria)
+      const { data: max } = await supabase
+        .from('loteria_historico')
+        .select('concurso')
+        .eq('loteria', loteria)
+        .order('concurso', { ascending: false })
+        .limit(1).single()
+      const { data: min } = await supabase
+        .from('loteria_historico')
+        .select('concurso')
+        .eq('loteria', loteria)
+        .order('concurso', { ascending: true })
+        .limit(1).single()
+      return NextResponse.json({ total: count || 0, primeiro: min?.concurso, ultimo: max?.concurso, loteria })
     }
 
     return NextResponse.json({ error: 'Tipo inválido' }, { status: 400 })

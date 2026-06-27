@@ -1,21 +1,15 @@
 import { useState } from 'react'
-
-const CAIXA_PRECOS: Record<number, number> = {
-  6: 6, 7: 42, 8: 168, 9: 504, 10: 1260,
-  11: 2772, 12: 5544, 13: 10296, 14: 18018, 15: 30030,
-  16: 48048, 17: 74256, 18: 111384, 19: 162792, 20: 232560,
-}
+import { getLoteria, type LoteriaId } from '@/lib/loterias'
 
 export interface Bolao {
   id: string; nome: string; slug: string; valor_cota: number
   total_cotas: number; ativo: boolean; dezenas: number; num_apostas: number
-  taxa_admin: number; encerrado: boolean
+  taxa_admin: number; encerrado: boolean; loteria: LoteriaId
   apostas_data?: { bets: number[][]; total_apostas: number } | null
   resultado_conferencia?: Record<string, unknown> | null
 }
 
 export function useBoloes() {
-  // Lista e seleção
   const [boloes, setBoloes]           = useState<Bolao[]>([])
   const [bolaoAtual, setBolaoAtual]   = useState<Bolao | null>(null)
   const [linkCopiado, setLinkCopiado] = useState(false)
@@ -24,10 +18,10 @@ export function useBoloes() {
   const [showCreate, setShowCreate]   = useState(false)
   const [novoNome, setNovoNome]       = useState('')
   const [novoSlug, setNovoSlug]       = useState('')
+  const [novaLoteria, setNovaLoteria] = useState<LoteriaId>('mega')
   const [criando, setCriando]         = useState(false)
   const [criarErro, setCriarErro]     = useState('')
 
-  // Config do bolão selecionado
   const [showConfig, setShowConfig]   = useState(false)
   const [editDezenas, setEditDezenas] = useState(6)
   const [editApostas, setEditApostas] = useState(1)
@@ -36,11 +30,11 @@ export function useBoloes() {
   const [salvando, setSalvando]       = useState(false)
   const [configSalva, setConfigSalva] = useState(false)
 
-  // Derivados de config
-  const precoCaixa   = CAIXA_PRECOS[editDezenas] ?? 6
-  const custoApostas = editApostas * precoCaixa
-  const totalBolao   = custoApostas + editTaxa
-  const valorPorCota = editCotas > 0 ? totalBolao / editCotas : 0
+  const loteriaConfig = getLoteria(bolaoAtual?.loteria)
+  const precoCaixa    = loteriaConfig.precos[editDezenas] ?? 0
+  const custoApostas  = editApostas * precoCaixa
+  const totalBolao    = custoApostas + editTaxa
+  const valorPorCota  = editCotas > 0 ? totalBolao / editCotas : 0
 
   async function carregarBoloes() {
     const res = await fetch('/api/boloes').then(r => r.json())
@@ -53,7 +47,7 @@ export function useBoloes() {
   }
 
   function aplicarConfigDoBolao(b: Bolao) {
-    setEditDezenas(b.dezenas || 6)
+    setEditDezenas(b.dezenas || getLoteria(b.loteria).minDezenas)
     setEditApostas(b.num_apostas || 1)
     setEditCotas(b.total_cotas || 20)
     setEditTaxa(Number(b.taxa_admin) || 0)
@@ -81,9 +75,10 @@ export function useBoloes() {
   async function criarBolao() {
     if (!novoNome || !novoSlug) return
     setCriando(true); setCriarErro('')
+    const cfg = getLoteria(novaLoteria)
     const res = await fetch('/api/boloes', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome: novoNome, slug: novoSlug }),
+      body: JSON.stringify({ nome: novoNome, slug: novoSlug, loteria: novaLoteria, dezenas: cfg.minDezenas }),
     }).then(r => r.json())
     setCriando(false)
     if (res.error) { setCriarErro('❌ ' + res.error); return }
@@ -93,15 +88,13 @@ export function useBoloes() {
 
   async function salvarConfig(bolaoId: string) {
     setSalvando(true)
-    const preco = CAIXA_PRECOS[editDezenas] ?? 6
+    const cfg   = getLoteria(bolaoAtual?.loteria)
+    const preco = cfg.precos[editDezenas] ?? 0
     const custo = editApostas * preco
     const valor = editCotas > 0 ? parseFloat(((custo + editTaxa) / editCotas).toFixed(2)) : 0
     await fetch('/api/boloes', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: bolaoId, dezenas: editDezenas, num_apostas: editApostas,
-        total_cotas: editCotas, taxa_admin: editTaxa, valor_cota: valor,
-      }),
+      body: JSON.stringify({ id: bolaoId, dezenas: editDezenas, num_apostas: editApostas, total_cotas: editCotas, taxa_admin: editTaxa, valor_cota: valor }),
     })
     await carregarBoloes()
     setSalvando(false); setConfigSalva(true)
@@ -116,6 +109,7 @@ export function useBoloes() {
     showCreate, setShowCreate,
     novoNome, setNovoNome,
     novoSlug, setNovoSlug,
+    novaLoteria, setNovaLoteria,
     criando, criarErro,
     showConfig, setShowConfig,
     editDezenas, setEditDezenas,

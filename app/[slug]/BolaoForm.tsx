@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import TrevoIcon from '@/components/TrevoIcon'
+import { getLoteria } from '@/lib/loterias'
 
 function mascaraNome(nome: string): string {
   const words = nome.trim().split(/\s+/)
@@ -67,6 +68,7 @@ interface ResultadoConf {
 interface Props {
   bolaoNome: string
   bolaoSlug: string
+  loteria?: string
   valorCota: number
   totalCotas: number
   dezenas: number
@@ -75,7 +77,8 @@ interface Props {
   encerrado: boolean
 }
 
-export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, valorCota, totalCotas, dezenas: dezenasProp, numApostas: numApostasProp, taxaAdmin: taxaAdminProp, encerrado: encerradoProp }: Props) {
+export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria, valorCota, totalCotas, dezenas: dezenasProp, numApostas: numApostasProp, taxaAdmin: taxaAdminProp, encerrado: encerradoProp }: Props) {
+  const loteriaLabel = getLoteria(loteria).label
   // Config do bolão — sempre confirmada pela API antes de liberar a seleção
   const [VALOR_COTA, setValorCota]     = useState(0)
   const [TOTAL_COTAS, setTotalCotas]   = useState(Number(totalCotas) || 20)

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { getLoteria, type LoteriaId } from '@/lib/loterias'
 
 export interface Concurso { num: number; data: string; premio: string }
 
@@ -7,10 +8,9 @@ function parseBRDate(s: string): Date | null {
   if (!m) return null
   return new Date(+m[3], +m[2] - 1, +m[1])
 }
-function nextDrawDate(d: Date): Date {
+function nextDrawDate(d: Date, drawDays: number[]): Date {
   const next = new Date(d)
-  do { next.setDate(next.getDate() + 1) }
-  while (![2, 4, 6].includes(next.getDay())) // ter, qui, sáb
+  do { next.setDate(next.getDate() + 1) } while (!drawDays.includes(next.getDay()))
   return next
 }
 function formatData(d: Date | null): string {
@@ -35,28 +35,28 @@ export function useConcurso() {
     setPremioAtivo(premio)
   }
 
-  async function buscarCaixa() {
+  async function buscarCaixa(loteria: LoteriaId = 'mega') {
     setLoadingCaixa(true)
     try {
-      const API = 'https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena'
-      let data: Record<string, unknown>
-      try { data = await fetch(API).then(r => r.json()) }
-      catch {
-        const w = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(API)}`).then(r => r.json())
-        data = JSON.parse(w.contents as string)
-      }
+      const cfg = getLoteria(loteria)
+      // Usa nossa API de resultados (já tem cache + fallback)
+      const res = await fetch(`/api/resultados/${cfg.apiSlug}`)
+      if (!res.ok) throw new Error('Falha')
+      const data: Record<string, unknown> = await res.json()
+
       const ultimo    = parseInt(String(data.numero || data.numeroConcurso || 0))
       const proxData  = String(data.dataProximoConcurso || '')
-      const premioVal = data.valorEstimadoProximoConcurso as number
+      const premioVal = data.valorEstimadoProximoConcurso as number | undefined
       const d1 = parseBRDate(proxData)
-      const d2 = d1 ? nextDrawDate(d1) : null
-      const d3 = d2 ? nextDrawDate(d2) : null
+      const d2 = d1 ? nextDrawDate(d1, cfg.drawDays) : null
+      const d3 = d2 ? nextDrawDate(d2, cfg.drawDays) : null
       setProximos([
         { num: ultimo + 1, data: formatData(d1), premio: premioVal ? formatPremio(premioVal) : '—' },
         { num: ultimo + 2, data: formatData(d2), premio: 'Acumulando' },
         { num: ultimo + 3, data: formatData(d3), premio: 'Acumulando' },
       ])
-    } finally { setLoadingCaixa(false) }
+    } catch { /* mantém lista vazia */ }
+    finally { setLoadingCaixa(false) }
   }
 
   async function selecionarConcurso(c: Concurso) {
@@ -67,7 +67,6 @@ export function useConcurso() {
     setConcursoAtivo(String(c.num))
     setDataAtiva(c.data)
     setPremioAtivo(c.premio)
-    // Caller (page.tsx) deve carregar participantes se houver bolão ativo
   }
 
   return {
