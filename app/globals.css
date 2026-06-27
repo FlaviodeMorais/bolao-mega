@@ -615,99 +615,73 @@ input[type="text"], input[type="password"], input[type="tel"] { -webkit-appearan
   font-family: var(--f-mono); letter-spacing: -.5px;
 }
 
-/* ── WIDGET CAIXA (fundo branco, estilo oficial) ── */
-.caixa-widget {
-  margin: 0 16px 16px;
-  background: #fff;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 24px rgba(0,0,0,.18);
+/* ── CARDS RESULTADOS LOTERIAS ── */
+.lot-section { margin: 0 16px 16px; }
+.lot-section-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.5px; color: rgba(255,255,255,.25); margin-bottom: 10px;
 }
-.caixa-widget-titulo {
-  background: #003882;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 700;
-  padding: 12px 18px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+.lot-cards { display: flex; flex-direction: column; gap: 8px; }
+
+.lot-card {
+  background: var(--glass-10);
+  border: 1px solid var(--glass-bd);
+  border-radius: var(--r12);
+  padding: 14px 16px;
+  box-shadow: 0 4px 20px var(--lot-glow, rgba(0,0,0,.1));
+  transition: transform .15s, box-shadow .15s;
+}
+.lot-card:hover { transform: translateY(-1px); box-shadow: 0 8px 28px var(--lot-glow, rgba(0,0,0,.15)); }
+
+/* Topo: nome + próximo sorteio */
+.lot-card-top {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 12px;
+}
+.lot-card-nome {
+  font-size: 15px; font-weight: 900; letter-spacing: -.3px; line-height: 1;
+  text-transform: uppercase;
+}
+.lot-card-proximo { text-align: right; }
+.lot-card-proximo-data {
+  display: block; font-size: 9px; color: rgba(255,255,255,.30);
+  text-transform: uppercase; letter-spacing: .8px; margin-bottom: 1px;
+}
+.lot-card-proximo-val {
+  font-size: 13px; font-weight: 800; color: var(--white); font-family: var(--f-mono);
 }
 
-/* Linha de cada loteria */
-.caixa-row {
-  display: flex;
-  gap: 0;
-  border-bottom: 1px solid #e8edf2;
-  padding: 16px 18px;
-  align-items: flex-start;
-}
-.caixa-row:last-child { border-bottom: none; }
-
-/* Coluna esquerda */
-.caixa-left {
-  width: 40%;
-  flex-shrink: 0;
-  padding-right: 14px;
-  border-right: 1px solid #e8edf2;
-}
-.caixa-logo {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 10px;
-}
-.caixa-nome {
-  font-size: 16px; font-weight: 800; letter-spacing: -.3px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-}
-.caixa-estimativa-texto {
-  font-size: 11px; color: #555; line-height: 1.4; margin-bottom: 4px;
-}
-.caixa-estimativa-valor {
-  font-size: 16px; font-weight: 800;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-}
-
-/* Coluna direita */
-.caixa-right {
-  flex: 1;
-  padding-left: 16px;
-}
-.caixa-dezenas {
-  display: grid;
-  gap: 5px;
-  margin-bottom: 10px;
-  justify-items: center;
-}
-.caixa-ball {
-  width: 36px; height: 36px; border-radius: 50%;
+/* Números */
+.lot-card-nums { display: grid; gap: 5px; margin-bottom: 12px; justify-items: center; }
+.lot-ball {
+  width: 32px; height: 32px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 13px; font-weight: 800;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  box-shadow: 0 2px 6px rgba(0,0,0,.20);
+  color: #fff; font-size: 11px; font-weight: 800;
 }
-.caixa-num {
-  font-size: 20px; font-weight: 700;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  text-align: center;
-  padding: 5px 0;
-  border-bottom: 1px solid #f0f0f0;
-  width: 100%;
+.lot-plain {
+  font-size: 17px; font-weight: 800; text-align: center;
+  padding: 4px 0; font-family: var(--f-mono);
+  border-bottom: 1px solid rgba(255,255,255,.05); width: 100%;
 }
-.caixa-resultado {
-  font-size: 18px; font-weight: 900; letter-spacing: -.3px;
-  color: #003882;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  margin-bottom: 4px;
+
+/* Rodapé: badge + concurso */
+.lot-card-bottom {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 10px; border-top: 1px solid rgba(255,255,255,.06);
 }
-.caixa-concurso-info {
-  font-size: 11px; color: #666;
-  margin-bottom: 6px; line-height: 1.4;
+.lot-badge {
+  font-size: 11px; font-weight: 700; padding: 3px 10px;
+  border-radius: var(--pill); border: 1px solid;
 }
-.caixa-link {
-  font-size: 12px; font-weight: 700;
-  color: #f47920; text-decoration: none;
+.lot-conc { font-size: 10px; color: rgba(255,255,255,.22); font-family: var(--f-mono); }
+.lot-card-loading { font-size: 11px; color: rgba(255,255,255,.20); padding: 20px 0; text-align: center; }
+
+.lot-caixa-link {
+  display: block; text-align: center; margin-top: 8px;
+  font-size: 11px; color: rgba(255,255,255,.25); text-decoration: none;
+  transition: color .15s;
 }
-.caixa-link:hover { text-decoration: underline; }
-.caixa-loading { font-size: 12px; color: #aaa; padding: 8px 0; }
-.caixa-erro { font-size: 11px; color: #e57373; padding: 8px 0; }
+.lot-caixa-link:hover { color: rgba(255,255,255,.5); }
 
 /* ── COMPROVANTE SHARÁVEL ── */
 .comprov-share-card {
