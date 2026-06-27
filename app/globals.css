@@ -1368,43 +1368,48 @@ hr { border: none; border-top: 1px solid var(--border); margin: var(--s5) 0; }
 }
 
 /* ── Apostas do Bolão ── */
-.apostas-section { padding: 4px 0; }
-.apostas-section-title {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--text-secondary, #475569);
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  margin-bottom: 12px;
+.apostas-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 16px;
 }
-.apostas-lista { display: flex; flex-direction: column; gap: 10px; }
 .aposta-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 .aposta-idx {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: #94A3B8;
-  width: 20px;
+  width: 16px;
   text-align: right;
   flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace;
 }
-.aposta-bolas { display: flex; flex-wrap: wrap; gap: 6px; }
+/* Bolas preenchem toda a linha automaticamente */
+.aposta-bolas {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
 .aposta-bola {
+  flex: 1;
+  aspect-ratio: 1;
+  max-width: 40px;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--brand-blue, #005DA9), var(--brand-green, #00AB67));
+  background: #00AB67;
   color: #fff;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
+  font-size: clamp(0.6rem, 2.5vw, 0.8rem);
   font-weight: 800;
-  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+  box-shadow: 0 2px 6px rgba(0,0,0,.18);
 }
 
 /* p-pago como botão clicável */

@@ -339,23 +339,23 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
 
         {/* ── Apostas do bolão ── */}
         {apostasData?.bets && apostasData.bets.length > 0 && (
-          <div className="card">
-            <div className="form-body">
-              <div className="apostas-section">
-                <div className="apostas-section-title">🎯 Apostas do Bolão</div>
-                <div className="apostas-lista">
-                  {apostasData.bets.map((aposta, i) => (
-                    <div key={i} className="aposta-row">
-                      <span className="aposta-idx">{i + 1}</span>
-                      <div className="aposta-bolas">
-                        {aposta.map(n => (
-                          <span key={n} className="aposta-bola">{String(n).padStart(2, '0')}</span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+          <div className="mega-card">
+            <div className="mega-header">
+              <TrevoIcon size={24} />
+              <span className="mega-title">{loteriaLabel.toUpperCase()}</span>
+              <span className="mega-concurso">{apostasData.bets.length} apostas · {apostasData.bets[0]?.length} dezenas</span>
+            </div>
+            <div className="apostas-lista">
+              {apostasData.bets.map((aposta, i) => (
+                <div key={i} className="aposta-row">
+                  <span className="aposta-idx">{i + 1}</span>
+                  <div className="aposta-bolas">
+                    {aposta.map(n => (
+                      <span key={n} className="aposta-bola">{String(n).padStart(2, '0')}</span>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
         )}
