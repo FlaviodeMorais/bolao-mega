@@ -10,3 +10,8 @@ settings.local.json
 .claude/settings.local.json
 
 .vercel
+
+# Manual de identidade visual (referência local, não vai pro deploy)
+public/manual-de-identidade-visual-loterias-caixa/
+public/manual-de-identidade-visual-loterias-caixa.html
+public/manual-de-identidade-visual-loterias-caixa.pdf
