@@ -82,11 +82,14 @@ export default function IngerirHistorico() {
     <div className={styles.panel}>
       <div className={styles.panelTitle}>🗄️ Histórico Estatístico</div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
         <button className={styles.btnLoad} onClick={verificar} disabled={verificando} style={{ marginBottom: 0 }}>
           {verificando ? 'Verificando...' : '🔍 Verificar banco'}
         </button>
         {info && <span style={{ fontSize: 12, color: info.includes('vazio') ? '#f59e0b' : '#00A651' }}>{info}</span>}
+        <a href="/estatisticas" target="_blank" className={styles.btnLoad} style={{ marginBottom: 0, textDecoration: 'none' }}>
+          📊 Ver Estatísticas
+        </a>
       </div>
 
       {!rodando && (
