@@ -582,6 +582,66 @@
 .btnLoad:hover:not(:disabled) { background: #D1F0E0; }
 .btnLoad:disabled { opacity: .4; cursor: not-allowed; }
 
+/* inline — sem margin-bottom (uso em linhas de botões) */
+.btnLoadInline { margin-bottom: 0; text-decoration: none; }
+
+/* preenchido — ocupa linha inteira */
+.btnPrimarioFull { width: 100%; justify-content: center; margin-top: 4px; }
+
+/* compacto */
+.btnSecundarioSm { padding: 5px 12px; font-size: 12px; }
+
+/* alias para lembrete — mesma aparência que btnWhatsapp */
+.btnLembrete {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 16px; border-radius: 10px;
+  background: #F0FFF4; color: #16A34A; border: 1px solid rgba(22,163,74,.25);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s;
+}
+.btnLembrete:hover { background: #DCFCE7; }
+
+/* ── LOTERIA SELECTOR (criar bolão) ── */
+.loteriaSelector {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;
+}
+.loteriaBotao {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 13px; border-radius: 8px;
+  background: #F8FAFB; color: #475569; border: 1px solid #E2E8F0;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s;
+}
+.loteriaBotao:hover { background: #E6F7EE; border-color: rgba(0,171,103,.3); color: #007A45; }
+.loteriaBotaoAtivo { background: #E6F7EE; border-color: rgba(0,171,103,.4); color: #007A45; }
+
+/* ── UTILITÁRIOS ── */
+/* linha de botões horizontais */
+.btnRow { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+
+/* override .detStatsRow para 3 colunas */
+.detStatsRow3 { grid-template-columns: repeat(3,1fr) !important; margin-bottom: 14px; }
+
+/* label de stat sem uppercase/letterSpacing (uso em histórico) */
+.detStatLblPlain {
+  text-transform: none; letter-spacing: 0; font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* valor de stat em tamanho reduzido */
+.detStatValSm { font-size: 14px !important; }
+
+/* barra de progresso */
+.progressWrap { height: 8px; background: #E2E8F0; border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
+.progressFill { height: 100%; border-radius: 4px; transition: width .5s; }
+
+/* texto auxiliar / descritivo */
+.helpText { font-size: 12px; color: #64748B; margin-bottom: 12px; line-height: 1.6; }
+
+/* mensagem de resumo colorida */
+.resumoMsg    { font-size: 12px; margin-top: 8px; }
+.resumoMsgOk  { color: #007A45; }
+.resumoMsgErr { color: #DC2626; }
+
 /* ── BOLÕES ── */
 .bolaoCard {
   background: #FFFFFF;

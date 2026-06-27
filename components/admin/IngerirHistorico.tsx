@@ -100,18 +100,18 @@ export default function IngerirHistorico() {
       <div className={styles.panelTitle}>🗄️ Histórico Estatístico</div>
 
       {/* Status por loteria */}
-      <div className={styles.detStatsRow} style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 14 }}>
+      <div className={`${styles.detStatsRow} ${styles.detStatsRow3}`}>
         {LOTERIA_LIST.map(l => {
-          const val    = info[l.id]
-          const vazio  = val?.includes('vazio')
+          const val       = info[l.id]
+          const vazio     = val?.includes('vazio')
           const carregado = val && !vazio
+          const cor = carregado ? '#007A45' : vazio ? '#D97706' : '#94A3B8'
           return (
             <div key={l.id} className={`${styles.detStat} ${vazio ? styles.detStatWarn : ''}`}>
-              <div className={styles.detStatVal}
-                style={{ fontSize: 14, color: carregado ? '#007A45' : vazio ? '#D97706' : '#94A3B8' }}>
+              <div className={`${styles.detStatVal} ${styles.detStatValSm}`} style={{ color: cor }}>
                 {l.emoji} {l.label}
               </div>
-              <span className={styles.detStatLbl} style={{ color: carregado ? '#007A45' : vazio ? '#D97706' : '#94A3B8', textTransform: 'none', letterSpacing: 0, fontFamily: 'inherit' }}>
+              <span className={`${styles.detStatLbl} ${styles.detStatLblPlain}`} style={{ color: cor }}>
                 {val ?? '—'}
               </span>
             </div>
@@ -119,22 +119,22 @@ export default function IngerirHistorico() {
         })}
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-        <button className={styles.btnLoad} onClick={verificar} disabled={verificando} style={{ marginBottom: 0 }}>
+      <div className={styles.btnRow}>
+        <button className={`${styles.btnLoad} ${styles.btnLoadInline}`} onClick={verificar} disabled={verificando}>
           {verificando ? '⟳' : '🔍'} Verificar banco
         </button>
-        <a href="/estatisticas" target="_blank" className={styles.btnLoad} style={{ marginBottom: 0, textDecoration: 'none' }}>
+        <a href="/estatisticas" target="_blank" className={`${styles.btnLoad} ${styles.btnLoadInline}`}>
           📊 Ver Estatísticas
         </a>
       </div>
 
       {/* Seletor de loteria */}
       {!rodando && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+        <div className={styles.btnRow}>
           {LOTERIA_LIST.map(l => (
             <button key={l.id} type="button"
-              className={`${styles.btnSecundario} ${loteria === l.id ? styles.btnPrimario : ''}`}
-              style={loteria === l.id ? { background: l.cor, borderColor: l.cor } : {}}
+              className={`${styles.loteriaBotao} ${loteria === l.id ? styles.loteriaBotaoAtivo : ''}`}
+              style={loteria === l.id ? { background: l.cor + '18', borderColor: l.cor, color: l.cor } : {}}
               onClick={() => setLoteria(l.id)}>
               {l.emoji} {l.label}
             </button>
@@ -143,7 +143,7 @@ export default function IngerirHistorico() {
       )}
 
       {!rodando && (
-        <p style={{ fontSize: 12, color: '#64748B', marginBottom: 12, lineHeight: 1.6 }}>
+        <p className={styles.helpText}>
           Busca os concursos da <strong style={{ color: cfg.cor }}>{cfg.label}</strong> do seu browser e salva no banco.
           Aprox. <strong>{TOTAIS[loteria].toLocaleString('pt-BR')}</strong> concursos — leva ~15 min. <strong>Não feche esta aba.</strong>
         </p>
@@ -157,10 +157,10 @@ export default function IngerirHistorico() {
 
       {rodando && (
         <>
-          <div style={{ height: 8, background: '#E2E8F0', borderRadius: 4, overflow: 'hidden', marginBottom: 6 }}>
-            <div style={{ height: '100%', width: `${pct}%`, background: cfg.cor, borderRadius: 4, transition: 'width .5s' }} />
+          <div className={styles.progressWrap}>
+            <div className={styles.progressFill} style={{ width: `${pct}%`, background: cfg.cor }} />
           </div>
-          <div style={{ fontSize: 12, color: '#64748B', marginBottom: 12 }}>{pct}% — {resumo}</div>
+          <div className={styles.helpText}>{pct}% — {resumo}</div>
           <button className={styles.btnPerigoPad} onClick={() => { abortRef.current = true }}>
             ⏹ Parar
           </button>
@@ -168,7 +168,7 @@ export default function IngerirHistorico() {
       )}
 
       {!rodando && resumo && (
-        <div style={{ fontSize: 12, color: resumo.includes('✅') ? '#007A45' : '#DC2626', marginTop: 8 }}>{resumo}</div>
+        <div className={`${styles.resumoMsg} ${resumo.includes('✅') ? styles.resumoMsgOk : styles.resumoMsgErr}`}>{resumo}</div>
       )}
     </div>
   )

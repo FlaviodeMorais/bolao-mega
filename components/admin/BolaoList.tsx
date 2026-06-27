@@ -39,12 +39,12 @@ interface BolaoListProps {
 const LOTERIA_BADGE: Record<string, string> = {
   mega:      '🍀',
   lotofacil: '🌸',
-  quina:     '🟣',
+  quina:     '🔵',
 }
 const LOTERIA_COR: Record<string, string> = {
-  mega:      '#00AB67',
-  lotofacil: '#FF6B35',
-  quina:     '#9B59B6',
+  mega:      '#009B63',
+  lotofacil: '#702A82',
+  quina:     '#00508F',
 }
 
 export default function BolaoList({
