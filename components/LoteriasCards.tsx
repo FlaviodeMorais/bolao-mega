@@ -19,17 +19,29 @@ const LOTERIAS = [
   { id: 'lotomania', nome: 'lotomania',  corA: '#e07000', corB: '#f5b87a', glow: 'rgba(224,112,0,.25)',   ballStyle: 'plain'  as const, cols: 5 },
 ]
 
-// Trevo 4 folhas idêntico ao logo oficial da Caixa
-// diagonal principal (topo-esq + baixo-dir) = corA (escura)
-// diagonal secundária (topo-dir + baixo-esq) = corB (clara)
-function Trevo({ corA, corB }: { corA: string; corB: string }) {
+// Trevo 4 folhas — réplica fiel do logo Caixa
+// Cada pétala = círculo grande clipado ao seu quadrante
+// diagonal principal (↖ + ↘) = corA (escura), secundária (↗ + ↙) = corB (clara)
+function Trevo({ corA, corB, id }: { corA: string; corB: string; id: string }) {
+  const uid = `trevo-${id}`
   return (
-    <svg width="28" height="28" viewBox="0 0 100 100" fill="none">
-      <circle cx="32" cy="32" r="28" fill={corA} />
-      <circle cx="68" cy="32" r="28" fill={corB} />
-      <circle cx="32" cy="68" r="28" fill={corB} />
-      <circle cx="68" cy="68" r="28" fill={corA} />
-      <circle cx="50" cy="50" r="10" fill={corA} />
+    <svg width="30" height="30" viewBox="0 0 100 100" fill="none">
+      <defs>
+        <clipPath id={`${uid}-tl`}><rect x="0"  y="0"  width="52" height="52"/></clipPath>
+        <clipPath id={`${uid}-tr`}><rect x="48" y="0"  width="52" height="52"/></clipPath>
+        <clipPath id={`${uid}-bl`}><rect x="0"  y="48" width="52" height="52"/></clipPath>
+        <clipPath id={`${uid}-br`}><rect x="48" y="48" width="52" height="52"/></clipPath>
+      </defs>
+      {/* ↖ topo-esquerda — cor escura */}
+      <circle cx="36" cy="36" r="30" fill={corA} clipPath={`url(#${uid}-tl)`}/>
+      {/* ↗ topo-direita — cor clara */}
+      <circle cx="64" cy="36" r="30" fill={corB} clipPath={`url(#${uid}-tr)`}/>
+      {/* ↙ baixo-esquerda — cor clara */}
+      <circle cx="36" cy="64" r="30" fill={corB} clipPath={`url(#${uid}-bl)`}/>
+      {/* ↘ baixo-direita — cor escura */}
+      <circle cx="64" cy="64" r="30" fill={corA} clipPath={`url(#${uid}-br)`}/>
+      {/* haste central */}
+      <rect x="47" y="78" width="6" height="16" rx="3" fill={corA}/>
     </svg>
   )
 }
@@ -82,7 +94,7 @@ export default function LoteriasCards() {
               {/* Topo: logo + nome + prêmio próximo */}
               <div className="lot-card-top">
                 <div className="lot-card-logo">
-                  <Trevo corA={lot.corA} corB={lot.corB} />
+                  <Trevo corA={lot.corA} corB={lot.corB} id={lot.id} />
                   <span className="lot-card-nome" style={{ color: lot.corA }}>{lot.nome}</span>
                 </div>
                 {d && (
