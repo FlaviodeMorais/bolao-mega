@@ -13,18 +13,34 @@ interface LotResult {
   listaRateioPremio: { numeroDeGanhadores: number }[]
 }
 
+// Cores exatas dos logos oficiais da Caixa
 const LOTERIAS = [
-  { id: 'megasena',  nome: 'Mega-Sena',  cor: '#209869', glow: 'rgba(32,152,105,.30)', ballStyle: 'circle' as const, cols: 6 },
-  { id: 'lotofacil', nome: 'Lotofácil',  cor: '#930089', glow: 'rgba(147,0,137,.25)',  ballStyle: 'plain'  as const, cols: 5 },
-  { id: 'quina',     nome: 'Quina',      cor: '#4a3aff', glow: 'rgba(74,58,255,.25)',  ballStyle: 'circle' as const, cols: 5 },
-  { id: 'lotomania', nome: 'Lotomania',  cor: '#f78100', glow: 'rgba(247,129,0,.25)',  ballStyle: 'plain'  as const, cols: 5 },
+  { id: 'megasena',  nome: 'mega-sena',  corA: '#1a7c4f', corB: '#6abf95', glow: 'rgba(26,124,79,.30)',   ballStyle: 'circle' as const, cols: 6 },
+  { id: 'lotofacil', nome: 'lotofácil',  corA: '#8b008b', corB: '#c87ec8', glow: 'rgba(139,0,139,.25)',   ballStyle: 'plain'  as const, cols: 5 },
+  { id: 'quina',     nome: 'quina',      corA: '#1a0080', corB: '#8080c0', glow: 'rgba(26,0,128,.25)',    ballStyle: 'circle' as const, cols: 5 },
+  { id: 'lotomania', nome: 'lotomania',  corA: '#e07000', corB: '#f5b87a', glow: 'rgba(224,112,0,.25)',   ballStyle: 'plain'  as const, cols: 5 },
 ]
+
+// Trevo 4 folhas idêntico ao logo oficial da Caixa
+// diagonal principal (topo-esq + baixo-dir) = corA (escura)
+// diagonal secundária (topo-dir + baixo-esq) = corB (clara)
+function Trevo({ corA, corB }: { corA: string; corB: string }) {
+  return (
+    <svg width="28" height="28" viewBox="0 0 100 100" fill="none">
+      <circle cx="32" cy="32" r="28" fill={corA} />
+      <circle cx="68" cy="32" r="28" fill={corB} />
+      <circle cx="32" cy="68" r="28" fill={corB} />
+      <circle cx="68" cy="68" r="28" fill={corA} />
+      <circle cx="50" cy="50" r="10" fill={corA} />
+    </svg>
+  )
+}
 
 const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
 
 function fmtPremio(v: number) {
   if (v >= 1_000_000_000) return `R$ ${(v/1e9).toFixed(0)} bi`
-  if (v >= 1_000_000) return `R$ ${(v/1e6).toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 1})} mi`
+  if (v >= 1_000_000) return `R$ ${(v/1e6).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 1 })} mi`
   return `R$ ${(v/1000).toFixed(0)}k`
 }
 
@@ -66,20 +82,22 @@ export default function LoteriasCards() {
 
           return (
             <div key={lot.id} className="lot-card"
-              style={{ '--lot-cor': lot.cor, '--lot-glow': lot.glow, borderColor: `${lot.cor}30` } as React.CSSProperties}
+              style={{ '--lot-glow': lot.glow, borderColor: `${lot.corA}35` } as React.CSSProperties}
             >
-              {/* Topo: nome + prêmio próximo */}
+              {/* Topo: logo + nome + prêmio próximo */}
               <div className="lot-card-top">
-                <div className="lot-card-nome" style={{ color: lot.cor }}>{lot.nome}</div>
+                <div className="lot-card-logo">
+                  <Trevo corA={lot.corA} corB={lot.corB} />
+                  <span className="lot-card-nome" style={{ color: lot.corA }}>{lot.nome}</span>
+                </div>
                 {d && (
                   <div className="lot-card-proximo">
-                    <span className="lot-card-proximo-data">{fmtData(d.dataProximoConcurso)}</span>
-                    <span className="lot-card-proximo-val">{fmtPremio(d.valorEstimadoProximoConcurso)}</span>
+                    <span className="lot-card-proximo-data">próximo · {fmtData(d.dataProximoConcurso)}</span>
+                    <span className="lot-card-proximo-val" style={{ color: lot.corA }}>{fmtPremio(d.valorEstimadoProximoConcurso)}</span>
                   </div>
                 )}
               </div>
 
-              {/* Dezenas */}
               {loading && <div className="lot-card-loading">carregando...</div>}
 
               {!loading && d && (
@@ -87,17 +105,16 @@ export default function LoteriasCards() {
                   <div className="lot-card-nums" style={{ gridTemplateColumns: `repeat(${lot.cols}, 1fr)` }}>
                     {d.listaDezenas.map((n, i) =>
                       lot.ballStyle === 'circle'
-                        ? <span key={i} className="lot-ball" style={{ background: lot.cor, boxShadow: `0 2px 10px ${lot.glow}` }}>{n}</span>
-                        : <span key={i} className="lot-plain" style={{ color: lot.cor }}>{n}</span>
+                        ? <span key={i} className="lot-ball" style={{ background: lot.corA, boxShadow: `0 2px 10px ${lot.glow}` }}>{n}</span>
+                        : <span key={i} className="lot-plain" style={{ color: lot.corA }}>{n}</span>
                     )}
                   </div>
 
-                  {/* Resultado + concurso */}
                   <div className="lot-card-bottom">
-                    <span className={`lot-badge ${d.acumulado ? 'acc' : 'win'}`}
+                    <span className="lot-badge"
                       style={d.acumulado
-                        ? { background: `rgba(59,130,246,.12)`, borderColor: `rgba(59,130,246,.25)`, color: '#60a5fa' }
-                        : { background: `${lot.cor}18`, borderColor: `${lot.cor}40`, color: lot.cor }
+                        ? { background: 'rgba(59,130,246,.12)', borderColor: 'rgba(59,130,246,.25)', color: '#60a5fa' }
+                        : { background: `${lot.corA}18`, borderColor: `${lot.corA}40`, color: lot.corA }
                       }
                     >
                       {d.acumulado ? '🔥 Acumulou' : ganhadores === 1 ? '🏆 1 Ganhador' : `🏆 ${ganhadores} Ganhadores`}

@@ -635,12 +635,13 @@ input[type="text"], input[type="password"], input[type="tel"] { -webkit-appearan
 
 /* Topo: nome + próximo sorteio */
 .lot-card-top {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  margin-bottom: 12px;
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; gap: 8px;
 }
+.lot-card-logo { display: flex; align-items: center; gap: 8px; }
 .lot-card-nome {
   font-size: 15px; font-weight: 900; letter-spacing: -.3px; line-height: 1;
-  text-transform: uppercase;
+  text-transform: lowercase; font-variant: small-caps;
 }
 .lot-card-proximo { text-align: right; }
 .lot-card-proximo-data {
