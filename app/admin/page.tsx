@@ -97,6 +97,24 @@ export default function AdminPage() {
           conferirResult, setConferirResult,
           conferirSorteio, resetarConferencia, conferirManual } = conf
 
+  const [enviarAcertosMsg, setEnviarAcertosMsg] = useState('')
+  const enviarAcertos = async () => {
+    if (!bolaoAtual || !concursoAtivo) return
+    setEnviarAcertosMsg('Enviando...')
+    try {
+      const r = await fetch('/api/admin/acertos-pos-sorteio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bolao_slug: bolaoAtual.slug, concurso: concursoAtivo }),
+      })
+      const d = await r.json()
+      if (r.ok) setEnviarAcertosMsg(`✅ Enviado para ${d.enviados} participante(s)${d.erros > 0 ? ` (${d.erros} sem telefone)` : ''}`)
+      else setEnviarAcertosMsg(`❌ ${d.error}`)
+    } catch {
+      setEnviarAcertosMsg('❌ Erro ao enviar')
+    }
+  }
+
   // BolaoDetailPanel — config
   const { showConfig, setShowConfig, editDezenas, setEditDezenas,
           editApostas, setEditApostas, editCotas, setEditCotas,
@@ -336,6 +354,8 @@ export default function AdminPage() {
                 onConferirManual={conferirManual}
                 onResetarConferencia={resetarConferencia}
                 onDezenasInputChange={setDezenasInput}
+                onEnviarAcertos={enviarAcertos}
+                enviarAcertosMsg={enviarAcertosMsg}
                 onToggleEncerrar={() => { setShowEncerrar(v => !v); setEncerrarOk(null) }}
                 onEncerrarBolao={encerrarBolao}
                 onToggleConfig={() => setShowConfig(v => !v)}

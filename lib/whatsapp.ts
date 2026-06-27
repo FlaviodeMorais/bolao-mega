@@ -244,6 +244,58 @@ export async function notificarAcrescimo(
   )
 }
 
+export async function notificarQuaseLotado(
+  bolaoNome: string,
+  cotasVendidas: number,
+  totalCotas: number
+) {
+  const pct = Math.round((cotasVendidas / totalCotas) * 100)
+  await toGroup(
+    `🔥 *BOLÃO QUASE LOTADO!*\n\n` +
+    `*${bolaoNome}* está com *${pct}%* das cotas preenchidas.\n\n` +
+    `🎟️ ${cotasVendidas} de ${totalCotas} cotas vendidas\n` +
+    `⚠️ *Restam apenas ${totalCotas - cotasVendidas} cotas disponíveis!*\n\n` +
+    `_Corra para garantir a sua! 🍀_`
+  )
+}
+
+export async function notificarAcertosIndividual(
+  telefone: string,
+  nome: string,
+  bolaoNome: string,
+  concurso: number,
+  dezenasSorteadas: number[],
+  apostas: number[][],
+  cotas: string[]
+) {
+  if (!telefone) return
+
+  const set = new Set(dezenasSorteadas)
+  const acertosPorAposta = apostas.map(bet => bet.filter(n => set.has(n)).length)
+  const maxAcertos = acertosPorAposta.length > 0 ? Math.max(...acertosPorAposta) : 0
+
+  const emoji = maxAcertos >= 6 ? '🏆' : maxAcertos === 5 ? '🥈' : maxAcertos === 4 ? '🥉' : '🎲'
+  const dezStr = dezenasSorteadas.map(n => String(n).padStart(2, '0')).join(' · ')
+
+  let linhasApostas = ''
+  apostas.forEach((bet, i) => {
+    const ac = acertosPorAposta[i]
+    const betStr = bet.map(n => String(n).padStart(2, '0')).join(' ')
+    linhasApostas += `  Jogo ${String(i + 1).padStart(2, '0')}: ${betStr} — *${ac} acerto${ac !== 1 ? 's' : ''}*\n`
+  })
+
+  return toNumber(telefone,
+    `${emoji} *RESULTADO — Mega-Sena #${concurso}*\n\n` +
+    `Olá *${nome}*! Aqui está seu resultado do bolão *${bolaoNome}*:\n\n` +
+    `🔢 *Dezenas sorteadas:*\n${dezStr}\n\n` +
+    `🎟️ *Suas cotas: ${cotas.join(', ')}*\n\n` +
+    `📊 *Seus jogos:*\n${linhasApostas}\n` +
+    (maxAcertos >= 4
+      ? `🏆 *Parabéns! Você acertou ${maxAcertos} dezenas!*\n\n_O administrador entrará em contato com detalhes do prêmio._`
+      : `_Não foi dessa vez — mas a sorte está chegando! 💪🍀_`)
+  )
+}
+
 export async function buscarGrupos(): Promise<{ id: string; name: string }[]> {
   if (!WHAPI_TOKEN) return []
   try {

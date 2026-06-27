@@ -13,6 +13,7 @@ interface Bolao {
   total_cotas: number; dezenas: number; num_apostas: number
   taxa_admin: number; encerrado: boolean
   apostas_data?: { bets: number[][]; total_apostas: number } | null
+  resultado_conferencia?: Record<string, unknown> | null
 }
 interface ConferirResult {
   status: string; dezenas_sorteadas: number[]
@@ -107,6 +108,8 @@ export interface BolaoDetailPanelProps {
   onConferirManual: () => void
   onResetarConferencia: () => void
   onDezenasInputChange: (v: string) => void
+  onEnviarAcertos: () => void
+  enviarAcertosMsg: string
 
   // Callbacks — encerramento
   onToggleEncerrar: () => void
@@ -311,6 +314,17 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
           )}
         </div>
       )}
+
+      {/* ── Acertos pós-sorteio ── */}
+      {bolao.resultado_conferencia &&
+        (bolao.resultado_conferencia as Record<string, string>).status !== 'nao_apurado' &&
+        bolao.apostas_data && p.pagosLista.length > 0 && (
+        <button type="button" className={styles.btnLembrete}
+          onClick={p.onEnviarAcertos}>
+          📊 Enviar Acertos por WhatsApp
+        </button>
+      )}
+      {p.enviarAcertosMsg && <div className={styles.lembreteMsg}>{p.enviarAcertosMsg}</div>}
 
       {/* ── Encerrar bolão ── */}
       {!bolao.encerrado && p.cotasLivres > 0 && p.pagosLista.length > 0 && (

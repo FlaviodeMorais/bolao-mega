@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { notificarInscricao } from '@/lib/whatsapp'
+import { notificarInscricao, notificarQuaseLotado } from '@/lib/whatsapp'
 import { enviarPixEmail, notificarAdminInscricao } from '@/lib/email'
 
 export async function GET(req: NextRequest) {
@@ -89,11 +89,33 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   const { data: bolaoInfo } = await supabase
-    .from('boloes').select('nome, num_apostas, dezenas').eq('slug', bolao_slug || '').single()
+    .from('boloes').select('nome, num_apostas, dezenas, total_cotas').eq('slug', bolao_slug || '').single()
   const bolaoNome = bolaoInfo?.nome || 'Bolão Mega-Sena'
 
   // Notifica grupo WhatsApp (silencioso se Whapi não estiver ativo)
   notificarInscricao(nome, cotas, concurso, total).catch(() => {})
+
+  // Alerta de quase lotado (80% das cotas vendidas)
+  if (bolao_slug && bolaoInfo) {
+    const { data: todas } = await supabase
+      .from('participantes')
+      .select('cotas')
+      .eq('bolao_slug', bolao_slug)
+      .eq('concurso', concurso)
+      .neq('status', 'cancelado')
+
+    const totalVendidas = (todas || []).reduce((acc, r) => acc + (r.cotas as string[]).length, 0)
+    const totalCotas = (bolaoInfo as { total_cotas?: number }).total_cotas ?? 0
+
+    if (totalCotas > 0) {
+      const pct = totalVendidas / totalCotas
+      const pctAntes = (totalVendidas - cotas.length) / totalCotas
+      // Dispara apenas uma vez: quando cruza o limiar de 80%
+      if (pct >= 0.8 && pctAntes < 0.8) {
+        notificarQuaseLotado(bolaoInfo.nome || 'Bolão', totalVendidas, totalCotas).catch(() => {})
+      }
+    }
+  }
 
   // Envia PIX por e-mail ao participante
   if (email && pix_code) {
