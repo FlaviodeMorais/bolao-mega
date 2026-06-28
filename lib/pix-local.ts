@@ -1,6 +1,6 @@
-const PIX_CHAVE  = '27210592890'
-const PIX_NOME   = 'FLAVIO DE MORAIS'
-const PIX_CIDADE = 'SAO PAULO'
+const PIX_CHAVE  = process.env.PIX_KEY  || ''
+const PIX_NOME   = process.env.PIX_NOME  || 'ADMIN'
+const PIX_CIDADE = process.env.PIX_CIDADE || 'SAO PAULO'
 
 function emv(tag: string, value: string): string {
   return tag + String(value.length).padStart(2, '0') + value

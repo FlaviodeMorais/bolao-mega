@@ -3,6 +3,8 @@ import { getLoteria } from '@/lib/loterias'
 
 interface Bolao { id: string; loteria?: string; apostas_data?: unknown }
 
+const MIN_ACERTOS: Record<string, number> = { mega: 4, lotofacil: 11, quina: 2 }
+
 export interface ConferirResult {
   status: string
   dezenas_sorteadas: number[]
@@ -47,9 +49,10 @@ export function useConferencia(
     if (!silencioso) setConferindoRes(false)
     if (res.error) { if (!silencioso) setConferirMsg(`❌ ${res.error}`); return }
     setConferirResult(res)
+    const min = MIN_ACERTOS[bolaoAtual.loteria || 'mega'] ?? 4
     const msgs: Record<string, string> = {
       ganhamos:     `🏆 GANHAMOS! ${res.maior_premio} — ${res.total_premiadas} aposta(s) premiada(s)`,
-      nao_premiada: `😔 Não premiada — nenhuma aposta com 4 ou mais acertos`,
+      nao_premiada: `😔 Não premiada — nenhuma aposta com ${min} ou mais acertos`,
       nao_apurado:  res.message || `⏳ Sorteio #${concursoAtivo} ainda não apurado.`,
     }
     setConferirMsg(msgs[res.status] || res.message || `Status: ${res.status}`)
@@ -79,10 +82,10 @@ export function useConferencia(
 
   async function conferirManual() {
     if (!bolaoAtual) return
-    const cfg  = getLoteria(bolaoAtual.loteria)
-    const maxN = cfg.totalNumeros
-    const drawn = cfg.totalNumeros <= 25 ? 15 : cfg.totalNumeros <= 60 ? 6 : 5
-    const nums = dezenasInput.trim().split(/[\s,;]+/).map(Number).filter(n => n >= 1 && n <= maxN)
+    const cfg   = getLoteria(bolaoAtual.loteria)
+    const maxN  = cfg.totalNumeros
+    const drawn = cfg.minDezenas  // minDezenas = dezenas sorteadas pela Caixa (6/5/15)
+    const nums  = dezenasInput.trim().split(/[\s,;]+/).map(Number).filter(n => n >= 1 && n <= maxN)
     if (nums.length !== drawn) { setConferirMsg(`❌ Informe exatamente ${drawn} dezenas (1–${maxN}) para ${cfg.label}`); return }
     setConferindoManual(true); setConferirMsg('')
     const res = await fetch('/api/admin/conferir-sorteio', {
@@ -94,9 +97,10 @@ export function useConferencia(
     if (res.error) { setConferirMsg(`❌ ${res.error}`); return }
     setConferirResult(res)
     limparAutoRef()
+    const minM = MIN_ACERTOS[bolaoAtual.loteria || 'mega'] ?? 4
     const msgs: Record<string, string> = {
       ganhamos:     `🏆 GANHAMOS! ${res.maior_premio} — ${res.total_premiadas} aposta(s) premiada(s)`,
-      nao_premiada: `😔 Não premiada — nenhuma aposta com 4 ou mais acertos`,
+      nao_premiada: `😔 Não premiada — nenhuma aposta com ${minM} ou mais acertos`,
     }
     setConferirMsg(msgs[res.status] || `Status: ${res.status}`)
     onBoloesChange()
