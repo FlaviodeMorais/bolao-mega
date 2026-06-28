@@ -17,10 +17,14 @@
   position: relative;
   overflow: hidden;
   background: linear-gradient(180deg, #0d2044 0%, #091629 60%, #06090f 100%);
-  padding: 40px 24px 32px;
+  padding: 32px 24px 28px;
   text-align: center;
   border-radius: 20px;
   border: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
 }
 .header::before {
   content: '';
@@ -39,11 +43,11 @@
   margin-bottom: 20px;
 }
 .headerLogo {
-  width: 150px;
+  width: 72px;
   height: auto;
   display: block;
-  margin: 0 auto 16px;
-  filter: drop-shadow(0 4px 24px rgba(255,184,28,0.5));
+  margin-bottom: 12px;
+  filter: drop-shadow(0 4px 20px rgba(255,184,28,0.5));
   border-radius: 8px;
 }
 .headerTrophy {
@@ -52,20 +56,30 @@
   display: block;
   margin-bottom: 4px;
 }
+.headerLabel {
+  position: relative;
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #FFB81C;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  opacity: 0.85;
+  margin-bottom: 10px;
+}
 .headerComp {
   position: relative;
-  display: inline-block;
-  color: #FFB81C;
-  font-size: 30px;
+  color: #fff;
+  font-size: 26px;
   font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 4px;
-  margin-bottom: 14px;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+  margin-bottom: 10px;
 }
 .headerTitle {
   position: relative;
   color: #fff;
-  font-size: 30px;
+  font-size: 26px;
   font-weight: 800;
   margin: 0 0 10px;
   line-height: 1.15;
@@ -73,16 +87,14 @@
 }
 .headerDesc {
   position: relative;
-  color: #fff;
-  font-size: 30px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 4px;
-  margin: 0 0 24px;
-  line-height: 1.6;
-  max-width: 380px;
-  margin-left: auto;
-  margin-right: auto;
+  color: rgba(255,255,255,0.65);
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  margin: 0;
+  line-height: 1.5;
+  max-width: 360px;
 }
 .headerBadges {
   position: relative;
@@ -791,10 +803,10 @@
 
 /* ── RESPONSIVE ──────────────────────────── */
 @media (max-width: 480px) {
-  .headerTitle { font-size: 22px; }
-  .headerComp { font-size: 20px; letter-spacing: 2px; }
-  .headerDesc { font-size: 16px; letter-spacing: 2px; }
-  .headerLogo { width: 100px; }
+  .headerTitle { font-size: 20px; }
+  .headerComp { font-size: 20px; }
+  .headerDesc { font-size: 13px; }
+  .headerLogo { width: 60px; }
   .headerTrophy { font-size: 40px; }
   .timeBandeira { font-size: 32px; }
   .timeNome { font-size: 12px; }
@@ -806,11 +818,6 @@
   .timeCasa { gap: 6px; }
   .timeVisit { gap: 6px; }
   .badge { font-size: 11px; padding: 5px 12px; }
-
-  /* Header mobile — evita quebra de linha */
-  .headerComp { font-size: 16px; letter-spacing: 1px; white-space: nowrap; }
-  .headerDesc  { font-size: 13px; letter-spacing: 1px; }
-  .headerLogo  { width: 90px; }
 
   /* Header mobile */
   .headerWrap { padding: 0 12px; }
