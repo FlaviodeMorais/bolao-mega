@@ -78,7 +78,8 @@ interface Props {
 }
 
 export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria, valorCota, totalCotas, dezenas: dezenasProp, numApostas: numApostasProp, taxaAdmin: taxaAdminProp, encerrado: encerradoProp }: Props) {
-  const loteriaLabel = getLoteria(loteria).label
+  const loteriaCfg   = getLoteria(loteria)
+  const loteriaLabel = loteriaCfg.label
   // Config do bolão — sempre confirmada pela API antes de liberar a seleção
   const [VALOR_COTA, setValorCota]     = useState(0)
   const [TOTAL_COTAS, setTotalCotas]   = useState(Number(totalCotas) || 20)
@@ -150,13 +151,25 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
   useEffect(() => {
     setConfigOk(false)
 
+    const concursoFetch = loteriaCfg.id !== 'mega'
+      ? fetch(`/api/resultados/${loteriaCfg.apiSlug}`).then(r => r.json()).then(d => {
+          if (!d?.numero) return null
+          const val = d.valorEstimadoProximoConcurso
+          return {
+            concurso: String((d.numero || 0) + 1),
+            data: d.dataProximoConcurso || '',
+            premio: val ? `R$ ${(val / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} mi` : 'Acumulando',
+          }
+        }).catch(() => null)
+      : fetch('/api/concurso-ativo').then(r => r.json())
+
     Promise.all([
-      fetch('/api/concurso-ativo').then(r => r.json()),
+      concursoFetch,
       fetch('/api/boloes').then(r => r.json()),
     ]).then(([ca, d]) => {
       // 1. Concurso
-      setConcursoAtivo(ca)
-      const num = String(ca.concurso || '')
+      if (ca) setConcursoAtivo(ca)
+      const num = String(ca?.concurso || '')
 
       // 2. Config do bolão
       const b = (d.boloes || []).find((x: { slug: string }) => x.slug === bolaoSlug)
@@ -190,11 +203,22 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
   // Revalida config ao focar a aba e a cada 60s
   useEffect(() => {
     const atualizar = () => {
+      const caFetch = loteriaCfg.id !== 'mega'
+        ? fetch(`/api/resultados/${loteriaCfg.apiSlug}`).then(r => r.json()).then(d => {
+            if (!d?.numero) return null
+            const val = d.valorEstimadoProximoConcurso
+            return {
+              concurso: String((d.numero || 0) + 1),
+              data: d.dataProximoConcurso || '',
+              premio: val ? `R$ ${(val / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} mi` : 'Acumulando',
+            }
+          }).catch(() => null)
+        : fetch('/api/concurso-ativo').then(r => r.json())
       Promise.all([
         fetch('/api/boloes').then(r => r.json()),
-        fetch('/api/concurso-ativo').then(r => r.json()),
+        caFetch,
       ]).then(([d, ca]) => {
-        setConcursoAtivo(ca)
+        if (ca) setConcursoAtivo(ca)
         const b = (d.boloes || []).find((x: { slug: string }) => x.slug === bolaoSlug)
         if (!b) return
         setValorCota(Number(b.valor_cota) || 0)
@@ -304,7 +328,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
             <span className="material-icons-round">arrow_back</span>
           </a>
           <div className="header-brand">
-            <span className="brand">MEGA-SENA</span>
+            <span className="brand">{loteriaLabel.toUpperCase()}</span>
           </div>
           <a href="/admin" className="header-link"><span className="material-icons-round">settings</span></a>
         </div>
@@ -315,7 +339,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
           <div className="mega-card">
             <div className="mega-header">
               <TrevoIcon size={24} loteria={loteria ?? 'mega'} />
-              <span className="mega-title">MEGA-SENA</span>
+              <span className="mega-title">{loteriaLabel.toUpperCase()}</span>
               <span className="mega-concurso">Concurso #{concursoAtivo.concurso}</span>
             </div>
             <div className="mega-body">

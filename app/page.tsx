@@ -1,12 +1,19 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import TrevoIcon from '@/components/TrevoIcon'
 const LoteriasCards = dynamic(() => import('@/components/LoteriasCards'), { ssr: false })
 
-interface Bolao { id: string; nome: string; slug: string; ativo: boolean; dezenas: number; num_apostas: number }
+interface Bolao { id: string; nome: string; slug: string; ativo: boolean; dezenas: number; num_apostas: number; loteria?: string }
 interface BolaoEsporte { id: string; nome: string; slug: string; descricao?: string; valor_cota: number }
 interface ConcursoAtivo { concurso: string; data: string; premio: string; ultimoConcurso?: string; ultimoDezenas?: number[] }
+interface SorteioInfo { id: string; label: string; concurso: number; premio: string; data: string; dezenas: number[] }
+
+const LOTERIAS_HOME = [
+  { id: 'mega',      label: 'Mega-Sena',  apiSlug: 'megasena'  },
+  { id: 'quina',     label: 'Quina',      apiSlug: 'quina'     },
+  { id: 'lotofacil', label: 'Lotofácil',  apiSlug: 'lotofacil' },
+]
 
 function useCountdown(dataStr: string) {
   const [texto, setTexto] = useState('')
@@ -31,14 +38,98 @@ function useCountdown(dataStr: string) {
   return texto
 }
 
+function SorteioCard({ s }: { s: SorteioInfo }) {
+  const countdown = useCountdown(s.data)
+  return (
+    <div className="mega-card" style={{ minWidth: 0, flex: '0 0 100%', scrollSnapAlign: 'start' }}>
+      <div className="mega-header">
+        <TrevoIcon size={26} loteria={s.id} />
+        <span className="mega-title">{s.label.toUpperCase()}</span>
+        <span className="mega-concurso">Concurso #{s.concurso}</span>
+      </div>
+      <div className="mega-body">
+        {s.premio && s.premio !== 'Acumulando'
+          ? <div className="mega-prize">{s.premio}</div>
+          : <div className="mega-prize mega-prize-acc">Acumulando</div>
+        }
+        <div className="mega-prize-label">Prêmio estimado</div>
+        {s.data && (
+          <div className="mega-draw-row">
+            <div>
+              <div className="mega-draw-label">Sorteio</div>
+              <div className="mega-draw-date">{s.data}</div>
+            </div>
+            {countdown && (
+              <div className="mega-countdown-box">
+                <div className="mega-draw-label">Faltam</div>
+                <div className="mega-countdown-val">{countdown}</div>
+              </div>
+            )}
+          </div>
+        )}
+        {s.dezenas.length > 0 && (
+          <div className="ultimo-resultado">
+            <div className="ultimo-resultado-label">Último resultado</div>
+            <div className="ultimo-resultado-balls">
+              {s.dezenas.map(n => (
+                <span key={n} className="result-ball">{String(n).padStart(2, '0')}</span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function CarrosselSorteios({ sorteios }: { sorteios: SorteioInfo[] }) {
+  const [ativo, setAtivo] = useState(0)
+  const ref = useRef<HTMLDivElement>(null)
+
+  function scrollTo(i: number) {
+    setAtivo(i)
+    ref.current?.children[i]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
+  }
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const onScroll = () => {
+      const idx = Math.round(el.scrollLeft / el.offsetWidth)
+      setAtivo(idx)
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [])
+
+  if (sorteios.length === 0) return null
+
+  return (
+    <div>
+      <div ref={ref} style={{ display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollbarWidth: 'none', gap: 0 }}>
+        {sorteios.map(s => <SorteioCard key={s.id} s={s} />)}
+      </div>
+      {sorteios.length > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 8, marginBottom: 4 }}>
+          {sorteios.map((s, i) => (
+            <button key={s.id} onClick={() => scrollTo(i)} style={{
+              width: ativo === i ? 20 : 8, height: 8, borderRadius: 4, border: 'none', cursor: 'pointer',
+              background: ativo === i ? '#009B63' : '#CBD5E1', transition: 'all .25s', padding: 0,
+            }} aria-label={s.label} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Home() {
   const [boloes, setBoloes]               = useState<Bolao[]>([])
   const [boloesEsporte, setBoloesEsporte] = useState<BolaoEsporte[]>([])
   const [concursoAtivo, setConcursoAtivo] = useState<ConcursoAtivo | null>(null)
   const [loading, setLoading]             = useState(true)
   const [host, setHost]                   = useState('')
-
-  const countdown = useCountdown(concursoAtivo?.data || '')
+  const [sorteios, setSorteios]           = useState<SorteioInfo[]>([])
 
   const carregar = useCallback((inicial = false) => {
     Promise.all([
@@ -62,7 +153,35 @@ export default function Home() {
     return () => { clearInterval(id); window.removeEventListener('focus', onFocus) }
   }, [carregar])
 
-  const dezenas = concursoAtivo?.ultimoDezenas || []
+  // Carrega info dos sorteios de cada loteria em paralelo
+  useEffect(() => {
+    Promise.all(
+      LOTERIAS_HOME.map(l =>
+        fetch(`/api/resultados/${l.apiSlug}`).then(r => r.json()).catch(() => null)
+      )
+    ).then(results => {
+      const lista: SorteioInfo[] = []
+      LOTERIAS_HOME.forEach((l, i) => {
+        const d = results[i]
+        if (!d || !d.numero) return
+        const val = d.valorEstimadoProximoConcurso
+        const premio = val
+          ? `R$ ${(val / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} mi`
+          : 'Acumulando'
+        lista.push({
+          id:      l.id,
+          label:   l.label,
+          concurso: (d.numero || 0) + 1,
+          premio,
+          data:    d.dataProximoConcurso || '',
+          dezenas: d.dezenasSorteadas || [],
+        })
+      })
+      setSorteios(lista)
+    })
+  }, [])
+
+  const boloesAtivos = boloes.filter(b => b.ativo)
 
   return (
     <div className="page-wrap">
@@ -75,8 +194,11 @@ export default function Home() {
         </a>
       </div>
 
-      {/* Hero */}
-      {concursoAtivo?.concurso && (
+      {/* Carrossel de Sorteios */}
+      <CarrosselSorteios sorteios={sorteios} />
+
+      {/* Fallback: card concurso ativo (enquanto carrossel carrega) */}
+      {sorteios.length === 0 && concursoAtivo?.concurso && (
         <div className="mega-card">
           <div className="mega-header">
             <TrevoIcon size={26} />
@@ -89,35 +211,6 @@ export default function Home() {
               : <div className="mega-prize mega-prize-acc">Acumulando</div>
             }
             <div className="mega-prize-label">Prêmio estimado</div>
-
-            {concursoAtivo.data && (
-              <div className="mega-draw-row">
-                <div>
-                  <div className="mega-draw-label">Sorteio</div>
-                  <div className="mega-draw-date">{concursoAtivo.data}</div>
-                </div>
-                {countdown && (
-                  <div className="mega-countdown-box">
-                    <div className="mega-draw-label">Faltam</div>
-                    <div className="mega-countdown-val">{countdown}</div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Último resultado */}
-            {dezenas.length === 6 && (
-              <div className="ultimo-resultado">
-                <div className="ultimo-resultado-label">
-                  Último resultado — Concurso #{concursoAtivo.ultimoConcurso}
-                </div>
-                <div className="ultimo-resultado-balls">
-                  {dezenas.map(n => (
-                    <span key={n} className="result-ball">{String(n).padStart(2, '0')}</span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -129,14 +222,14 @@ export default function Home() {
 
           {loading && <div className="p-empty">Carregando...</div>}
 
-          {!loading && boloes.filter(b => b.ativo).length === 0 && (
+          {!loading && boloesAtivos.length === 0 && (
             <div className="p-empty">
               Nenhum bolão disponível no momento.<br/>
               Aguarde o administrador criar um.
             </div>
           )}
 
-          {boloes.filter(b => b.ativo).map(b => (
+          {boloesAtivos.map(b => (
             <a key={b.id} href={`/${b.slug}`} className="bolao-link-card">
               <div className="blc-info">
                 <div className="blc-nome">{b.nome}</div>
