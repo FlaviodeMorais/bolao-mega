@@ -425,7 +425,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
         </div>
       </div>
 
-      {/* ── Carrossel de jogos ── */}
+      {/* ── Carrossel de jogos + CTA ── */}
       {step === 'form' && (
         <JogosCarrossel
           jogos={jogosDisponiveis}
@@ -434,6 +434,13 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
           preenchidos={preenchidos}
           styles={styles}
         />
+      )}
+      {step === 'form' && !cadastrando && jogosDisponiveis.length > 0 && (
+        <div className={styles.ctaWrap}>
+          <button type="button" className={styles.btnConfirmar} onClick={() => setCadastrando(true)}>
+            {logado ? `⚽ Continuar como ${nome.split(' ')[0]}` : '⚽ Quero Participar'}
+          </button>
+        </div>
       )}
 
       {/* ── Momentos FIFA ── */}
@@ -477,15 +484,6 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
           </div>
         </div>
       </div>
-
-      {/* ── CTA topo ── */}
-      {step === 'form' && !cadastrando && jogosDisponiveis.length > 0 && (
-        <div className={styles.ctaWrap}>
-          <button type="button" className={styles.btnConfirmar} onClick={() => setCadastrando(true)}>
-            {logado ? `⚽ Continuar como ${nome.split(' ')[0]}` : '⚽ Quero Participar'}
-          </button>
-        </div>
-      )}
 
       <div className={styles.card}>
 
