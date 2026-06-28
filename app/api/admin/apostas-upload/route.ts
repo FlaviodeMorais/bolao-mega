@@ -5,19 +5,30 @@ import { getLoteria } from '@/lib/loterias'
 
 export const runtime = 'nodejs'
 
-// Parser dinâmico — respeita a quantidade de dezenas e o range válido da loteria
-function parseBets(text: string, dezenas: number, maxNum: number): number[][] {
-  const bets: number[][] = []
+// Parser dinâmico — detecta automaticamente dezenas por linha dentro do range válido da loteria
+function parseBets(text: string, dezenasConfig: number, maxNum: number, minDezenas: number, maxDezenas: number): { bets: number[][], dezenasPorAposta: number } {
   const lines = text.split(/[\r\n]+/)
+  const candidatas: number[][] = []
+
   for (const line of lines) {
+    if (!line.trim()) continue
     const nums = (line.match(/\b\d{1,2}\b/g) || [])
       .map(Number)
       .filter(n => n >= 1 && n <= maxNum)
-    if (nums.length === dezenas) {
-      bets.push(nums)
+    if (nums.length >= minDezenas && nums.length <= maxDezenas) {
+      candidatas.push(nums)
     }
   }
-  return bets
+
+  if (candidatas.length === 0) return { bets: [], dezenasPorAposta: dezenasConfig }
+
+  // Detecta o tamanho mais frequente entre as linhas válidas
+  const freq: Record<number, number> = {}
+  for (const c of candidatas) freq[c.length] = (freq[c.length] || 0) + 1
+  const tamanhoDetectado = Number(Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0])
+
+  const bets = candidatas.filter(c => c.length === tamanhoDetectado)
+  return { bets, dezenasPorAposta: tamanhoDetectado }
 }
 
 function parseTransacao(text: string) {
@@ -76,15 +87,15 @@ export async function POST(req: NextRequest) {
   const { data: bolao } = await supabase
     .from('boloes').select('dezenas, num_apostas, loteria').eq('id', bolaoId).single()
 
-  const dezenasPorAposta = bolao?.dezenas || 6
   const cfg              = getLoteria(bolao?.loteria)
   const maxNum           = cfg.totalNumeros
+  const dezenasConfig    = bolao?.dezenas || cfg.minDezenas
 
-  const bets = parseBets(text, dezenasPorAposta, maxNum)
+  const { bets, dezenasPorAposta } = parseBets(text, dezenasConfig, maxNum, cfg.minDezenas, cfg.maxDezenas)
   if (bets.length === 0) {
     return NextResponse.json({
-      error: `Nenhuma aposta encontrada com ${dezenasPorAposta} dezenas por linha (${cfg.label}, números 1–${maxNum}). `
-           + `Verifique se cada linha contém exatamente ${dezenasPorAposta} números separados por espaço.`,
+      error: `Nenhuma aposta encontrada (${cfg.label}, números 1–${maxNum}). `
+           + `Cada linha deve conter entre ${cfg.minDezenas} e ${cfg.maxDezenas} números separados por espaço.`,
     }, { status: 422 })
   }
 

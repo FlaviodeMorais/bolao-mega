@@ -202,8 +202,8 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
             <div className={styles.apostasModalTitle}>📊 Carregar Apostas</div>
             <p className={styles.apostasModalDesc}>
               Cole abaixo o texto com os números das apostas.<br />
-              Formato aceito: <strong>{bolao.dezenas ?? 6} números por linha</strong>, separados por espaço — ex:{' '}
-              <code>{Array.from({ length: bolao.dezenas ?? 6 }, (_, i) => String(i + 1).padStart(2, '0')).join(' ')}</code>
+              Formato aceito: <strong>{loteriaCfg.minDezenas}–{loteriaCfg.maxDezenas} números por linha</strong> ({loteriaCfg.label}), separados por espaço — ex:{' '}
+              <code>{Array.from({ length: loteriaCfg.minDezenas }, (_, i) => String(i + 1).padStart(2, '0')).join(' ')}</code>
             </p>
             <textarea
               className={styles.apostasTextarea}
