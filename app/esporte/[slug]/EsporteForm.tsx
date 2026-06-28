@@ -361,16 +361,24 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
             <div className={styles.headerInfo}>
               <span className={styles.headerLabel}>FIFA World Cup 2026</span>
               <div className={styles.headerComp}>
-                {bolao.nome.split(/\s+vs\.?\s+/i).map((time, i, arr) => {
-                  const iso = getFlagCode(time)
-                  return (
-                    <span key={i}>
-                      {iso && <span className={`fi fi-${iso} ${styles.headerFlag}`} />}
-                      {time}
-                      {i < arr.length - 1 && <span className={styles.headerVs}> vs </span>}
-                    </span>
-                  )
-                })}
+                {(() => {
+                  const times = bolao.nome.split(/\s+vs\.?\s+/i)
+                  if (times.length === 2) {
+                    const [casa, fora] = times
+                    const isoCasa = getFlagCode(casa)
+                    const isoFora = getFlagCode(fora)
+                    return (
+                      <>
+                        {isoCasa && <span className={`fi fi-${isoCasa} ${styles.headerFlag}`} />}
+                        <span>{casa}</span>
+                        <span className={styles.headerVs}>vs</span>
+                        <span>{fora}</span>
+                        {isoFora && <span className={`fi fi-${isoFora} ${styles.headerFlag}`} />}
+                      </>
+                    )
+                  }
+                  return <span>{bolao.nome}</span>
+                })()}
               </div>
             </div>
           </div>
