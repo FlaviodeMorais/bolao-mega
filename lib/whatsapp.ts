@@ -1,14 +1,15 @@
-const WHAPI_URL   = 'https://gate.whapi.cloud'
-const WHAPI_TOKEN = process.env.WHAPI_TOKEN || ''
-const GROUP_ID    = process.env.WHAPI_GROUP_ID || ''
+import { getWhatsappSettings, getAppSettings } from './settings'
+
+const WHAPI_URL = 'https://gate.whapi.cloud'
 
 async function send(endpoint: string, body: object): Promise<{ ok: boolean; erro?: string }> {
-  if (!WHAPI_TOKEN) return { ok: false, erro: 'WHAPI_TOKEN não configurado' }
+  const cfg = await getWhatsappSettings()
+  if (!cfg.token) return { ok: false, erro: 'WHAPI_TOKEN não configurado' }
   try {
     const res = await fetch(`${WHAPI_URL}/${endpoint}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${WHAPI_TOKEN}`,
+        'Authorization': `Bearer ${cfg.token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
@@ -25,9 +26,10 @@ async function send(endpoint: string, body: object): Promise<{ ok: boolean; erro
   }
 }
 
-function toGroup(text: string) {
-  if (!GROUP_ID) return
-  return send('messages/text', { to: GROUP_ID, body: text })
+async function toGroup(text: string) {
+  const cfg = await getWhatsappSettings()
+  if (!cfg.group_id) return
+  return send('messages/text', { to: cfg.group_id, body: text })
 }
 
 async function toNumber(telefone: string, text: string): Promise<{ ok: boolean; erro?: string }> {
@@ -38,16 +40,17 @@ async function toNumber(telefone: string, text: string): Promise<{ ok: boolean; 
 }
 
 export async function verificarNumeroWhatsApp(telefone: string): Promise<boolean> {
-  if (!WHAPI_TOKEN) return true
+  const cfg = await getWhatsappSettings()
+  if (!cfg.token) return true
   try {
     const number = telefone.replace(/\D/g, '')
     const full   = number.startsWith('55') ? number : `55${number}`
     const res = await fetch(`${WHAPI_URL}/contacts`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${WHAPI_TOKEN}`, 'Content-Type': 'application/json' },
+      headers: { 'Authorization': `Bearer ${cfg.token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ blocking: 'wait', phones: [full] }),
     })
-    if (!res.ok) return true // se falhar, não bloqueia o cadastro
+    if (!res.ok) return true
     const data = await res.json()
     const contato = Array.isArray(data) ? data[0] : data?.contacts?.[0]
     return contato?.exists !== false
@@ -63,15 +66,15 @@ export async function enviarQRCodePIX(
   pixCode: string,
   bolaoNome: string
 ) {
-  if (!WHAPI_TOKEN || !telefone) return
+  const cfg = await getWhatsappSettings()
+  if (!cfg.token || !telefone) return
   const number = telefone.replace(/\D/g, '')
   const to     = number.startsWith('55') ? `${number}@s.whatsapp.net` : `55${number}@s.whatsapp.net`
   const valorStr = valor.toFixed(2).replace('.', ',')
 
-  // Envia QR Code como imagem
   await fetch(`${WHAPI_URL}/messages/image`, {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${WHAPI_TOKEN}`, 'Content-Type': 'application/json' },
+    headers: { 'Authorization': `Bearer ${cfg.token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       to,
       image: `data:image/png;base64,${qrBase64}`,
@@ -83,7 +86,6 @@ export async function enviarQRCodePIX(
     }),
   }).catch(() => {})
 
-  // Envia código PIX em texto para copiar
   await send('messages/text', {
     to,
     body:
@@ -144,8 +146,12 @@ export async function enviarComprovante(
   )
 }
 
-export async function notificarPagamento(nome: string, cotas: string[], concurso: number, total: number, telefone?: string, participanteId?: string) {
-  const linkComprovante = participanteId ? `\n🔗 Comprovante: https://bolao-mega-zeta.vercel.app/p/${participanteId}` : ''
+export async function notificarPagamento(
+  nome: string, cotas: string[], concurso: number, total: number,
+  telefone?: string, participanteId?: string
+) {
+  const app = await getAppSettings()
+  const linkComprovante = participanteId ? `\n🔗 Comprovante: ${app.url}/p/${participanteId}` : ''
   const msg =
     `💚 *PAGAMENTO CONFIRMADO*\n\n` +
     `👤 *${nome}*\n` +
@@ -178,11 +184,12 @@ export async function notificarResultado(concurso: number, numeros: string[], pr
 }
 
 export async function notificarLembrete(concurso: number, pendentes: number) {
+  const cfg = await getWhatsappSettings()
   await toGroup(
     `⏰ *LEMBRETE DE PAGAMENTO*\n\n` +
     `🎯 Concurso: #${concurso}\n` +
     `⚠️ ${pendentes} pagamento(s) ainda pendente(s)\n\n` +
-    `💳 Prazo: *12:00 do dia do sorteio*\n` +
+    `💳 Prazo: *${cfg.prazo_horario} do dia do sorteio*\n` +
     `_Fale com o administrador para informações de pagamento._`
   )
 }
@@ -244,11 +251,7 @@ export async function notificarAcrescimo(
   )
 }
 
-export async function notificarQuaseLotado(
-  bolaoNome: string,
-  cotasVendidas: number,
-  totalCotas: number
-) {
+export async function notificarQuaseLotado(bolaoNome: string, cotasVendidas: number, totalCotas: number) {
   const pct = Math.round((cotasVendidas / totalCotas) * 100)
   await toGroup(
     `🔥 *BOLÃO QUASE LOTADO!*\n\n` +
@@ -297,10 +300,11 @@ export async function notificarAcertosIndividual(
 }
 
 export async function buscarGrupos(): Promise<{ id: string; name: string }[]> {
-  if (!WHAPI_TOKEN) return []
+  const cfg = await getWhatsappSettings()
+  if (!cfg.token) return []
   try {
     const res = await fetch(`${WHAPI_URL}/groups?count=20`, {
-      headers: { 'Authorization': `Bearer ${WHAPI_TOKEN}` },
+      headers: { 'Authorization': `Bearer ${cfg.token}` },
     })
     const data = await res.json()
     return (data.groups || []).map((g: { id: string; name: string }) => ({

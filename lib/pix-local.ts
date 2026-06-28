@@ -1,6 +1,4 @@
-const PIX_CHAVE  = process.env.PIX_KEY  || ''
-const PIX_NOME   = process.env.PIX_NOME  || 'ADMIN'
-const PIX_CIDADE = process.env.PIX_CIDADE || 'SAO PAULO'
+import { getPagamentoSettings } from './settings'
 
 function emv(tag: string, value: string): string {
   return tag + String(value.length).padStart(2, '0') + value
@@ -18,21 +16,26 @@ function crc16(str: string): string {
   return crc.toString(16).toUpperCase().padStart(4, '0')
 }
 
-export function gerarPixLocal(valor: number, txId: string): string {
-  const mai = emv('00', 'br.gov.bcb.pix') + emv('01', PIX_CHAVE)
+export async function gerarPixLocal(valor: number, txId: string): Promise<string> {
+  const cfg = await getPagamentoSettings()
+  const chave  = cfg.pix_chave
+  const nome   = cfg.pix_nome
+  const cidade = cfg.pix_cidade
+
+  const mai = emv('00', 'br.gov.bcb.pix') + emv('01', chave)
   const adf = emv('05', txId.substring(0, 25))
   let p =
     emv('00', '01') + emv('01', '12') + emv('26', mai) +
     emv('52', '0000') + emv('53', '986') +
     emv('54', valor.toFixed(2)) + emv('58', 'BR') +
-    emv('59', PIX_NOME.substring(0, 25)) + emv('60', PIX_CIDADE.substring(0, 15)) +
+    emv('59', nome.substring(0, 25)) + emv('60', cidade.substring(0, 15)) +
     emv('62', adf)
   p += '6304' + crc16(p + '6304')
   return p
 }
 
 export function gerarTxId(concurso: number): string {
-  return ('MEGA' + concurso + Math.random().toString(36).substring(2, 8))
+  return ('BOLAO' + concurso + Math.random().toString(36).substring(2, 8))
     .toUpperCase()
     .substring(0, 25)
 }

@@ -1,5 +1,6 @@
-const MP_TOKEN = process.env.MP_ACCESS_TOKEN!
-const MP_URL   = 'https://api.mercadopago.com/v1/payments'
+import { getPagamentoSettings } from './settings'
+
+const MP_URL = 'https://api.mercadopago.com/v1/payments'
 
 interface PixResult {
   success: boolean
@@ -16,6 +17,10 @@ export async function criarPixMP(
   nome: string
 ): Promise<PixResult> {
   try {
+    const cfg   = await getPagamentoSettings()
+    const token = cfg.mp_access_token
+    if (!token) return { success: false, error: 'MP_ACCESS_TOKEN não configurado' }
+
     const nomes     = nome.split(' ')
     const firstName = nomes[0]
     const lastName  = nomes.slice(1).join(' ') || nomes[0]
@@ -23,15 +28,19 @@ export async function criarPixMP(
     const res = await fetch(MP_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${MP_TOKEN}`,
-        'Content-Type': 'application/json',
+        'Authorization':     `Bearer ${token}`,
+        'Content-Type':      'application/json',
         'X-Idempotency-Key': crypto.randomUUID(),
       },
       body: JSON.stringify({
         transaction_amount: valor,
-        description: `Bolao Mega Conc.${concurso} Cotas:${cotas.join(',')}`,
+        description: `Bolao Conc.${concurso} Cotas:${cotas.join(',')}`,
         payment_method_id: 'pix',
-        payer: { email: 'pagador@bolao.com', first_name: firstName, last_name: lastName },
+        payer: {
+          email:      cfg.pix_email_payer,
+          first_name: firstName,
+          last_name:  lastName,
+        },
       }),
     })
 
@@ -52,8 +61,9 @@ export async function criarPixMP(
 }
 
 export async function buscarPagamentoMP(paymentId: string) {
+  const cfg = await getPagamentoSettings()
   const res = await fetch(`${MP_URL}/${paymentId}`, {
-    headers: { 'Authorization': `Bearer ${MP_TOKEN}` },
+    headers: { 'Authorization': `Bearer ${cfg.mp_access_token}` },
   })
   return res.json()
 }

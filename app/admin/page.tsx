@@ -18,6 +18,7 @@ import KpiDashboard from '@/components/admin/KpiDashboard'
 import HistoricoPanel from '@/components/admin/HistoricoPanel'
 import BolaoDetailPanel from '@/components/admin/BolaoDetailPanel'
 import IngerirHistorico from '@/components/admin/IngerirHistorico'
+import AdminSettings from '@/components/admin/AdminSettings'
 
 import type { Bolao } from '@/hooks/admin/useBoloes'
 import type { Concurso } from '@/hooks/admin/useConcurso'
@@ -41,6 +42,13 @@ export default function AdminPage() {
   const [logado, setLogado]     = useState(false)
   const [senha, setSenha]       = useState('')
   const [errLogin, setErrLogin] = useState('')
+  const [grupoNome, setGrupoNome] = useState('BOLÃO 💯')
+
+  useEffect(() => {
+    fetch('/api/config-publica').then(r => r.json()).then(d => {
+      if (d?.app?.grupo_nome) setGrupoNome(d.app.grupo_nome)
+    }).catch(() => {})
+  }, [])
 
   // WhatsApp health (inline — pequeno e sem domínio próprio)
   const [waStatus, setWaStatus] = useState<'ok' | 'erro' | ''>('')
@@ -235,6 +243,7 @@ export default function AdminPage() {
       errLogin={errLogin}
       onSenhaChange={setSenha}
       onLogin={login}
+      grupoNome={grupoNome}
     />
   )
 
@@ -435,6 +444,9 @@ export default function AdminPage() {
 
         {/* ── FERRAMENTAS ── */}
         <IngerirHistorico />
+
+        {/* ── CONFIGURAÇÕES WHITE-LABEL ── */}
+        <AdminSettings />
 
         {/* ── SEGURANÇA ── */}
         <AdminSenha />

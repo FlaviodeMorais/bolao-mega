@@ -233,10 +233,29 @@ function MomentosCarousel() {
   )
 }
 
+interface PremiacaoItem { lugar: number; emoji: string; label: string; categoria: string; pts: number; pct: number }
+
+const PREMIACAO_DEFAULT: PremiacaoItem[] = [
+  { lugar: 1, emoji: '🏆', label: '1º lugar', categoria: 'Acertou o Placar e o Vencedor', pts: 5, pct: 40 },
+  { lugar: 2, emoji: '🥈', label: '2º lugar', categoria: 'Acertou o Vencedor',            pts: 3, pct: 30 },
+  { lugar: 3, emoji: '🥉', label: '3º lugar', categoria: 'Acertou o Placar',              pts: 2, pct: 20 },
+]
+
+const TACA_VARIANT: Record<number, 'gold'|'silver'|'bronze'> = { 1: 'gold', 2: 'silver', 3: 'bronze' }
+const LUGAR_COR:   Record<number, string>                    = { 1: '#FFB81C', 2: '#C0C0C0', 3: '#CD7F32' }
+const PTS_COR:     Record<number, string>                    = { 1: 'gold',   2: 'green',  3: 'blue' }
+
 export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
   const [step, setStep]         = useState<'form'|'pix'|'ok'>('form')
   const [cadastrando, setCadastrando] = useState(false)
   const [logado, setLogado]     = useState(false)
+  const [premiacao, setPremiacao] = useState<PremiacaoItem[]>(PREMIACAO_DEFAULT)
+
+  useEffect(() => {
+    fetch('/api/config-publica').then(r => r.json()).then(d => {
+      if (d?.esporte?.premiacao?.length) setPremiacao(d.esporte.premiacao)
+    }).catch(() => {})
+  }, [])
   const [nome, setNome]         = useState('')
   const [telefone, setTelefone] = useState('')
   const [email, setEmail]       = useState('')
@@ -446,43 +465,23 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
       {/* ── Momentos FIFA ── */}
       <MomentosCarousel />
 
-      {/* ── Premiação — 3 banners ── */}
+      {/* ── Premiação — banners dinâmicos ── */}
       <div className={styles.premiacaoWrap}>
-        <div className={styles.premiacaoBanner} data-place="1">
-          <TacaFifa variant="gold" />
-          <div className={styles.premiacaoInfo}>
-            <span className={styles.premiacaoLugar} style={{color:'#FFB81C'}}>🏆 1º lugar</span>
-            <span className={styles.premiacaoCategoria}>Acertou o Placar e o Vencedor</span>
+        {premiacao.map(item => (
+          <div key={item.lugar} className={styles.premiacaoBanner} data-place={String(item.lugar)}>
+            <TacaFifa variant={TACA_VARIANT[item.lugar] ?? 'gold'} />
+            <div className={styles.premiacaoInfo}>
+              <span className={styles.premiacaoLugar} style={{color: LUGAR_COR[item.lugar] ?? '#FFB81C'}}>
+                {item.emoji} {item.label}
+              </span>
+              <span className={styles.premiacaoCategoria}>{item.categoria}</span>
+            </div>
+            <div className={styles.premiacaoPremio}>
+              <span className={styles.premiacaoPts} data-color={PTS_COR[item.lugar] ?? 'gold'}>{item.pts} pts</span>
+              <span className={styles.premiacaoPct}>{item.pct}% ÷ acertadores</span>
+            </div>
           </div>
-          <div className={styles.premiacaoPremio}>
-            <span className={styles.premiacaoPts} data-color="gold">5 pts</span>
-            <span className={styles.premiacaoPct}>40% ÷ acertadores</span>
-          </div>
-        </div>
-
-        <div className={styles.premiacaoBanner} data-place="2">
-          <TacaFifa variant="silver" />
-          <div className={styles.premiacaoInfo}>
-            <span className={styles.premiacaoLugar} style={{color:'#C0C0C0'}}>🥈 2º lugar</span>
-            <span className={styles.premiacaoCategoria}>Acertou o Vencedor</span>
-          </div>
-          <div className={styles.premiacaoPremio}>
-            <span className={styles.premiacaoPts} data-color="green">3 pts</span>
-            <span className={styles.premiacaoPct}>30% ÷ acertadores</span>
-          </div>
-        </div>
-
-        <div className={styles.premiacaoBanner} data-place="3">
-          <TacaFifa variant="bronze" />
-          <div className={styles.premiacaoInfo}>
-            <span className={styles.premiacaoLugar} style={{color:'#CD7F32'}}>🥉 3º lugar</span>
-            <span className={styles.premiacaoCategoria}>Acertou o Placar</span>
-          </div>
-          <div className={styles.premiacaoPremio}>
-            <span className={styles.premiacaoPts} data-color="blue">2 pts</span>
-            <span className={styles.premiacaoPct}>20% ÷ acertadores</span>
-          </div>
-        </div>
+        ))}
       </div>
 
       <div className={styles.card}>

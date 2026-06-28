@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
   // Fallback: PIX local
   const txId    = gerarTxId(concurso)
-  const pixCode = gerarPixLocal(total, txId)
+  const pixCode = await gerarPixLocal(total, txId)
   const qrCodeBase64 = await QRCode.toDataURL(pixCode, { width: 300, margin: 1 })
 
   return NextResponse.json({

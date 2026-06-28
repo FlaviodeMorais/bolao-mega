@@ -84,6 +84,13 @@ function ComprovanteContent() {
   const [concurso, setConcurso]           = useState(paramConc || '')
   const [dataSorteio, setDataSorteio]     = useState('')
   const [loading, setLoading]             = useState(true)
+  const [grupoNome, setGrupoNome]         = useState('BOLÃO 💯')
+
+  useEffect(() => {
+    fetch('/api/config-publica').then(r => r.json()).then(d => {
+      if (d?.app?.grupo_nome) setGrupoNome(d.app.grupo_nome)
+    }).catch(() => {})
+  }, [])
 
   const filtroSet = filtroIds ? new Set(filtroIds.split(',')) : null
   const lista = filtroId
@@ -192,7 +199,7 @@ function ComprovanteContent() {
                     <div className={styles.cartaoHeaderLeft}>
                       <TrevoIcon size={32} loteria={bolao?.loteria ?? 'mega'} className={styles.cartaoLogo} />
                       <div>
-                        <div className={styles.cartaoGrupo}>GRUPO MEGA 💯</div>
+                        <div className={styles.cartaoGrupo}>{grupoNome}</div>
                         <div className={styles.cartaoBolao}>{bolao?.nome}</div>
                       </div>
                     </div>

@@ -1,22 +1,29 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import 'flag-icons/css/flag-icons.min.css'
+import { getAppSettings } from '@/lib/settings'
 
-export const metadata: Metadata = {
-  title: 'GRUPO MEGA 💯 – Bolão Mega-Sena',
-  description: 'Bolão da Mega-Sena — Grupo Fechado',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: 'Mega Bolão',
-  },
+export async function generateMetadata(): Promise<Metadata> {
+  const app = await getAppSettings()
+  return {
+    title:       `${app.grupo_nome} – ${app.nome}`,
+    description: app.descricao,
+    appleWebApp: {
+      capable:         true,
+      statusBarStyle:  'black-translucent',
+      title:           app.nome,
+    },
+  }
 }
 
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  themeColor: '#00A651',
+export async function generateViewport(): Promise<Viewport> {
+  const app = await getAppSettings()
+  return {
+    width:         'device-width',
+    initialScale:  1,
+    maximumScale:  1,
+    themeColor:    app.cor_primaria,
+  }
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

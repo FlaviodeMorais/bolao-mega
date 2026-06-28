@@ -8,19 +8,16 @@ interface AdminLoginProps {
   errLogin: string
   onSenhaChange: (senha: string) => void
   onLogin: () => void
+  grupoNome?: string
 }
 
-/**
- * Tela de entrada do painel administrativo.
- * Mantem apenas a UI do login; validacao e criacao de sessao continuam em `app/admin/page.tsx`.
- */
-export default function AdminLogin({ senha, errLogin, onSenhaChange, onLogin }: AdminLoginProps) {
+export default function AdminLogin({ senha, errLogin, onSenhaChange, onLogin, grupoNome = 'BOLÃO 💯' }: AdminLoginProps) {
   return (
     <div className={styles.loginWrap}>
       <div className={styles.loginBox}>
         <div className={styles.loginLogo}><TrevoIcon loteria="mega" size={48} /></div>
         <div className={styles.loginTitle}>Admin</div>
-        <div className={styles.loginSub}>GRUPO MEGA 💯</div>
+        <div className={styles.loginSub}>{grupoNome}</div>
         <input type="password" placeholder="SENHA ADMIN" value={senha}
           onChange={e => onSenhaChange(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && onLogin()}

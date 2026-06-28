@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
           pixCode    = mp.qrCode
           paymentId  = mp.paymentId || paymentId
         } else {
-          pixCode = gerarPixLocal(acrescimo, part.id.slice(0, 25))
+          pixCode = await gerarPixLocal(acrescimo, part.id.slice(0, 25))
         }
       }
 

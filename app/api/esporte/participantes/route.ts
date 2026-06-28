@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     fonte = 'mp'
   } else {
     const txId = gerarTxId(Date.now())
-    pixCode = gerarPixLocal(total, txId)
+    pixCode = await gerarPixLocal(total, txId)
     const qrUrl = await QRCode.toDataURL(pixCode, { width: 300, margin: 1 })
     qrCodeBase64 = qrUrl.replace('data:image/png;base64,', '')
     paymentId = txId

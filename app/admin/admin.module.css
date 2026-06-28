@@ -1995,3 +1995,90 @@
   .esporteResRow { flex-wrap: wrap; }
   .fifaSheet { max-height: 95dvh; }
 }
+
+/* ── SETTINGS WHITE-LABEL ── */
+.settingsSection {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-top: 16px;
+}
+.settingsToggle {
+  width: 100%; padding: 20px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: 15px; font-weight: 700; color: #0D1B2A;
+  text-align: left;
+}
+.settingsToggle:hover { background: #F8FAFB; }
+.settingsBadge {
+  font-size: 11px; font-weight: 600; color: #64748B;
+  background: #F1F5F9; border-radius: 100px; padding: 3px 10px;
+}
+.settingsHeader {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px 0;
+}
+.settingsTitle { font-size: 16px; font-weight: 800; color: #0D1B2A; }
+.settingsClose {
+  background: none; border: none; cursor: pointer;
+  font-size: 18px; color: #94A3B8; padding: 4px 8px; border-radius: 8px;
+}
+.settingsClose:hover { background: #F1F5F9; color: #0D1B2A; }
+.settingsLoading { padding: 32px 24px; color: #64748B; font-size: 14px; }
+.settingsAbas {
+  display: flex; gap: 4px; padding: 16px 24px 0; flex-wrap: wrap;
+}
+.settingsAba {
+  background: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: 13px; font-weight: 600; color: #64748B;
+  padding: 8px 14px; border-radius: 10px; transition: all .15s;
+}
+.settingsAba:hover { background: #F1F5F9; color: #0D1B2A; }
+.settingsAbaAtiva { background: #EEF2FF; color: #4F46E5; }
+.settingsBody { padding: 20px 24px 24px; }
+.settingsGrid {
+  display: flex; flex-direction: column; gap: 14px;
+}
+.settingsField { display: flex; flex-direction: column; gap: 5px; }
+.settingsLabel { font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: .5px; }
+.settingsInput {
+  border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px 14px;
+  font-family: inherit; font-size: 14px; color: #0D1B2A; background: #FAFAFA;
+  outline: none; transition: border-color .15s;
+}
+.settingsInput:focus { border-color: #00A651; background: #fff; }
+.settingsInputSmall {
+  border: 1px solid #E2E8F0; border-radius: 8px; padding: 7px 10px;
+  font-family: inherit; font-size: 13px; color: #0D1B2A; background: #FAFAFA;
+  outline: none; flex: 1;
+}
+.settingsInputSmall:focus { border-color: #00A651; }
+.settingsSave {
+  background: #00A651; color: #fff; border: none; border-radius: 12px;
+  padding: 12px 24px; font-family: inherit; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: background .15s; align-self: flex-start;
+}
+.settingsSave:hover:not(:disabled) { background: #008F44; }
+.settingsSave:disabled { opacity: .5; cursor: not-allowed; }
+.settingsMsg {
+  padding: 12px 24px 16px;
+  font-size: 14px; font-weight: 600;
+  color: #00A651;
+}
+.settingsInfoBox {
+  background: #F8FAFB; border: 1px solid #E2E8F0; border-radius: 12px;
+  padding: 16px; display: flex; flex-direction: column; gap: 12px;
+}
+.settingsInfoBox b { font-size: 13px; font-weight: 700; color: #0D1B2A; }
+.settingsInfoBox p { font-size: 12px; color: #64748B; margin: 0; }
+.settingsPremiacaoRow {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.settingsPremiacaoLugar {
+  font-size: 13px; font-weight: 700; color: #0D1B2A; min-width: 80px;
+}
+.settingsPremiacaoFields {
+  display: flex; gap: 8px; flex: 1; flex-wrap: wrap;
+}

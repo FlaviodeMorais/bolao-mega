@@ -1,23 +1,32 @@
 import nodemailer from 'nodemailer'
-
-const GMAIL_USER = process.env.EMAIL_GMAIL_USER || ''
-const GMAIL_PASS = process.env.EMAIL_GMAIL_PASS || ''
-const FROM_NAME  = process.env.EMAIL_FROM_NAME  || 'Bolão Mega'
-const ADMIN      = process.env.EMAIL_ADMIN      || ''
-
-function criarTransport() {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: GMAIL_USER, pass: GMAIL_PASS },
-  })
-}
+import { getEmailSettings } from './settings'
 
 async function send(to: string, subject: string, html: string) {
-  if (!GMAIL_USER || !GMAIL_PASS) return { ok: false, erro: 'EMAIL_GMAIL_USER ou EMAIL_GMAIL_PASS não configurado' }
+  const cfg = await getEmailSettings()
+  if (!cfg.ativo) return { ok: false, erro: 'Email desativado nas configurações' }
   if (!to) return { ok: false, erro: 'E-mail não informado' }
+
+  if (cfg.provider === 'resend' && cfg.resend_key) {
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${cfg.resend_key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: `${cfg.from_name} <noreply@resend.dev>`, to, subject, html }),
+      })
+      if (!res.ok) return { ok: false, erro: `Resend ${res.status}` }
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, erro: String(err) }
+    }
+  }
+
+  if (!cfg.gmail_user || !cfg.gmail_pass) return { ok: false, erro: 'Credenciais de e-mail não configuradas' }
   try {
-    const transport = criarTransport()
-    await transport.sendMail({ from: `"${FROM_NAME}" <${GMAIL_USER}>`, to, subject, html })
+    const transport = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: cfg.gmail_user, pass: cfg.gmail_pass },
+    })
+    await transport.sendMail({ from: `"${cfg.from_name}" <${cfg.gmail_user}>`, to, subject, html })
     return { ok: true }
   } catch (err) {
     console.error('[Email]', err)
@@ -25,7 +34,7 @@ async function send(to: string, subject: string, html: string) {
   }
 }
 
-// ── Layout padrão — tema claro, brand Caixa ─────────────────────────────
+// ── Layout padrão ─────────────────────────────────────────────────────────────
 function layout(titulo: string, corpo: string, loteriaLabel = 'Mega-Sena') {
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -66,15 +75,10 @@ function stat(label: string, valor: string, cor = '#00AB67') {
   </tr>`
 }
 
-// ── PIX gerado — envia código e instruções ─────────────────────────────────
+// ── PIX gerado ─────────────────────────────────────────────────────────────────
 export async function enviarPixEmail(
-  email: string,
-  nome: string,
-  valor: number,
-  pixCode: string,
-  bolaoNome: string,
-  cotas: string[],
-  loteriaLabel = 'Mega-Sena'
+  email: string, nome: string, valor: number, pixCode: string,
+  bolaoNome: string, cotas: string[], loteriaLabel = 'Mega-Sena'
 ) {
   const valorStr = `R$ ${valor.toFixed(2).replace('.', ',')}`
   const corpo = `
@@ -82,22 +86,18 @@ export async function enviarPixEmail(
       Olá <strong style="color:#0D1B2A;">${nome}</strong>! Sua inscrição foi registrada.<br>
       Efetue o pagamento via PIX para confirmar sua participação.
     </p>
-
     <div style="background:#F0FDF4;border:1.5px solid #00AB67;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
       <div style="color:#64748B;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Valor a pagar</div>
       <div style="color:#00AB67;font-size:28px;font-weight:800;">${valorStr}</div>
     </div>
-
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
       ${stat('Bolão', bolaoNome, '#0D1B2A')}
       ${stat('Suas cotas', cotas.map(c => `Nº ${c}`).join(' · '), '#0D1B2A')}
     </table>
-
     <div style="background:#F8FAFB;border:1px solid #E2E8F0;border-radius:10px;padding:16px;margin-bottom:24px;">
       <div style="color:#94A3B8;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Código PIX — Copia e Cola</div>
       <div style="color:#0D1B2A;font-size:11px;word-break:break-all;font-family:monospace;line-height:1.6;">${pixCode}</div>
     </div>
-
     <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:14px;">
       <div style="color:#D97706;font-size:13px;font-weight:600;">⚠️ Atenção</div>
       <div style="color:#78716C;font-size:13px;margin-top:6px;line-height:1.5;">
@@ -109,17 +109,11 @@ export async function enviarPixEmail(
   return send(email, `🔑 PIX gerado — ${bolaoNome}`, layout('Código PIX para pagamento', corpo, loteriaLabel))
 }
 
-// ── Pagamento confirmado / Comprovante ────────────────────────────────────
+// ── Pagamento confirmado ───────────────────────────────────────────────────────
 export async function enviarConfirmacaoPagamento(
-  email: string,
-  nome: string,
-  cotas: string[],
-  total: number,
-  concurso: number,
-  bolaoNome: string,
-  numApostas: number,
-  dezenas: number,
-  loteriaLabel = 'Mega-Sena'
+  email: string, nome: string, cotas: string[], total: number,
+  concurso: number, bolaoNome: string, numApostas: number,
+  dezenas: number, loteriaLabel = 'Mega-Sena'
 ) {
   const valorStr = `R$ ${total.toFixed(2).replace('.', ',')}`
   const corpo = `
@@ -128,7 +122,6 @@ export async function enviarConfirmacaoPagamento(
       <h2 style="color:#0D1B2A;margin:12px 0 4px;font-size:20px;">Pagamento confirmado!</h2>
       <p style="color:#64748B;margin:0;font-size:14px;">Você está participando do bolão. Boa sorte!</p>
     </div>
-
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
       ${stat('Participante', nome, '#0D1B2A')}
       ${stat('Bolão', bolaoNome, '#0D1B2A')}
@@ -137,7 +130,6 @@ export async function enviarConfirmacaoPagamento(
       ${stat('Apostas', `${numApostas} apostas · ${dezenas} dezenas`, '#0D1B2A')}
       ${stat('Valor pago', valorStr)}
     </table>
-
     <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px;text-align:center;">
       <div style="color:#475569;font-size:13px;line-height:1.6;">
         🏆 Em caso de premiação, você será notificado por e-mail.<br>
@@ -148,16 +140,10 @@ export async function enviarConfirmacaoPagamento(
   return send(email, `✅ Comprovante de participação — ${bolaoNome}`, layout('Comprovante de Participação', corpo, loteriaLabel))
 }
 
-// ── Resultado do sorteio ──────────────────────────────────────────────────
+// ── Resultado do sorteio ──────────────────────────────────────────────────────
 export async function enviarResultado(
-  email: string,
-  nome: string,
-  concurso: number,
-  numeros: string[],
-  ganhou: boolean,
-  bolaoNome: string,
-  premioIndividual?: number,
-  loteriaLabel = 'Mega-Sena'
+  email: string, nome: string, concurso: number, numeros: string[],
+  ganhou: boolean, bolaoNome: string, premioIndividual?: number, loteriaLabel = 'Mega-Sena'
 ) {
   const corpo = ganhou && premioIndividual ? `
     <div style="text-align:center;margin-bottom:28px;">
@@ -192,15 +178,10 @@ export async function enviarResultado(
   return send(email, assunto, layout('Resultado do Sorteio', corpo, loteriaLabel))
 }
 
-// ── Lembrete de pagamento pendente ─────────────────────────────────────────
+// ── Lembrete de pagamento pendente ─────────────────────────────────────────────
 export async function enviarLembrete(
-  email: string,
-  nome: string,
-  cotas: string[],
-  concurso: number,
-  bolaoNome: string,
-  pixCode?: string,
-  loteriaLabel = 'Mega-Sena'
+  email: string, nome: string, cotas: string[], concurso: number,
+  bolaoNome: string, pixCode?: string, loteriaLabel = 'Mega-Sena'
 ) {
   const corpo = `
     <p style="color:#475569;font-size:15px;margin:0 0 20px;">
@@ -223,15 +204,10 @@ export async function enviarLembrete(
   return send(email, `⏰ Lembrete — pagamento pendente #${concurso}`, layout('Lembrete de Pagamento', corpo, loteriaLabel))
 }
 
-// ── Acréscimo (encerramento com cotas sobrando) ────────────────────────────
+// ── Acréscimo (encerramento) ───────────────────────────────────────────────────
 export async function enviarAcrescimo(
-  email: string,
-  nome: string,
-  cotas: string[],
-  acrescimo: number,
-  pixCode: string,
-  bolaoNome: string,
-  loteriaLabel = 'Mega-Sena'
+  email: string, nome: string, cotas: string[], acrescimo: number,
+  pixCode: string, bolaoNome: string, loteriaLabel = 'Mega-Sena'
 ) {
   const valorStr = `R$ ${acrescimo.toFixed(2).replace('.', ',')}`
   const corpo = `
@@ -255,15 +231,12 @@ export async function enviarAcrescimo(
   return send(email, `🔔 Complemento de pagamento — ${bolaoNome}`, layout('Complemento de Pagamento', corpo, loteriaLabel))
 }
 
-// ── Notifica admin sobre nova inscrição ───────────────────────────────────
+// ── Notifica admin sobre nova inscrição ───────────────────────────────────────
 export async function notificarAdminInscricao(
-  nome: string,
-  cotas: string[],
-  total: number,
-  concurso: number,
-  telefone: string
+  nome: string, cotas: string[], total: number, concurso: number, telefone: string
 ) {
-  if (!ADMIN) return { ok: false, erro: 'EMAIL_ADMIN não configurado' }
+  const cfg = await getEmailSettings()
+  if (!cfg.admin_email) return { ok: false, erro: 'EMAIL_ADMIN não configurado' }
   const corpo = `
     <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:20px;margin-bottom:20px;">
       <div style="color:#64748B;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Nova inscrição</div>
@@ -272,9 +245,9 @@ export async function notificarAdminInscricao(
     <table width="100%" cellpadding="0" cellspacing="0">
       ${stat('Telefone', telefone, '#0D1B2A')}
       ${stat('Cotas', cotas.map(c => `Nº ${c}`).join(' · '), '#0D1B2A')}
-      ${stat('Total', `R$ ${total.toFixed(2).replace('.', ',')}` )}
+      ${stat('Total', `R$ ${total.toFixed(2).replace('.', ',')}`)}
       ${stat('Concurso', `#${concurso}`, '#0D1B2A')}
     </table>
   `
-  return send(ADMIN, `✅ Nova inscrição — ${nome}`, layout('Nova Inscrição', corpo))
+  return send(cfg.admin_email, `✅ Nova inscrição — ${nome}`, layout('Nova Inscrição', corpo))
 }
