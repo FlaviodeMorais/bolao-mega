@@ -29,8 +29,8 @@ function TacaFifa({ variant }: { variant: 'gold' | 'silver' | 'bronze' }) {
     <img
       src="/FIFA-2026-World-Cup-White-Logo.png"
       alt="Troféu"
-      width={80}
-      height={96}
+      width={77}
+      height={93}
       style={{
         objectFit: 'contain',
         filter: TACA_FILTER[variant],
