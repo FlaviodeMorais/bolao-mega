@@ -1,5 +1,3 @@
-'use client'
-
 // Cores oficiais por loteria — Manual de Identidade Visual Loterias CAIXA
 const CORES: Record<string, { corA: string; corB: string }> = {
   mega:      { corA: '#009B63', corB: '#00AB67' },
