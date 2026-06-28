@@ -89,7 +89,11 @@ export default function AdminPage() {
   const excluir                = parts.excluir
   const salvarApostas  = () => bolaoAtual && parts.salvarApostas(bolaoAtual.id, carregarBoloes)
   const removerApostas = () => bolaoAtual && parts.removerApostas(bolaoAtual.id, carregarBoloes)
-  const inserirApostasGeradas = (texto: string) => bolaoAtual && parts.salvarApostasDirecto(texto, bolaoAtual.id, carregarBoloes)
+  const inserirApostasGeradas = (texto: string) => {
+    if (!bolaoAtual) return
+    setApostasTexto(texto)
+    setShowApostasModal(true)
+  }
   const encerrarBolao  = () => bolaoAtual && parts.encerrarBolao(bolaoAtual.id, bolaoAtual.slug)
 
   // BolaoDetailPanel — conferência
