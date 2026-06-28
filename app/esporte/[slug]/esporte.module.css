@@ -162,6 +162,81 @@
   font-weight: 800;
 }
 
+/* ── PÓDIO DE PREMIAÇÃO ──────────────────── */
+.podioWrap {
+  max-width: 600px;
+  margin: 24px auto 0;
+  padding: 0 16px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+}
+.podioCard {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  background: #0d1c2e;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-bottom: none;
+  border-radius: 16px 16px 0 0;
+  padding: 16px 10px 20px;
+}
+/* Alturas do pódio: 1º mais alto, 2º médio, 3º mais baixo */
+.podioCard[data-place="1"] { padding-top: 28px; min-height: 220px; background: #0f2035; border-color: rgba(255,184,28,0.2); }
+.podioCard[data-place="2"] { min-height: 175px; }
+.podioCard[data-place="3"] { min-height: 145px; }
+
+/* Step (degrau) na base */
+.podioCard::after {
+  content: attr(data-place) 'º';
+  display: block;
+  position: absolute;
+  bottom: -28px;
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.3);
+}
+.podioLugar {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.podioCategoria {
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+  font-weight: 500;
+  line-height: 1.35;
+}
+.podioPts {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 800;
+}
+.podioPts[data-color="gold"]  { color: #FFB81C; }
+.podioPts[data-color="green"] { color: #00C46A; }
+.podioPts[data-color="blue"]  { color: #60a5fa; }
+.podioPct {
+  font-size: 10px;
+  color: rgba(255,255,255,0.35);
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Degraus na base do pódio */
+.podioWrap::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 16px; right: 16px;
+  height: 4px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 0 0 8px 8px;
+}
+
 /* ── PONTUAÇÃO BAR ───────────────────────── */
 .pontuacaoBar {
   display: flex;
