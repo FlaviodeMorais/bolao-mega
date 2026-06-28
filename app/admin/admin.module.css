@@ -1870,6 +1870,48 @@
 /* Form novo bolão */
 .esporteNovoBolaoForm { background: #F8FAFB; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; }
 
+/* ── Calculadora de Arrecadação ── */
+.esporteCalcWrap {
+  background: #F8FAFB; border: 1px solid #E2E8F0; border-radius: 12px;
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;
+}
+.esporteCalcTitle {
+  font-size: 11px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.8px; color: #64748B;
+}
+.esporteCalcGrid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.esporteCalcCard {
+  background: #fff; border: 1px solid #E2E8F0; border-radius: 10px;
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 3px;
+}
+.esporteCalcCardReal {
+  border-color: rgba(0,155,99,.3); background: #F0FDF4;
+}
+.esporteCalcLabel {
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.7px; color: #94A3B8;
+}
+.esporteCalcCardReal .esporteCalcLabel { color: #059669; }
+.esporteCalcSub  { font-size: 11px; color: #94A3B8; }
+.esporteCalcBruto {
+  font-size: 20px; font-weight: 800; color: #0D1B2A;
+  font-family: 'JetBrains Mono', monospace; margin: 2px 0;
+}
+.esporteCalcCardReal .esporteCalcBruto { color: #009B63; }
+.esporteCalcLiq  { font-size: 11px; color: #64748B; }
+.esporteCalcBar  {
+  height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden;
+}
+.esporteCalcBarFill {
+  height: 100%; background: #009B63; border-radius: 3px;
+  transition: width .4s ease;
+}
+.esporteCalcBarLabel {
+  font-size: 11px; color: #94A3B8;
+}
+
 /* ── Seletor de Jogos FIFA ── */
 .fifaModal {
   position: fixed; inset: 0; z-index: 1000;

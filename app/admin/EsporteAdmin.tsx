@@ -506,6 +506,53 @@ export default function EsporteAdmin() {
                   {editMsg && <span className={styles.esporteImportMsg}>{editMsg}</span>}
                 </div>
               </div>
+
+              {/* ── Calculadora de Arrecadação ── */}
+              {(() => {
+                const valorCota  = Number(bolaoSel.valor_cota)
+                const taxa       = Number(bolaoSel.taxa_admin) / 100
+                const totalCotas = Number(bolaoSel.total_cotas)
+                const pagos      = participantes.filter(p => p.status === 'pago').length
+
+                const prevista      = totalCotas * valorCota
+                const prevLiq       = prevista * (1 - taxa)
+                const real          = pagos * valorCota
+                const realLiq       = real * (1 - taxa)
+                const pct           = totalCotas > 0 ? Math.round((pagos / totalCotas) * 100) : 0
+
+                const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+                return (
+                  <div className={styles.esporteCalcWrap}>
+                    <div className={styles.esporteCalcTitle}>💰 Calculadora de Arrecadação</div>
+                    <div className={styles.esporteCalcGrid}>
+                      <div className={styles.esporteCalcCard}>
+                        <div className={styles.esporteCalcLabel}>Prevista</div>
+                        <div className={styles.esporteCalcSub}>{totalCotas} cotas × {fmt(valorCota)}</div>
+                        <div className={styles.esporteCalcBruto}>{fmt(prevista)}</div>
+                        <div className={styles.esporteCalcLiq}>
+                          Líquido ({100 - bolaoSel.taxa_admin}%): <strong>{fmt(prevLiq)}</strong>
+                        </div>
+                      </div>
+                      <div className={`${styles.esporteCalcCard} ${styles.esporteCalcCardReal}`}>
+                        <div className={styles.esporteCalcLabel}>Real (pagos)</div>
+                        <div className={styles.esporteCalcSub}>{pagos} pago{pagos !== 1 ? 's' : ''} · {pct}% vendido</div>
+                        <div className={styles.esporteCalcBruto}>{fmt(real)}</div>
+                        <div className={styles.esporteCalcLiq}>
+                          Líquido ({100 - bolaoSel.taxa_admin}%): <strong>{fmt(realLiq)}</strong>
+                        </div>
+                      </div>
+                    </div>
+                    <div className={styles.esporteCalcBar}>
+                      <div className={styles.esporteCalcBarFill} style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className={styles.esporteCalcBarLabel}>
+                      {pagos}/{totalCotas} cotas vendidas
+                      {bolaoSel.taxa_admin > 0 && <span> · Taxa admin {bolaoSel.taxa_admin}% = {fmt(real * taxa)} (real) / {fmt(prevista * taxa)} (prevista)</span>}
+                    </div>
+                  </div>
+                )
+              })()}
             </>
           )}
 

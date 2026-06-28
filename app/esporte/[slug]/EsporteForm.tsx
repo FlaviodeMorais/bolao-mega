@@ -376,41 +376,32 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
       {/* ── Momentos FIFA ── */}
       <MomentosCarousel />
 
-      {/* ── Premiação ── */}
-      {(() => {
-        const arrecadacao = 50 * Number(bolao.valor_cota)
-        const liquido = arrecadacao * (1 - Number(bolao.taxa_admin) / 100)
-        const p1 = liquido * 0.60
-        const p2 = liquido * 0.30
-        const p3 = liquido * 0.10
-        return (
-          <div className={styles.pontuacaoBar}>
-            <div className={styles.pontuacaoItem}>
-              <TacaFifa variant="gold" />
-              <div className={styles.pontuacaoTextos}>
-                <span className={styles.pontuacaoTxt}>A maior soma de pontos, leva o 1º Premio!</span>
-                <span className={styles.pontuacaoValor} style={{color:'#FFB81C'}}>{formatReal(p1)}</span>
-              </div>
-            </div>
-            <span className={styles.pontuacaoDiv} />
-            <div className={styles.pontuacaoItem}>
-              <TacaFifa variant="silver" />
-              <div className={styles.pontuacaoTextos}>
-                <span className={styles.pontuacaoTxt}>A segunda maior soma de pontos, leva o 2º Premio!</span>
-                <span className={styles.pontuacaoValor} style={{color:'#C0C0C0'}}>{formatReal(p2)}</span>
-              </div>
-            </div>
-            <span className={styles.pontuacaoDiv} />
-            <div className={styles.pontuacaoItem}>
-              <TacaFifa variant="bronze" />
-              <div className={styles.pontuacaoTextos}>
-                <span className={styles.pontuacaoTxt}>A terceira maior soma de pontos, leva o 3º Premio!</span>
-                <span className={styles.pontuacaoValor} style={{color:'#CD7F32'}}>{formatReal(p3)}</span>
-              </div>
-            </div>
+      {/* ── Premiação — valores definidos pelo administrador ── */}
+      <div className={styles.pontuacaoBar}>
+        <div className={styles.pontuacaoItem}>
+          <TacaFifa variant="gold" />
+          <div className={styles.pontuacaoTextos}>
+            <span className={styles.pontuacaoTxt}>A maior soma de pontos leva o 1º Prêmio!</span>
+            <span className={styles.pontuacaoValor} style={{color:'#FFB81C'}}>🏆 1º lugar</span>
           </div>
-        )
-      })()}
+        </div>
+        <span className={styles.pontuacaoDiv} />
+        <div className={styles.pontuacaoItem}>
+          <TacaFifa variant="silver" />
+          <div className={styles.pontuacaoTextos}>
+            <span className={styles.pontuacaoTxt}>A segunda maior soma de pontos leva o 2º Prêmio!</span>
+            <span className={styles.pontuacaoValor} style={{color:'#C0C0C0'}}>🥈 2º lugar</span>
+          </div>
+        </div>
+        <span className={styles.pontuacaoDiv} />
+        <div className={styles.pontuacaoItem}>
+          <TacaFifa variant="bronze" />
+          <div className={styles.pontuacaoTextos}>
+            <span className={styles.pontuacaoTxt}>A terceira maior soma de pontos leva o 3º Prêmio!</span>
+            <span className={styles.pontuacaoValor} style={{color:'#CD7F32'}}>🥉 3º lugar</span>
+          </div>
+        </div>
+      </div>
 
       {/* ── CTA topo ── */}
       {step === 'form' && !cadastrando && jogosDisponiveis.length > 0 && (
