@@ -1,7 +1,8 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import styles from './admin.module.css'
 
+// ── Tipos ────────────────────────────────────────────────────────────────────
 interface BolaoEsporte {
   id: string; slug: string; nome: string; competicao: string
   valor_cota: number; taxa_admin: number; total_cotas: number
@@ -21,20 +22,218 @@ interface Participante {
   created_at: string; pontos_total?: number
 }
 
+// ── Helpers para parsear dados brutos da FIFA (replicados do backend) ────────
+interface FifaTeam { TeamName?: Array<{ Description: string }>; ShortClubName?: string; Abbreviation?: string; IdCountry?: string }
+interface FifaLocale { Locale: string; Description: string }
+interface FifaMatch { IdMatch: string; Date: string; Home: FifaTeam; Away: FifaTeam; IdGroup: string; MatchNumber: number; StageName?: FifaLocale[]; GroupName?: FifaLocale[] }
+
+const FIFA_TO_ISO: Record<string, string> = {
+  BRA:'br', ARG:'ar', URU:'uy', COL:'co', CHI:'cl', PAR:'py', BOL:'bo', ECU:'ec', PER:'pe', VEN:'ve',
+  MEX:'mx', USA:'us', CAN:'ca', CRC:'cr', PAN:'pa', HON:'hn', SLV:'sv', JAM:'jm', TRI:'tt',
+  GER:'de', FRA:'fr', ESP:'es', POR:'pt', ENG:'gb-eng', ITA:'it', NED:'nl', BEL:'be',
+  CRO:'hr', SRB:'rs', POL:'pl', DEN:'dk', SUI:'ch', AUT:'at', UKR:'ua', HUN:'hu',
+  CZE:'cz', SVK:'sk', ALB:'al', SVN:'si', TUR:'tr', ROU:'ro', GEO:'ge', GRE:'gr',
+  SCO:'gb-sct', WAL:'gb-wls', KOR:'kr', JPN:'jp', PRK:'kp', KSA:'sa', AUS:'au',
+  IRN:'ir', IRQ:'iq', QAT:'qa', CHN:'cn', IDN:'id', NZL:'nz', PHI:'ph', IND:'in',
+  MAR:'ma', SEN:'sn', GHA:'gh', CMR:'cm', TUN:'tn', EGY:'eg', NGA:'ng', MLI:'ml',
+  CPV:'cv', CIV:'ci', RSA:'za', ANG:'ao', ZAM:'zm', BIH:'ba', ISL:'is', FIN:'fi', NOR:'no', SWE:'se',
+  ALG:'dz', NIG:'ne', MOZ:'mz', TAN:'tz', BEN:'bj', GUI:'gn', COD:'cd', CUW:'cw', HAI:'ht', JOR:'jo', UZB:'uz',
+}
+
+const FASE_ORDEM: Record<string, number> = {
+  'Fase de Grupos': 1, 'Segundas de final': 2, 'Oitavas de final': 3,
+  'Quartas de final': 4, 'Semifinal': 5, 'Decisão do 3º lugar': 6, 'Final': 7,
+}
+
+function getNome(team: FifaTeam): string {
+  if (Array.isArray(team?.TeamName) && team.TeamName.length > 0) return team.TeamName[0].Description || ''
+  return team?.ShortClubName || team?.Abbreviation || ''
+}
+function getFasePtBR(stageName?: FifaLocale[]): string {
+  if (!stageName) return 'Fase de Grupos'
+  const pt = stageName.find(s => s.Locale === 'pt-BR')?.Description || stageName[0]?.Description || ''
+  if (pt.toLowerCase().includes('primeira') || pt.toLowerCase().includes('grupo')) return 'Fase de Grupos'
+  return pt || 'Fase de Grupos'
+}
+function getGrupoPtBR(groupName?: FifaLocale[]): string | null {
+  if (!groupName || groupName.length === 0) return null
+  return groupName.find(s => s.Locale === 'pt-BR')?.Description || groupName[0]?.Description || null
+}
+function parseFifaDate(dateStr: string): { data: string; hora: string } {
+  if (!dateStr) return { data: '', hora: '' }
+  const d = new Date(dateStr)
+  const br = new Date(d.getTime() - 3 * 60 * 60 * 1000)
+  return { data: br.toISOString().slice(0, 10), hora: br.toISOString().slice(11, 16) }
+}
+
+// Jogo processado para exibição no seletor
+interface JogoPreview {
+  id: string
+  nomeCasa: string; nomeFora: string
+  isoCasa: string; isoFora: string
+  data: string; hora: string
+  fase: string; grupo: string | null
+  ordem: number
+  raw: FifaMatch  // mantém o dado bruto para enviar ao backend
+}
+
+function processarFifaMatch(j: FifaMatch): JogoPreview | null {
+  const nomeCasa = getNome(j.Home)
+  const nomeFora = getNome(j.Away)
+  if (!nomeCasa || !nomeFora) return null
+  const { data, hora } = parseFifaDate(j.Date)
+  const fase = getFasePtBR(j.StageName)
+  return {
+    id: j.IdMatch,
+    nomeCasa, nomeFora,
+    isoCasa: FIFA_TO_ISO[j.Home?.IdCountry || ''] || '',
+    isoFora: FIFA_TO_ISO[j.Away?.IdCountry || ''] || '',
+    data, hora, fase,
+    grupo: getGrupoPtBR(j.GroupName),
+    ordem: (FASE_ORDEM[fase] || 1) * 1000 + (j.MatchNumber || 0),
+    raw: j,
+  }
+}
+
 function formatData(d?: string) {
   if (!d) return ''
   const [, m, day] = d.split('-')
   return `${day}/${m}`
 }
 
+// ── Seletor de Jogos FIFA ─────────────────────────────────────────────────────
+interface SeletorProps {
+  jogosDisponiveis: JogoPreview[]
+  onConfirmar: (selecionados: FifaMatch[]) => void
+  onFechar: () => void
+}
+
+function SeletorJogosFifa({ jogosDisponiveis, onConfirmar, onFechar }: SeletorProps) {
+  const [sel, setSel]         = useState<Set<string>>(() => new Set(jogosDisponiveis.map(j => j.id)))
+  const [filtro, setFiltro]   = useState('')
+
+  const fases = useMemo(() => {
+    const grupos: Record<string, JogoPreview[]> = {}
+    for (const j of jogosDisponiveis) {
+      if (!grupos[j.fase]) grupos[j.fase] = []
+      grupos[j.fase].push(j)
+    }
+    return Object.entries(grupos).sort((a, b) => (FASE_ORDEM[a[0]] || 9) - (FASE_ORDEM[b[0]] || 9))
+  }, [jogosDisponiveis])
+
+  const filtrado = useMemo(() => {
+    const q = filtro.toLowerCase()
+    if (!q) return jogosDisponiveis
+    return jogosDisponiveis.filter(j =>
+      j.nomeCasa.toLowerCase().includes(q) ||
+      j.nomeFora.toLowerCase().includes(q) ||
+      j.fase.toLowerCase().includes(q) ||
+      (j.grupo || '').toLowerCase().includes(q)
+    )
+  }, [jogosDisponiveis, filtro])
+
+  function toggleJogo(id: string) {
+    setSel(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+  function toggleFase(fase: string, marcar: boolean) {
+    setSel(prev => {
+      const n = new Set(prev)
+      jogosDisponiveis.filter(j => j.fase === fase).forEach(j => marcar ? n.add(j.id) : n.delete(j.id))
+      return n
+    })
+  }
+  function toggleTodos(marcar: boolean) {
+    setSel(marcar ? new Set(jogosDisponiveis.map(j => j.id)) : new Set())
+  }
+
+  function confirmar() {
+    const ids = sel
+    onConfirmar(jogosDisponiveis.filter(j => ids.has(j.id)).map(j => j.raw))
+  }
+
+  const jogosFiltradosPorFase = useMemo(() => {
+    const q = filtro.toLowerCase()
+    if (!q) return fases
+    return fases.map(([fase, jogos]) => [fase, jogos.filter(j =>
+      j.nomeCasa.toLowerCase().includes(q) || j.nomeFora.toLowerCase().includes(q) ||
+      (j.grupo || '').toLowerCase().includes(q)
+    )] as [string, JogoPreview[]]).filter(([, jogos]) => jogos.length > 0)
+  }, [fases, filtro])
+
+  return (
+    <div className={styles.fifaModal} onClick={e => { if (e.target === e.currentTarget) onFechar() }}>
+      <div className={styles.fifaSheet}>
+        <div className={styles.fifaSheetHeader}>
+          <div className={styles.fifaSheetTitle}>
+            <span>🌐 Selecionar Jogos — {jogosDisponiveis.length} disponíveis</span>
+            <button type="button" onClick={onFechar} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94A3B8' }}>✕</button>
+          </div>
+          <div className={styles.fifaSheetControls}>
+            <input
+              className={styles.fifaSearchInput}
+              placeholder="Filtrar por time, fase ou grupo…"
+              value={filtro}
+              onChange={e => setFiltro(e.target.value)}
+            />
+            <button type="button" className={styles.fifaBtnSmall} onClick={() => toggleTodos(true)}>✓ Todos</button>
+            <button type="button" className={styles.fifaBtnSmall} onClick={() => toggleTodos(false)}>✗ Nenhum</button>
+          </div>
+        </div>
+
+        <div className={styles.fifaSheetBody}>
+          {jogosFiltradosPorFase.map(([fase, jogos]) => (
+            <div key={fase} className={styles.fifaFaseGroup}>
+              <div className={styles.fifaFaseHeader}>
+                <span className={styles.fifaFaseTitle}>{fase} ({jogos.length})</span>
+                <div className={styles.fifaFaseBtns}>
+                  <button type="button" className={styles.fifaBtnSmall} onClick={() => toggleFase(fase, true)}>✓ todos</button>
+                  <button type="button" className={styles.fifaBtnSmall} onClick={() => toggleFase(fase, false)}>✗ nenhum</button>
+                </div>
+              </div>
+              {jogos.map(j => (
+                <label key={j.id} className={styles.fifaJogoCheck}>
+                  <input type="checkbox" checked={sel.has(j.id)} onChange={() => toggleJogo(j.id)} />
+                  <div className={styles.fifaJogoTxt}>
+                    <div className={styles.fifaJogoNomes}>
+                      {j.isoCasa && <span className={`fi fi-${j.isoCasa}`} style={{ marginRight: 4 }} />}
+                      {j.nomeCasa}
+                      <span style={{ color: '#94A3B8', margin: '0 6px', fontSize: 11 }}>×</span>
+                      {j.nomeFora}
+                      {j.isoFora && <span className={`fi fi-${j.isoFora}`} style={{ marginLeft: 4 }} />}
+                    </div>
+                    <div className={styles.fifaJogoData}>
+                      {j.grupo ? `Grupo ${j.grupo} · ` : ''}
+                      {j.data ? `${formatData(j.data)} ${j.hora}` : 'Data a definir'}
+                    </div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          ))}
+          {filtrado.length === 0 && <div style={{ color: '#94A3B8', padding: '24px 0', textAlign: 'center', fontSize: 13 }}>Nenhum jogo encontrado para &ldquo;{filtro}&rdquo;</div>}
+        </div>
+
+        <div className={styles.fifaSheetFooter}>
+          <span className={styles.fifaCount}>{sel.size} jogo{sel.size !== 1 ? 's' : ''} selecionado{sel.size !== 1 ? 's' : ''}</span>
+          <button type="button" className={styles.fifaBtnSmall} onClick={onFechar}>Cancelar</button>
+          <button type="button" className={styles.btnFifaImport} onClick={confirmar} disabled={sel.size === 0}>
+            ✅ Importar {sel.size > 0 ? sel.size : ''} jogo{sel.size !== 1 ? 's' : ''}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Componente principal ──────────────────────────────────────────────────────
 export default function EsporteAdmin() {
-  const [boloes, setBoloes]           = useState<BolaoEsporte[]>([])
-  const [bolaoSel, setBolaoSel]       = useState<BolaoEsporte | null>(null)
-  const [jogos, setJogos]             = useState<Jogo[]>([])
-  const [ranking, setRanking]               = useState<RankingPart[]>([])
-  const [participantes, setParticipantes]   = useState<Participante[]>([])
-  const [show, setShow]                     = useState(true)
-  const [aba, setAba]                       = useState<'jogos'|'participantes'|'ranking'|'novo'>('jogos')
+  const [boloes, setBoloes]               = useState<BolaoEsporte[]>([])
+  const [bolaoSel, setBolaoSel]           = useState<BolaoEsporte | null>(null)
+  const [jogos, setJogos]                 = useState<Jogo[]>([])
+  const [ranking, setRanking]             = useState<RankingPart[]>([])
+  const [participantes, setParticipantes] = useState<Participante[]>([])
+  const [show, setShow]                   = useState(true)
+  const [aba, setAba]                     = useState<'jogos'|'participantes'|'ranking'|'novo'>('jogos')
 
   // Form novo bolão
   const [nSlug, setNSlug]   = useState('')
@@ -57,8 +256,12 @@ export default function EsporteAdmin() {
   const [jFase, setJFase]   = useState('Fase de Grupos')
   const [jGrupo, setJGrupo] = useState('')
   const [addingJ, setAddingJ] = useState(false)
-  const [importando, setImportando] = useState(false)
-  const [importMsg, setImportMsg] = useState('')
+
+  // Importação / seletor
+  const [importMsg, setImportMsg]         = useState('')
+  const [importando, setImportando]       = useState(false)
+  const [buscandoFifa, setBuscandoFifa]   = useState(false)
+  const [jogosPreview, setJogosPreview]   = useState<JogoPreview[] | null>(null)
 
   // Editar bolão
   const [editNome, setEditNome]   = useState('')
@@ -69,11 +272,11 @@ export default function EsporteAdmin() {
   const [editMsg, setEditMsg]     = useState('')
 
   // Resultado
-  const [resId, setResId]       = useState('')
-  const [resGC, setResGC]       = useState('')
-  const [resGF, setResGF]       = useState('')
-  const [savingR, setSavingR]   = useState(false)
-  const [resMsg, setResMsg]     = useState('')
+  const [resId, setResId]   = useState('')
+  const [resGC, setResGC]   = useState('')
+  const [resGF, setResGF]   = useState('')
+  const [savingR, setSavingR] = useState(false)
+  const [resMsg, setResMsg]   = useState('')
 
   async function carregar() {
     const d = await fetch('/api/esporte/boloes').then(r => r.json())
@@ -82,12 +285,8 @@ export default function EsporteAdmin() {
 
   async function selBolao(b: BolaoEsporte) {
     setBolaoSel(b)
-    setEditNome(b.nome)
-    setEditValor(String(b.valor_cota))
-    setEditTaxa(String(b.taxa_admin))
-    setEditAtivo(b.ativo)
-    setAba('jogos')
-    setResId('')
+    setEditNome(b.nome); setEditValor(String(b.valor_cota)); setEditTaxa(String(b.taxa_admin)); setEditAtivo(b.ativo)
+    setAba('jogos'); setResId('')
     const [jd, rd, pd] = await Promise.all([
       fetch(`/api/esporte/jogos?bolao=${b.slug}`).then(r => r.json()),
       fetch(`/api/esporte/ranking?bolao=${b.slug}`).then(r => r.json()),
@@ -109,9 +308,7 @@ export default function EsporteAdmin() {
     }).then(r => r.json())
     setCriando(false)
     if (res.error) { setErroB(res.error); return }
-    await carregar()
-    setNSlug(''); setNNome(''); setNDesc('')
-    setAba('jogos')
+    await carregar(); setNSlug(''); setNNome(''); setNDesc(''); setAba('jogos')
   }
 
   async function salvarBolao() {
@@ -123,21 +320,15 @@ export default function EsporteAdmin() {
     }).then(r => r.json())
     setSalvando(false)
     if (res.error) { setEditMsg('❌ ' + res.error); return }
-    setEditMsg('✅ Salvo!')
-    setBolaoSel(res.bolao)
-    await carregar()
+    setEditMsg('✅ Salvo!'); setBolaoSel(res.bolao); await carregar()
     setTimeout(() => setEditMsg(''), 3000)
   }
 
   async function excluirBolao() {
     if (!bolaoSel) return
     if (!confirm(`Excluir "${bolaoSel.nome}" e TODOS os seus jogos? Esta ação não pode ser desfeita.`)) return
-    await fetch('/api/esporte/boloes', {
-      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug: bolaoSel.slug }),
-    })
-    setBolaoSel(null)
-    await carregar()
+    await fetch('/api/esporte/boloes', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: bolaoSel.slug }) })
+    setBolaoSel(null); await carregar()
   }
 
   async function addJogo() {
@@ -149,37 +340,48 @@ export default function EsporteAdmin() {
     })
     setAddingJ(false)
     setJCasa(''); setJFora(''); setJBCasa(''); setJBFora(''); setJData(''); setJHora(''); setJGrupo('')
-    await selBolao(bolaoSel)
+    if (bolaoSel) await selBolao(bolaoSel)
   }
 
-  async function importarFifa(sobrescrever = false) {
+  // Passo 1: busca agenda na FIFA e abre o seletor
+  async function abrirSeletor() {
     if (!bolaoSel) return
-    if (sobrescrever && !confirm('Isso vai APAGAR todos os jogos existentes e reimportar da FIFA. Confirma?')) return
-    setImportando(true); setImportMsg('Buscando agenda da FIFA…')
-
+    setBuscandoFifa(true); setImportMsg('Conectando à API da FIFA…')
     try {
-      // 1. Limpa todos os jogos existentes primeiro
-      setImportMsg('Limpando jogos anteriores…')
-      const limpar = await fetch(`/api/esporte/limpar-jogos?bolao=${bolaoSel.slug}`, { method: 'DELETE' })
-      if (!limpar.ok) throw new Error('Falha ao limpar jogos existentes')
-
-      // 2. Busca agenda completa da Copa 2026 na FIFA
-      setImportMsg('Conectando à API da FIFA…')
       const params = new URLSearchParams({ idCompetition: '17', idSeason: '285023', count: '200', language: 'pt' })
       const r = await fetch(`https://api.fifa.com/api/v3/calendar/matches?${params}`)
       if (!r.ok) throw new Error(`FIFA API retornou ${r.status}`)
       const d = await r.json()
-      const todos = (d.Results || [])
-      setImportMsg(`${todos.length} jogos encontrados. Salvando futuros…`)
+      const agora = new Date()
+      const futuros = (d.Results || [] as FifaMatch[])
+        .filter((j: FifaMatch) => j.Date && new Date(j.Date) > agora)
+        .map(processarFifaMatch)
+        .filter((j: JogoPreview | null): j is JogoPreview => j !== null)
+        .sort((a: JogoPreview, b: JogoPreview) => a.ordem - b.ordem)
+      setImportMsg('')
+      setJogosPreview(futuros)
+    } catch (e) {
+      setImportMsg('❌ Erro ao buscar jogos: ' + String(e))
+    }
+    setBuscandoFifa(false)
+  }
 
-      // Envia para o backend salvar
+  // Passo 2: confirma os jogos selecionados e importa
+  async function importarSelecionados(selecionados: FifaMatch[]) {
+    if (!bolaoSel) return
+    setJogosPreview(null)
+    setImportando(true); setImportMsg(`Salvando ${selecionados.length} jogos…`)
+    try {
+      // Limpa jogos existentes
+      await fetch(`/api/esporte/limpar-jogos?bolao=${bolaoSel.slug}`, { method: 'DELETE' })
+
       const res = await fetch('/api/esporte/importar-jogos', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bolao_slug: bolaoSel.slug, sobrescrever, jogos: todos }),
+        body: JSON.stringify({ bolao_slug: bolaoSel.slug, sobrescrever: true, jogos: selecionados }),
       }).then(r => r.json())
 
       if (res.ok) {
-        setImportMsg(`✅ ${res.importados} jogos importados (${res.ignorados} já existiam de ${res.total} total)`)
+        setImportMsg(`✅ ${res.importados} jogo${res.importados !== 1 ? 's' : ''} importado${res.importados !== 1 ? 's' : ''} com sucesso`)
         await selBolao(bolaoSel)
       } else {
         setImportMsg('❌ ' + (res.error || 'Erro ao salvar'))
@@ -188,7 +390,7 @@ export default function EsporteAdmin() {
       setImportMsg('❌ Erro: ' + String(e))
     }
     setImportando(false)
-    setTimeout(() => setImportMsg(''), 8000)
+    setTimeout(() => setImportMsg(''), 6000)
   }
 
   async function delJogo(id: string) {
@@ -227,6 +429,15 @@ export default function EsporteAdmin() {
         </button>
       </div>
 
+      {/* Modal de seleção de jogos FIFA */}
+      {jogosPreview && (
+        <SeletorJogosFifa
+          jogosDisponiveis={jogosPreview}
+          onConfirmar={importarSelecionados}
+          onFechar={() => setJogosPreview(null)}
+        />
+      )}
+
       {show && (
         <div className={styles.esporteWrap}>
 
@@ -237,7 +448,7 @@ export default function EsporteAdmin() {
                 className={`${styles.esporteBolaoBtn} ${bolaoSel?.slug === b.slug ? styles.esporteBolaoBtnAtivo : ''}`}
                 onClick={() => selBolao(b)}>
                 <div className={styles.esporteBolaoBtnNome}>{b.nome}</div>
-                <div className={styles.esporteBolaoBtnMeta}>{b.competicao} · R$ {Number(b.valor_cota).toFixed(2).replace('.',',')}</div>
+                <div className={styles.esporteBolaoBtnMeta}>{b.competicao} · R$ {Number(b.valor_cota).toFixed(2).replace('.', ',')}</div>
               </button>
             ))}
             <button type="button" className={styles.btnAcao} onClick={() => { setAba('novo'); setBolaoSel(null) }}>
@@ -245,7 +456,7 @@ export default function EsporteAdmin() {
             </button>
           </div>
 
-          {/* Tabs quando há bolão selecionado */}
+          {/* Tabs */}
           {bolaoSel && (
             <>
               <div className={styles.esporteTabs}>
@@ -268,7 +479,7 @@ export default function EsporteAdmin() {
               {/* Editar bolão */}
               <div className={styles.esporteEditWrap}>
                 <div className={styles.esporteEditRow}>
-                  <div style={{flex:2}}>
+                  <div style={{ flex: 2 }}>
                     <div className={styles.configLabel}>Nome do bolão</div>
                     <input value={editNome} onChange={e => setEditNome(e.target.value)} className={styles.configInput} />
                   </div>
@@ -280,9 +491,9 @@ export default function EsporteAdmin() {
                     <div className={styles.configLabel}>Taxa admin (%)</div>
                     <input type="number" value={editTaxa} onChange={e => setEditTaxa(e.target.value)} className={styles.configInput} />
                   </div>
-                  <div style={{display:'flex',alignItems:'center',gap:6,paddingTop:18}}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 18 }}>
                     <input type="checkbox" id="editAtivo" checked={editAtivo} onChange={e => setEditAtivo(e.target.checked)} />
-                    <label htmlFor="editAtivo" className={styles.configLabel} style={{margin:0}}>Ativo</label>
+                    <label htmlFor="editAtivo" className={styles.configLabel} style={{ margin: 0 }}>Ativo</label>
                   </div>
                 </div>
                 <div className={styles.esporteEditBtns}>
@@ -304,24 +515,23 @@ export default function EsporteAdmin() {
 
               {/* Importar da FIFA */}
               <div className={styles.esporteImportWrap}>
-                <button type="button" className={styles.btnAcao} onClick={() => importarFifa(false)} disabled={importando}>
-                  {importando ? 'Importando…' : '🌐 Importar agenda FIFA 2026'}
-                </button>
-                <button type="button" className={styles.btnPerigo} onClick={() => importarFifa(true)} disabled={importando}>
-                  ↺ Reimportar (apaga tudo)
+                <button type="button" className={styles.btnAcao}
+                  onClick={abrirSeletor}
+                  disabled={buscandoFifa || importando}>
+                  {buscandoFifa ? 'Buscando jogos…' : '🌐 Selecionar jogos FIFA 2026'}
                 </button>
                 {importMsg && <div className={styles.esporteImportMsg}>{importMsg}</div>}
               </div>
 
-              {/* Lista */}
-              {jogos.length === 0 && <div className={styles.empty}>Nenhum jogo cadastrado ainda.</div>}
+              {/* Lista de jogos */}
+              {jogos.length === 0 && <div className={styles.empty}>Nenhum jogo cadastrado. Use "Selecionar jogos FIFA 2026" para importar.</div>}
               {jogos.map(j => (
                 <div key={j.id} className={`${styles.esporteJogoRow} ${j.encerrado ? styles.esporteJogoEncerrado : ''} ${resId === j.id ? styles.esporteJogoSelecionado : ''}`}>
                   <div className={styles.esporteJogoInfo}>
                     <div className={styles.esporteJogoTimes}>
-                      <span>{j.bandeira_casa && <span className={`fi fi-${j.bandeira_casa}`} style={{marginRight:4}} />}{j.time_casa}</span>
+                      <span>{j.bandeira_casa && <span className={`fi fi-${j.bandeira_casa}`} style={{ marginRight: 4 }} />}{j.time_casa}</span>
                       <span className={styles.esporteJogoVs}>×</span>
-                      <span>{j.time_fora}{j.bandeira_fora && <span className={`fi fi-${j.bandeira_fora}`} style={{marginLeft:4}} />}</span>
+                      <span>{j.time_fora}{j.bandeira_fora && <span className={`fi fi-${j.bandeira_fora}`} style={{ marginLeft: 4 }} />}</span>
                       {j.encerrado && j.gol_casa !== null && (
                         <span className={styles.esporteJogoResultado}>{j.gol_casa}–{j.gol_fora}</span>
                       )}
@@ -347,7 +557,7 @@ export default function EsporteAdmin() {
               {resId && jogoResSel && (
                 <div className={styles.esporteResPanel}>
                   <div className={styles.esporteResTitulo}>
-                    Lançar resultado — <span className={`fi fi-${jogoResSel.bandeira_casa}`} style={{marginRight:3}} />{jogoResSel.time_casa} × {jogoResSel.time_fora} <span className={`fi fi-${jogoResSel.bandeira_fora}`} style={{marginLeft:3}} />
+                    Lançar resultado — <span className={`fi fi-${jogoResSel.bandeira_casa}`} style={{ marginRight: 3 }} />{jogoResSel.time_casa} × {jogoResSel.time_fora} <span className={`fi fi-${jogoResSel.bandeira_fora}`} style={{ marginLeft: 3 }} />
                   </div>
                   <div className={styles.esporteResRow}>
                     <input type="number" min={0} max={99} value={resGC} onChange={e => setResGC(e.target.value)} placeholder="0" className={styles.esporteGolInput} />
@@ -364,14 +574,14 @@ export default function EsporteAdmin() {
                 </div>
               )}
 
-              {/* Form adicionar jogo */}
+              {/* Form adicionar jogo manualmente */}
               <div className={styles.esporteAddJogoForm}>
-                <div className={styles.esporteFormTitle}>+ Adicionar jogo</div>
+                <div className={styles.esporteFormTitle}>+ Adicionar jogo manualmente</div>
                 <div className={styles.esporteFormGrid2}>
                   <input value={jCasa} onChange={e => setJCasa(e.target.value)} placeholder="Time casa (ex: Brasil)" className={styles.configInput} />
                   <input value={jFora} onChange={e => setJFora(e.target.value)} placeholder="Time fora (ex: México)" className={styles.configInput} />
-                  <input value={jBCasa} onChange={e => setJBCasa(e.target.value)} placeholder="Bandeira casa 🇧🇷" className={styles.configInput} />
-                  <input value={jBFora} onChange={e => setJBFora(e.target.value)} placeholder="Bandeira fora 🇲🇽" className={styles.configInput} />
+                  <input value={jBCasa} onChange={e => setJBCasa(e.target.value)} placeholder="Bandeira casa (ex: br)" className={styles.configInput} />
+                  <input value={jBFora} onChange={e => setJBFora(e.target.value)} placeholder="Bandeira fora (ex: mx)" className={styles.configInput} />
                   <input type="date" value={jData} onChange={e => setJData(e.target.value)} className={styles.configInput} />
                   <input type="time" value={jHora} onChange={e => setJHora(e.target.value)} className={styles.configInput} />
                   <input value={jFase} onChange={e => setJFase(e.target.value)} placeholder="Fase" className={styles.configInput} />
@@ -389,14 +599,14 @@ export default function EsporteAdmin() {
             <div className={styles.esportePartWrap}>
               <div className={styles.esportePartHeader}>
                 <span>{participantes.length} inscrito{participantes.length !== 1 ? 's' : ''}</span>
-                <span style={{color:'#00C46A'}}>{participantes.filter(p=>p.status==='pago').length} pagos</span>
-                <span style={{color:'#f87171'}}>{participantes.filter(p=>p.status==='aguardando').length} aguardando</span>
+                <span style={{ color: '#00C46A' }}>{participantes.filter(p => p.status === 'pago').length} pagos</span>
+                <span style={{ color: '#f87171' }}>{participantes.filter(p => p.status === 'aguardando').length} aguardando</span>
               </div>
               {participantes.length === 0
                 ? <div className={styles.empty}>Nenhum participante ainda.</div>
                 : participantes.map(p => {
                   const dt = new Date(p.created_at)
-                  const dataFmt = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})
+                  const dataFmt = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
                   return (
                     <div key={p.id} className={styles.esportePartRow}>
                       <div className={styles.esportePartInfo}>
@@ -408,16 +618,13 @@ export default function EsporteAdmin() {
                         <span className={`${styles.esportePartStatus} ${p.status === 'pago' ? styles.esportePartPago : styles.esportePartAguardando}`}>
                           {p.status === 'pago' ? '✅ Pago' : '⏳ Aguardando'}
                         </span>
-                        <span className={styles.esportePartValor}>R$ {Number(p.total).toFixed(2).replace('.',',')}</span>
+                        <span className={styles.esportePartValor}>R$ {Number(p.total).toFixed(2).replace('.', ',')}</span>
                         {p.status !== 'pago' && (
-                          <button
-                            type="button"
-                            className={styles.btnConfirmarPag}
+                          <button type="button" className={styles.btnConfirmarPag}
                             onClick={async () => {
                               if (!confirm(`Confirmar pagamento em dinheiro de ${p.nome}?`)) return
                               await fetch(`/api/esporte/participantes/${p.id}`, {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
+                                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ status: 'pago' }),
                               })
                               const pd = await fetch(`/api/esporte/participantes?bolao=${bolaoSel!.slug}&admin=1`).then(r => r.json())
@@ -458,7 +665,7 @@ export default function EsporteAdmin() {
             <div className={styles.esporteNovoBolaoForm}>
               <div className={styles.esporteFormTitle}>Novo bolão esportivo</div>
               <div className={styles.esporteFormGrid1}>
-                <input value={nSlug} onChange={e => setNSlug(e.target.value.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''))} placeholder="slug (ex: copa-2026)" className={styles.configInput} />
+                <input value={nSlug} onChange={e => setNSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''))} placeholder="slug (ex: copa-2026)" className={styles.configInput} />
                 <input value={nNome} onChange={e => setNNome(e.target.value)} placeholder="Nome do bolão" className={styles.configInput} />
                 <input value={nDesc} onChange={e => setNDesc(e.target.value)} placeholder="Descrição (opcional)" className={styles.configInput} />
                 <input value={nComp} onChange={e => setNComp(e.target.value)} placeholder="Competição" className={styles.configInput} />

@@ -1870,8 +1870,86 @@
 /* Form novo bolão */
 .esporteNovoBolaoForm { background: #F8FAFB; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; }
 
+/* ── Seletor de Jogos FIFA ── */
+.fifaModal {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,.45);
+  display: flex; align-items: flex-end;
+}
+.fifaSheet {
+  width: 100%; max-height: 92dvh;
+  background: #fff; border-radius: 20px 20px 0 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.fifaSheetHeader {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid #E2E8F0;
+  display: flex; flex-direction: column; gap: 10px;
+  flex-shrink: 0;
+}
+.fifaSheetTitle {
+  font-size: 15px; font-weight: 800; color: #0D1B2A;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.fifaSheetControls {
+  display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+}
+.fifaSearchInput {
+  flex: 1; min-width: 160px;
+  padding: 7px 12px; border: 1px solid #E2E8F0; border-radius: 8px;
+  font-size: 13px; font-family: inherit; color: #0D1B2A;
+}
+.fifaSearchInput:focus { outline: none; border-color: #005DA9; }
+.fifaBtnSmall {
+  padding: 6px 12px; border-radius: 8px; border: 1px solid #E2E8F0;
+  font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+  background: #F8FAFB; color: #0D1B2A; white-space: nowrap;
+  transition: background .15s;
+}
+.fifaBtnSmall:hover { background: #E2E8F0; }
+.fifaSheetBody { flex: 1; overflow-y: auto; padding: 0 20px 8px; }
+.fifaFaseGroup { margin: 12px 0; }
+.fifaFaseHeader {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0 6px;
+  position: sticky; top: 0; background: #fff; z-index: 1;
+  border-bottom: 1px solid #F1F5F9;
+}
+.fifaFaseTitle {
+  font-size: 11px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.8px; color: #005DA9;
+}
+.fifaFaseBtns { display: flex; gap: 4px; }
+.fifaJogoCheck {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid #F8FAFB;
+  cursor: pointer;
+}
+.fifaJogoCheck:hover { background: #F8FAFB; margin: 0 -4px; padding-left: 4px; padding-right: 4px; border-radius: 6px; }
+.fifaJogoCheck input[type="checkbox"] {
+  width: 16px; height: 16px; flex-shrink: 0; accent-color: #005DA9; cursor: pointer;
+}
+.fifaJogoTxt { flex: 1; min-width: 0; }
+.fifaJogoNomes { font-size: 13px; font-weight: 600; color: #0D1B2A; }
+.fifaJogoData { font-size: 11px; color: #94A3B8; margin-top: 1px; }
+.fifaSheetFooter {
+  padding: 12px 20px; border-top: 1px solid #E2E8F0;
+  display: flex; gap: 8px; flex-shrink: 0; align-items: center;
+}
+.fifaCount { font-size: 13px; color: #64748B; flex: 1; }
+.btnFifaImport {
+  background: #005DA9; color: #fff; border: none;
+  border-radius: 10px; padding: 10px 20px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: background .15s; white-space: nowrap;
+}
+.btnFifaImport:hover:not(:disabled) { background: #004A87; }
+.btnFifaImport:disabled { opacity: .4; cursor: not-allowed; }
+
 @media (max-width: 600px) {
   .esporteFormGrid2 { grid-template-columns: 1fr; }
   .esporteFormGrid3 { grid-template-columns: 1fr; }
   .esporteResRow { flex-wrap: wrap; }
+  .fifaSheet { max-height: 95dvh; }
 }
