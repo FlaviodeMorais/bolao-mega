@@ -531,17 +531,6 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
           </div>
         )}
 
-        {/* ── CTA: Quero Participar ── */}
-        {step === 'form' && !cadastrando && jogosDisponiveis.length > 0 && (
-          <button
-            type="button"
-            className={styles.btnConfirmar}
-            onClick={() => setCadastrando(true)}
-          >
-            ⚽ Quero Participar
-          </button>
-        )}
-
         {/* ── Botão confirmar ── */}
         {step === 'form' && cadastrando && (
           <button
