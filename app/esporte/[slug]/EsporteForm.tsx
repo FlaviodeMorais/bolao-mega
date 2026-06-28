@@ -425,6 +425,17 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
         </div>
       </div>
 
+      {/* ── Carrossel de jogos ── */}
+      {step === 'form' && (
+        <JogosCarrossel
+          jogos={jogosDisponiveis}
+          palpites={palpites}
+          setPalpite={setPalpite}
+          preenchidos={preenchidos}
+          styles={styles}
+        />
+      )}
+
       {/* ── Momentos FIFA ── */}
       <MomentosCarousel />
 
@@ -466,17 +477,6 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
           </div>
         </div>
       </div>
-
-      {/* ── Carrossel de jogos ── */}
-      {step === 'form' && (
-        <JogosCarrossel
-          jogos={jogosDisponiveis}
-          palpites={palpites}
-          setPalpite={setPalpite}
-          preenchidos={preenchidos}
-          styles={styles}
-        />
-      )}
 
       {/* ── CTA topo ── */}
       {step === 'form' && !cadastrando && jogosDisponiveis.length > 0 && (
