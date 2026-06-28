@@ -446,33 +446,42 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
       {/* ── Momentos FIFA ── */}
       <MomentosCarousel />
 
-      {/* ── Pódio de Premiação ── */}
-      <div className={styles.podioWrap}>
-        {/* 2º — esquerda */}
-        <div className={styles.podioCard} data-place="2">
-          <TacaFifa variant="silver" />
-          <span className={styles.podioLugar} style={{color:'#C0C0C0'}}>🥈 2º lugar</span>
-          <span className={styles.podioCategoria}>Acertou o Vencedor</span>
-          <span className={styles.podioPts} data-color="green">3 pts</span>
-          <span className={styles.podioPct}>30% ÷ acertadores</span>
-        </div>
-
-        {/* 1º — centro (mais alto) */}
-        <div className={styles.podioCard} data-place="1">
+      {/* ── Premiação — 3 banners ── */}
+      <div className={styles.premiacaoWrap}>
+        <div className={styles.premiacaoBanner} data-place="1">
           <TacaFifa variant="gold" />
-          <span className={styles.podioLugar} style={{color:'#FFB81C'}}>🏆 1º lugar</span>
-          <span className={styles.podioCategoria}>Acertou o Placar e o Vencedor</span>
-          <span className={styles.podioPts} data-color="gold">5 pts</span>
-          <span className={styles.podioPct}>40% ÷ acertadores</span>
+          <div className={styles.premiacaoInfo}>
+            <span className={styles.premiacaoLugar} style={{color:'#FFB81C'}}>🏆 1º lugar</span>
+            <span className={styles.premiacaoCategoria}>Acertou o Placar e o Vencedor</span>
+          </div>
+          <div className={styles.premiacaoPremio}>
+            <span className={styles.premiacaoPts} data-color="gold">5 pts</span>
+            <span className={styles.premiacaoPct}>40% ÷ acertadores</span>
+          </div>
         </div>
 
-        {/* 3º — direita */}
-        <div className={styles.podioCard} data-place="3">
+        <div className={styles.premiacaoBanner} data-place="2">
+          <TacaFifa variant="silver" />
+          <div className={styles.premiacaoInfo}>
+            <span className={styles.premiacaoLugar} style={{color:'#C0C0C0'}}>🥈 2º lugar</span>
+            <span className={styles.premiacaoCategoria}>Acertou o Vencedor</span>
+          </div>
+          <div className={styles.premiacaoPremio}>
+            <span className={styles.premiacaoPts} data-color="green">3 pts</span>
+            <span className={styles.premiacaoPct}>30% ÷ acertadores</span>
+          </div>
+        </div>
+
+        <div className={styles.premiacaoBanner} data-place="3">
           <TacaFifa variant="bronze" />
-          <span className={styles.podioLugar} style={{color:'#CD7F32'}}>🥉 3º lugar</span>
-          <span className={styles.podioCategoria}>Acertou o Placar</span>
-          <span className={styles.podioPts} data-color="blue">2 pts</span>
-          <span className={styles.podioPct}>20% ÷ acertadores</span>
+          <div className={styles.premiacaoInfo}>
+            <span className={styles.premiacaoLugar} style={{color:'#CD7F32'}}>🥉 3º lugar</span>
+            <span className={styles.premiacaoCategoria}>Acertou o Placar</span>
+          </div>
+          <div className={styles.premiacaoPremio}>
+            <span className={styles.premiacaoPts} data-color="blue">2 pts</span>
+            <span className={styles.premiacaoPct}>20% ÷ acertadores</span>
+          </div>
         </div>
       </div>
 
