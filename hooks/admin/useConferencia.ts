@@ -27,6 +27,13 @@ export function useConferencia(
 
   useEffect(() => () => { if (autoRef.current) clearInterval(autoRef.current) }, [])
 
+  // Quando apostas são carregadas, limpa msg de erro de "sem apostas" para não ficar mensagem contraditória
+  useEffect(() => {
+    if (bolaoAtual?.apostas_data) {
+      setConferirMsg(prev => prev.includes('aposta') && prev.startsWith('❌') ? '' : prev)
+    }
+  }, [(bolaoAtual as { apostas_data?: unknown } | null)?.apostas_data])
+
   function limparAutoRef() {
     if (autoRef.current) { clearInterval(autoRef.current); autoRef.current = null }
   }
