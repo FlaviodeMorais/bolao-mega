@@ -360,45 +360,44 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
         {bolao.descricao && <p className={styles.headerDesc}>{bolao.descricao}</p>}
       </div>
 
-      {/* ── Sistema de Pontuação ── */}
-      <div className={styles.pontuacaoInfo}>
-        <div className={styles.pontuacaoRegra}>
-          <span className={styles.pontuacaoTextoRegra}>Acertou o Vencedor e o Placar do Jogo = <strong>5 Pontos</strong></span>
-        </div>
-        <div className={styles.pontuacaoRegra}>
-          <span className={styles.pontuacaoTextoRegra}>Acertou o Vencedor do Jogo = <strong>3 Pontos</strong></span>
-        </div>
-        <div className={styles.pontuacaoRegra}>
-          <span className={styles.pontuacaoTextoRegra}>Acertou o Placar do Jogo = <strong>2 Pontos</strong></span>
-        </div>
-      </div>
-
       {/* ── Momentos FIFA ── */}
       <MomentosCarousel />
 
-      {/* ── Premiação — valores definidos pelo administrador ── */}
+      {/* ── Pontuação + Premiação unificadas ── */}
       <div className={styles.pontuacaoBar}>
         <div className={styles.pontuacaoItem}>
           <TacaFifa variant="gold" />
           <div className={styles.pontuacaoTextos}>
-            <span className={styles.pontuacaoTxt}>A maior soma de pontos leva o 1º Prêmio!</span>
             <span className={styles.pontuacaoValor} style={{color:'#FFB81C'}}>🏆 1º lugar</span>
+            <span className={styles.pontuacaoTxt}>Acertou o Placar <em>e</em> o Vencedor</span>
+            <span className={styles.pontuacaoTxt}>
+              <span className={styles.pontuacaoPts} data-color="gold">5 pts</span>
+              <em> · 40% do prêmio ÷ acertadores</em>
+            </span>
           </div>
         </div>
         <span className={styles.pontuacaoDiv} />
         <div className={styles.pontuacaoItem}>
           <TacaFifa variant="silver" />
           <div className={styles.pontuacaoTextos}>
-            <span className={styles.pontuacaoTxt}>A segunda maior soma de pontos leva o 2º Prêmio!</span>
             <span className={styles.pontuacaoValor} style={{color:'#C0C0C0'}}>🥈 2º lugar</span>
+            <span className={styles.pontuacaoTxt}>Acertou o Vencedor</span>
+            <span className={styles.pontuacaoTxt}>
+              <span className={styles.pontuacaoPts} data-color="green">3 pts</span>
+              <em> · 30% do prêmio ÷ acertadores</em>
+            </span>
           </div>
         </div>
         <span className={styles.pontuacaoDiv} />
         <div className={styles.pontuacaoItem}>
           <TacaFifa variant="bronze" />
           <div className={styles.pontuacaoTextos}>
-            <span className={styles.pontuacaoTxt}>A terceira maior soma de pontos leva o 3º Prêmio!</span>
             <span className={styles.pontuacaoValor} style={{color:'#CD7F32'}}>🥉 3º lugar</span>
+            <span className={styles.pontuacaoTxt}>Acertou o Placar</span>
+            <span className={styles.pontuacaoTxt}>
+              <span className={styles.pontuacaoPts} data-color="blue">2 pts</span>
+              <em> · 20% do prêmio ÷ acertadores</em>
+            </span>
           </div>
         </div>
       </div>

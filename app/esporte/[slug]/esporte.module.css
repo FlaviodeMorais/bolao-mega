@@ -165,9 +165,10 @@
 }
 .pontuacaoPts {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 20px;
+  font-size: 13px;
   font-weight: 800;
   white-space: nowrap;
+  display: inline;
 }
 .pontuacaoPts[data-color="gold"]  { color: #FFB81C; }
 .pontuacaoPts[data-color="green"] { color: #00C46A; }
