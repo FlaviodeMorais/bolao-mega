@@ -98,11 +98,11 @@
 .headerDesc {
   position: relative;
   color: rgba(255,255,255,0.55);
-  font-size: 13px;
+  font-size: 24px;
   font-weight: 500;
   letter-spacing: 0;
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.4;
   padding-top: 12px;
   border-top: 1px solid rgba(255,255,255,0.07);
   text-align: center;
@@ -689,6 +689,107 @@
 .encIcon { font-size: 56px; margin-bottom: 16px; display: block; }
 .encTitle { color: #e6edf3; font-size: 24px; font-weight: 700; margin-bottom: 8px; }
 .encSub { color: rgba(255,255,255,0.35); font-size: 14px; }
+
+/* ── CARROSSEL DE JOGOS ─────────────────── */
+.jogosCarrosselWrap {
+  max-width: 600px;
+  margin: 16px auto 0;
+  padding: 0 16px;
+}
+.jogosCarrossel {
+  background: #0d1c2e;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+.jogosCarrosselHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.jogosCarrosselTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+.jogosCarrosselCounter {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.4);
+}
+.jogosCarrosselBadgeHoje {
+  font-size: 11px;
+  font-weight: 700;
+  color: #FF6B35;
+  background: rgba(255,107,53,0.12);
+  border-radius: 6px;
+  padding: 3px 10px;
+  margin: 10px 18px 0;
+  display: inline-block;
+}
+.jogosCarrosselTrack {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.jogosCarrosselTrack::-webkit-scrollbar { display: none; }
+.jogosCarrosselSlide {
+  min-width: 100%;
+  scroll-snap-align: start;
+  padding: 0 0 4px;
+}
+.jogosCarrosselFooter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 14px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.jogosCarrosselBtn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 300;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.jogosCarrosselBtn:hover:not(:disabled) { background: rgba(255,255,255,0.12); }
+.jogosCarrosselBtn:disabled { opacity: 0.25; cursor: default; }
+.jogosCarrosselProgressWrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.jogosCarrosselBar {
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.jogosCarrosselBarFill {
+  height: 100%;
+  background: #00C46A;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+.jogosCarrosselProgressLabel {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  text-align: center;
+}
 
 /* ── MOMENTOS FIFA ──────────────────────── */
 .momentosSec {

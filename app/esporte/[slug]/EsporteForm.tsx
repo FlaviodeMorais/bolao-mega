@@ -110,6 +110,65 @@ function formatReal(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
+function JogosCarrossel({ jogos, palpites, setPalpite, preenchidos, styles }: {
+  jogos: Jogo[]
+  palpites: Record<string, Palpite>
+  setPalpite: (id: string, campo: 'gol_casa'|'gol_fora', val: string) => void
+  preenchidos: number
+  styles: StylesMod
+}) {
+  const trackRef = useRef<HTMLDivElement>(null)
+  const [slideAtual, setSlideAtual] = useState(0)
+  const total = jogos.length
+  const hoje = new Date().toISOString().slice(0, 10)
+
+  function irPara(idx: number) {
+    const el = trackRef.current
+    if (!el) return
+    el.scrollTo({ left: idx * el.clientWidth, behavior: 'smooth' })
+    setSlideAtual(idx)
+  }
+
+  function onScroll() {
+    const el = trackRef.current
+    if (!el) return
+    setSlideAtual(Math.round(el.scrollLeft / el.clientWidth))
+  }
+
+  if (total === 0) return null
+
+  return (
+    <div className={styles.jogosCarrosselWrap}>
+      <div className={styles.jogosCarrossel}>
+        <div className={styles.jogosCarrosselHeader}>
+          <span className={styles.jogosCarrosselTitle}>⚽ Seus palpites</span>
+          <span className={styles.jogosCarrosselCounter}>{slideAtual + 1} / {total}</span>
+        </div>
+        <div className={styles.jogosCarrosselTrack} ref={trackRef} onScroll={onScroll}>
+          {jogos.map(jogo => (
+            <div key={jogo.id} className={styles.jogosCarrosselSlide}>
+              {jogo.data_jogo === hoje && (
+                <div className={styles.jogosCarrosselBadgeHoje}>🔥 Jogo de hoje!</div>
+              )}
+              <JogoCard jogo={jogo} palpites={palpites} bloqueado={false} setPalpite={setPalpite} styles={styles} />
+            </div>
+          ))}
+        </div>
+        <div className={styles.jogosCarrosselFooter}>
+          <button className={styles.jogosCarrosselBtn} onClick={() => irPara(Math.max(0, slideAtual - 1))} disabled={slideAtual === 0}>‹</button>
+          <div className={styles.jogosCarrosselProgressWrap}>
+            <div className={styles.jogosCarrosselBar}>
+              <div className={styles.jogosCarrosselBarFill} style={{ width: `${total ? (preenchidos / total) * 100 : 0}%` }} />
+            </div>
+            <span className={styles.jogosCarrosselProgressLabel}>{preenchidos} de {total} palpites preenchidos</span>
+          </div>
+          <button className={styles.jogosCarrosselBtn} onClick={() => irPara(Math.min(total - 1, slideAtual + 1))} disabled={slideAtual === total - 1}>›</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 interface Video { id: string; titulo: string; thumb: string; link: string; data: string }
 
 function MomentosCarousel() {
@@ -408,6 +467,17 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
         </div>
       </div>
 
+      {/* ── Carrossel de jogos ── */}
+      {step === 'form' && (
+        <JogosCarrossel
+          jogos={jogosDisponiveis}
+          palpites={palpites}
+          setPalpite={setPalpite}
+          preenchidos={preenchidos}
+          styles={styles}
+        />
+      )}
+
       {/* ── CTA topo ── */}
       {step === 'form' && !cadastrando && jogosDisponiveis.length > 0 && (
         <div className={styles.ctaWrap}>
@@ -470,47 +540,6 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
             <div style={{ fontSize: 36, marginBottom: 12 }}>⚽</div>
             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, fontWeight: 600 }}>Nenhum jogo disponível no momento</div>
             <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: 12, marginTop: 6 }}>Os jogos serão liberados em breve.</div>
-          </div>
-        )}
-
-        {/* ── Palpites ── */}
-        {step === 'form' && jogosAbertos.length > 0 && (
-          <div className={styles.section}>
-            <div className={styles.sectionTitle}>⚽ Seus palpites</div>
-
-            {/* Jogos de Hoje */}
-            {jogosHoje.length > 0 && (
-              <div className={styles.faseBlock}>
-                <div className={styles.faseHeader}>
-                  <span className={styles.faseLabel} data-urgente="true">🔥 Jogos de Hoje</span>
-                  <span className={styles.faseSubtitle}>Ainda dá tempo de apostar!</span>
-                  <div className={styles.faseLine} />
-                </div>
-                {jogosHoje.map(jogo => <JogoCard key={jogo.id} jogo={jogo} palpites={palpites} bloqueado={false} setPalpite={setPalpite} styles={styles} />)}
-              </div>
-            )}
-
-            {/* Próximos Jogos */}
-            {jogosFuturos.length > 0 && (
-              <div className={styles.faseBlock}>
-                <div className={styles.faseHeader}>
-                  <span className={styles.faseLabel}>📅 Próximos Jogos</span>
-                  <span className={styles.faseSubtitle}>Não deixe para amanhã, faça seu palpite agora!</span>
-                  <div className={styles.faseLine} />
-                </div>
-                {jogosFuturos.map(jogo => <JogoCard key={jogo.id} jogo={jogo} palpites={palpites} bloqueado={false} setPalpite={setPalpite} styles={styles} />)}
-              </div>
-            )}
-
-            {/* Progresso */}
-            {cadastrando && (
-              <div className={styles.progressWrap}>
-                <div className={styles.progressBar}>
-                  <div className={styles.progressFill} style={{ width: `${jogosDisponiveis.length ? (preenchidos / jogosDisponiveis.length) * 100 : 0}%` }} />
-                </div>
-                <div className={styles.progressLabel}>{preenchidos} de {jogosDisponiveis.length} palpites preenchidos</div>
-              </div>
-            )}
           </div>
         )}
 
