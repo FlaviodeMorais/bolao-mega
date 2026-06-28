@@ -17,14 +17,12 @@
   position: relative;
   overflow: hidden;
   background: linear-gradient(180deg, #0d2044 0%, #091629 60%, #06090f 100%);
-  padding: 32px 24px 28px;
-  text-align: center;
+  padding: 24px 24px 20px;
   border-radius: 20px;
   border: 1px solid rgba(255,255,255,0.08);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0;
+  gap: 16px;
 }
 .header::before {
   content: '';
@@ -35,67 +33,82 @@
     radial-gradient(ellipse 60% 40% at 20% 100%, rgba(0,80,160,0.15) 0%, transparent 60%);
   pointer-events: none;
 }
-.headerEmblem {
+.headerTop {
   position: relative;
-  display: inline-flex;
-  flex-direction: column;
+  display: flex;
+  flex-direction: row;
   align-items: center;
-  margin-bottom: 20px;
+  gap: 16px;
 }
 .headerLogo {
-  width: 72px;
+  width: 110px;
   height: auto;
+  flex-shrink: 0;
   display: block;
-  margin-bottom: 12px;
-  filter: drop-shadow(0 4px 20px rgba(255,184,28,0.5));
-  border-radius: 8px;
+  filter: drop-shadow(0 4px 24px rgba(255,184,28,0.45));
+  border-radius: 10px;
 }
-.headerTrophy {
-  font-size: 52px;
-  filter: drop-shadow(0 4px 24px rgba(255,184,28,0.6));
-  display: block;
-  margin-bottom: 4px;
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
 }
 .headerLabel {
-  position: relative;
   display: block;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: #FFB81C;
   text-transform: uppercase;
-  letter-spacing: 3px;
-  opacity: 0.85;
-  margin-bottom: 10px;
+  letter-spacing: 2.5px;
+  opacity: 0.9;
 }
 .headerComp {
-  position: relative;
   color: #fff;
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 800;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
   line-height: 1.2;
-  margin-bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.headerFlag {
+  width: 22px !important;
+  height: 16px !important;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.headerVs {
+  color: rgba(255,255,255,0.4);
+  font-size: 14px;
+  font-weight: 600;
 }
 .headerTitle {
   position: relative;
   color: #fff;
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 800;
-  margin: 0 0 10px;
+  margin: 0;
   line-height: 1.15;
   letter-spacing: -0.5px;
 }
 .headerDesc {
   position: relative;
-  color: rgba(255,255,255,0.65);
-  font-size: 14px;
+  color: rgba(255,255,255,0.55);
+  font-size: 13px;
   font-weight: 500;
-  text-transform: none;
   letter-spacing: 0;
   margin: 0;
   line-height: 1.5;
-  max-width: 360px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  text-align: center;
 }
+.headerEmblem { display: none; }
+.headerTrophy { display: none; }
 .headerBadges {
   position: relative;
   display: flex;
@@ -803,10 +816,10 @@
 
 /* ── RESPONSIVE ──────────────────────────── */
 @media (max-width: 480px) {
-  .headerTitle { font-size: 20px; }
-  .headerComp { font-size: 20px; }
-  .headerDesc { font-size: 13px; }
-  .headerLogo { width: 60px; }
+  .headerTitle { font-size: 18px; }
+  .headerComp { font-size: 18px; }
+  .headerDesc { font-size: 12px; }
+  .headerLogo { width: 80px; }
   .headerTrophy { font-size: 40px; }
   .timeBandeira { font-size: 32px; }
   .timeNome { font-size: 12px; }
