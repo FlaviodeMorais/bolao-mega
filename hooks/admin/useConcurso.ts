@@ -71,7 +71,7 @@ export function useConcurso() {
 
   return {
     concursoAtivo, dataAtiva, premioAtivo,
-    proximos, loadingCaixa,
+    proximos, setProximos, loadingCaixa,
     editDatas, setEditDatas,
     setFromApi,
     buscarCaixa, selecionarConcurso,
