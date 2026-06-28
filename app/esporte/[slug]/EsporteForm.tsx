@@ -353,11 +353,13 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
   return (
     <div className={styles.page}>
 
-      {/* ── Header ── */}
-      <div className={styles.header}>
-        <img src="/1684502982782.gif" alt="FIFA World Cup 2026" className={styles.headerLogo} />
-        <div className={styles.headerComp}>{bolao.nome}</div>
-        {bolao.descricao && <p className={styles.headerDesc}>{bolao.descricao}</p>}
+      {/* ── Header banner ── */}
+      <div className={styles.headerWrap}>
+        <div className={styles.header}>
+          <img src="/1684502982782.gif" alt="FIFA World Cup 2026" className={styles.headerLogo} />
+          <div className={styles.headerComp}>{bolao.nome}</div>
+          {bolao.descricao && <p className={styles.headerDesc}>{bolao.descricao}</p>}
+        </div>
       </div>
 
       {/* ── Momentos FIFA ── */}

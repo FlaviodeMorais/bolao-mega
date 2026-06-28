@@ -8,12 +8,19 @@
 }
 
 /* ── HERO HEADER ─────────────────────────── */
+.headerWrap {
+  max-width: 600px;
+  margin: 16px auto 0;
+  padding: 0 16px;
+}
 .header {
   position: relative;
   overflow: hidden;
   background: linear-gradient(180deg, #0d2044 0%, #091629 60%, #06090f 100%);
-  padding: 48px 24px 36px;
+  padding: 40px 24px 32px;
   text-align: center;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
 }
 .header::before {
   content: '';
@@ -805,9 +812,11 @@
   .headerDesc  { font-size: 13px; letter-spacing: 1px; }
   .headerLogo  { width: 90px; }
 
+  /* Header mobile */
+  .headerWrap { padding: 0 12px; }
+
   /* Carrossel mobile */
-  .videoCard { width: 180px; }
-  .videoThumbWrap { height: 80px; }
+  .videoThumbWrap { aspect-ratio: 16/9; }
   .videoTitulo { font-size: 10px; padding: 5px 6px 2px; }
   .videoData { font-size: 9px; padding: 2px 6px 6px; }
 
