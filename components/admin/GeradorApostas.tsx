@@ -70,10 +70,11 @@ interface Props {
   loteria: LoteriaId
   dezenasBolao: number
   uploadingApostas: boolean
+  apostasMsg?: string
   onInserirApostas: (texto: string) => void
 }
 
-export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas, onInserirApostas }: Props) {
+export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas, apostasMsg, onInserirApostas }: Props) {
   const cfg = getLoteria(loteria)
 
   const [aberto, setAberto]             = useState(false)
@@ -314,6 +315,12 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
                   onClick={handleInserir} disabled={uploadingApostas}>
                   {uploadingApostas ? '⟳ Inserindo...' : '📊 Inserir apostas neste bolão'}
                 </button>
+                {apostasMsg && (
+                  <div className={apostasMsg.startsWith('✅') ? styles.lembreteMsg : styles.loginErr}
+                    style={{ marginTop: 8, textAlign: 'center' }}>
+                    {apostasMsg}
+                  </div>
+                )}
               </div>
             )}
           </div>

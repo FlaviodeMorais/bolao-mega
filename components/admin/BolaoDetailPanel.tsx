@@ -562,6 +562,7 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
             loteria={(bolao.loteria ?? 'mega') as import('@/lib/loterias').LoteriaId}
             dezenasBolao={p.editDezenas}
             uploadingApostas={p.uploadingApostas}
+            apostasMsg={p.apostasMsg}
             onInserirApostas={p.onInserirApostasGeradas}
           />
         </div>
