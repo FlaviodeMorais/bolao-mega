@@ -369,7 +369,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
           <TacaFifa variant="gold" />
           <div className={styles.pontuacaoTextos}>
             <span className={styles.pontuacaoValor} style={{color:'#FFB81C'}}>🏆 1º lugar</span>
-            <span className={styles.pontuacaoTxt}>Acertou o Placar <em>e</em> o Vencedor</span>
+            <span className={styles.pontuacaoTxt}>Acertou o Placar e o Vencedor</span>
             <span className={styles.pontuacaoTxt}>
               <span className={styles.pontuacaoPts} data-color="gold">5 pts</span>
               <em> · 40% do prêmio ÷ acertadores</em>
