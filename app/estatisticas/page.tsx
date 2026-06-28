@@ -140,9 +140,14 @@ export default function EstatisticasPage() {
 
   const corBola = (pos: number, total: number) => {
     const pct = 1 - pos / total
-    if (pct > 0.66) return '#00AB67'
-    if (pct > 0.33) return '#1D6EA6'
-    return '#94A3B8'
+    if (pct > 0.66) return '#009B63'
+    if (pct > 0.33) return '#005DA9'
+    return '#CBD5E1'
+  }
+  // Texto: escuro sobre fundo cinza claro, branco sobre verde/azul
+  const corTexto = (pos: number, total: number) => {
+    const pct = 1 - pos / total
+    return pct > 0.33 ? '#fff' : '#0D1B2A'
   }
 
   return (
@@ -278,7 +283,7 @@ export default function EstatisticasPage() {
                       const rank = dados.findIndex(x => x.numero === d.numero)
                       return (
                         <div key={d.numero} className="estat-ball-item">
-                          <div className="estat-ball" style={{ background: corBola(rank, dados.length) }}>
+                          <div className="estat-ball" style={{ background: corBola(rank, dados.length), color: corTexto(rank, dados.length) }}>
                             {String(d.numero).padStart(2, '0')}
                           </div>
                           <div className="estat-ball-count">{d.count}x</div>
@@ -297,7 +302,7 @@ export default function EstatisticasPage() {
                   {dados.slice(0, 20).map((d, i) => (
                     <div key={d.numero} className="estat-rank-row">
                       <span className="estat-rank-pos">{i + 1}º</span>
-                      <span className="estat-rank-ball" style={{ background: corBola(i, 20) }}>
+                      <span className="estat-rank-ball" style={{ background: corBola(i, 20), color: corTexto(i, 20) }}>
                         {String(d.numero).padStart(2, '0')}
                       </span>
                       <div className="estat-rank-bar-wrap">

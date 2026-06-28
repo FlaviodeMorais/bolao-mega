@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import styles from '@/app/admin/admin.module.css'
 import { getLoteria, type LoteriaId } from '@/lib/loterias'
+import TrevoIcon from '@/components/TrevoIcon'
 
 interface NumStat { numero: number; count: number; pct: number; atraso?: number }
 type Estrategia = 'frequentes' | 'atrasados' | 'equilibrado' | 'aleatoria'
@@ -138,8 +139,10 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
     const pct = 1 - pos / total
     if (pct > 0.66) return cfg.cor
     if (pct > 0.33) return cfg.corSecundaria
-    return '#94A3B8'
+    return '#CBD5E1'
   }
+  const corTexto = (pos: number, total: number) =>
+    (1 - pos / total) > 0.33 ? '#fff' : '#0D1B2A'
 
   const dados   = abaEstat === 'freq' ? freqDados : atrasosDados
   const maxCount = dados.length ? Math.max(...dados.map(d => d.count || d.atraso || 1)) : 1
@@ -150,7 +153,7 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
   return (
     <div className={styles.geradorWrap}>
       <button type="button" className={styles.geradorToggle} onClick={() => setAberto(v => !v)}>
-        <span>{cfg.emoji} Gerador de Apostas & Estatísticas — {cfg.label}</span>
+        <span><TrevoIcon loteria={loteria} size={16} /> Gerador de Apostas & Estatísticas — {cfg.label}</span>
         <span>{aberto ? '▲' : '▼'}</span>
       </button>
 
@@ -180,7 +183,7 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
               <div className={styles.geradorLoading}>Carregando estatísticas da {cfg.label}...</div>
             ) : dados.length === 0 ? (
               <div className={styles.geradorLoading}>
-                Histórico não carregado — acesse Ferramentas → Ingerir Histórico → {cfg.emoji} {cfg.label}
+                Histórico não carregado — acesse Ferramentas → Ingerir Histórico → <TrevoIcon loteria={loteria} size={12} /> {cfg.label}
               </div>
             ) : (
               <>
@@ -205,7 +208,7 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
                   {dados.slice(0, 15).map((d, i) => (
                     <div key={d.numero} className={styles.geradorRankRow}>
                       <span className={styles.geradorRankPos}>{i + 1}º</span>
-                      <span className={styles.geradorRankBall} style={{ background: corBola(i, 15) }}>
+                      <span className={styles.geradorRankBall} style={{ background: corBola(i, 15), color: corTexto(i, 15) }}>
                         {String(d.numero).padStart(2, '0')}
                       </span>
                       <div className={styles.geradorRankBarWrap}>

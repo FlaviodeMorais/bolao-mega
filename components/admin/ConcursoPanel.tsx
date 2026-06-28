@@ -2,6 +2,7 @@
 
 import styles from '@/app/admin/admin.module.css'
 import { getLoteria, type LoteriaId } from '@/lib/loterias'
+import TrevoIcon from '@/components/TrevoIcon'
 
 interface Concurso { num: number; data: string; premio: string }
 
@@ -24,7 +25,7 @@ export default function ConcursoPanel({
   return (
     <div className={styles.panel}>
       <div className={styles.panelTitle}>
-        {cfg.emoji} Próximos Concursos — {cfg.label}
+        <TrevoIcon loteria={loteriaAtual} size={14} /> Próximos Concursos — {cfg.label}
       </div>
       <div className={styles.helpBox}>
         <p>Selecione um bolão à esquerda para gerenciar participantes.</p>

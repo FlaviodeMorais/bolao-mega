@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react'
 import styles from '@/app/admin/admin.module.css'
 import { LOTERIA_LIST, getLoteria, type LoteriaId } from '@/lib/loterias'
+import TrevoIcon from '@/components/TrevoIcon'
 
 // Totais aproximados por loteria para a barra de progresso
 const TOTAIS: Record<LoteriaId, number> = { mega: 3024, lotofacil: 3100, quina: 6400 }
@@ -109,7 +110,7 @@ export default function IngerirHistorico() {
           return (
             <div key={l.id} className={`${styles.detStat} ${vazio ? styles.detStatWarn : ''}`}>
               <div className={`${styles.detStatVal} ${styles.detStatValSm}`} style={{ color: cor }}>
-                {l.emoji} {l.label}
+                <TrevoIcon loteria={l.id} size={16} /> {l.label}
               </div>
               <span className={`${styles.detStatLbl} ${styles.detStatLblPlain}`} style={{ color: cor }}>
                 {val ?? '—'}
@@ -136,7 +137,7 @@ export default function IngerirHistorico() {
               className={`${styles.loteriaBotao} ${loteria === l.id ? styles.loteriaBotaoAtivo : ''}`}
               style={loteria === l.id ? { background: l.cor + '18', borderColor: l.cor, color: l.cor } : {}}
               onClick={() => setLoteria(l.id)}>
-              {l.emoji} {l.label}
+              <TrevoIcon loteria={l.id} size={14} /> {l.label}
             </button>
           ))}
         </div>
@@ -151,7 +152,7 @@ export default function IngerirHistorico() {
 
       {!rodando && (
         <button className={styles.btnLoad} onClick={iniciar}>
-          ⬇️ Carregar histórico — {cfg.emoji} {cfg.label} (~{TOTAIS[loteria]} concursos)
+          ⬇️ Carregar histórico — <TrevoIcon loteria={loteria} size={14} /> {cfg.label} (~{TOTAIS[loteria]} concursos)
         </button>
       )}
 

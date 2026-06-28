@@ -2,6 +2,7 @@
 
 import styles from '@/app/admin/admin.module.css'
 import { LOTERIA_LIST, type LoteriaId } from '@/lib/loterias'
+import TrevoIcon from '@/components/TrevoIcon'
 import type { Bolao } from '@/hooks/admin/useBoloes'
 export type { Bolao }
 
@@ -91,7 +92,7 @@ export default function BolaoList({
               <div className={styles.bolaoUrl}>/{b.slug}</div>
               <div className={styles.bolaoMeta}>
                 <span style={{ color: cor, fontWeight: 700 }}>
-                  {LOTERIA_BADGE[b.loteria ?? 'mega']} {b.loteria === 'lotofacil' ? 'Lotofácil' : b.loteria === 'quina' ? 'Quina' : 'Mega-Sena'}
+                  <TrevoIcon loteria={b.loteria ?? 'mega'} size={12} /> {b.loteria === 'lotofacil' ? 'Lotofácil' : b.loteria === 'quina' ? 'Quina' : 'Mega-Sena'}
                 </span>
                 {' · '}{b.num_apostas || 1} apostas · {b.dezenas || 6} dez · R$ {Number(b.valor_cota).toFixed(2).replace('.', ',')}/cota
               </div>
@@ -138,7 +139,7 @@ export default function BolaoList({
                 className={`${styles.loteriaBotao} ${novaLoteria === l.id ? styles.loteriaBotaoAtivo : ''}`}
                 style={novaLoteria === l.id ? { borderColor: l.cor, background: l.cor + '15', color: l.cor } : {}}
                 onClick={() => onNovaLoteriaChange(l.id)}>
-                {l.emoji} {l.label}
+                <TrevoIcon loteria={l.id} size={14} /> {l.label}
               </button>
             ))}
           </div>
