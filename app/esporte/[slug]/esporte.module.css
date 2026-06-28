@@ -660,7 +660,9 @@
 
 /* ── MOMENTOS FIFA ──────────────────────── */
 .momentosSec {
-  margin: 0 var(--s4, 16px) var(--s4, 16px);
+  max-width: 600px;
+  margin: 16px auto 0;
+  padding: 0 16px;
 }
 .momentosTitle {
   font-size: 13px; font-weight: 700;
@@ -701,29 +703,31 @@
   width: 100%; height: 100%; object-fit: cover;
 }
 
-/* Carrossel estilo YouTube */
+/* Carrossel estilo YouTube — 1 vídeo por vez */
 .videoRow {
-  display: flex; gap: 8px;
+  display: flex;
   overflow-x: auto;
-  padding: 4px 0 10px;
+  scroll-snap-type: x mandatory;
   scrollbar-width: none;
-  margin-left: -4px; margin-right: -4px;
-  padding-left: 4px; padding-right: 4px;
+  border-radius: 12px;
 }
 .videoRow::-webkit-scrollbar { display: none; }
 
 .videoCard {
-  flex-shrink: 0; width: 288px;
+  flex-shrink: 0;
+  min-width: 100%;
+  width: 100%;
+  scroll-snap-align: start;
   display: flex; flex-direction: column;
   text-decoration: none;
-  border-radius: 8px; overflow: hidden;
+  border-radius: 12px; overflow: hidden;
   background: #0d1c2e;
   border: 1px solid rgba(255,255,255,.06);
   transition: transform .2s;
 }
-.videoCard:hover { transform: scale(1.04); }
+.videoCard:hover { transform: scale(1.01); }
 .videoThumbWrap {
-  position: relative; width: 100%; height: 120px; overflow: hidden;
+  position: relative; width: 100%; aspect-ratio: 16/9; overflow: hidden;
 }
 .videoThumb { width: 100%; height: 100%; object-fit: cover; display: block; }
 .videoPlay {
@@ -817,5 +821,5 @@
 
   /* Jogo card */
   .section { padding: 16px 12px; }
-  .momentosSec { margin: 0 0 12px; }
+  .momentosSec { margin: 12px auto 0; }
 }

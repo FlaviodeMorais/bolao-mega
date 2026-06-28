@@ -129,15 +129,15 @@ function MomentosCarousel() {
   useEffect(() => {
     const total = aoVivo.length + momentos.length
     if (total === 0) return
-    const CARD_W = 296
     let pos = 0
     const t = setInterval(() => {
       const el = rowRef.current
       if (!el) return
-      const maxScroll = el.scrollWidth - el.clientWidth
-      pos = pos + CARD_W > maxScroll ? 0 : pos + CARD_W
+      const cardW = el.clientWidth
+      const maxScroll = el.scrollWidth - cardW
+      pos = pos + cardW > maxScroll ? 0 : pos + cardW
       el.scrollTo({ left: pos, behavior: 'smooth' })
-    }, 2500)
+    }, 4000)
     return () => clearInterval(t)
   }, [aoVivo, momentos])
 
