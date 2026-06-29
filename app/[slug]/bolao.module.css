@@ -155,18 +155,20 @@
   font-family: 'JetBrains Mono', monospace;
   min-width: 20px;
 }
-/* apostas: bolinhas adaptativas (dezenas variam por config do bolão) */
+/* apostas: space-between, bola até 32px ou menor se muitas dezenas */
 .apostaBolas {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 3px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 .apostaBola {
+  /* cabe exatamente na linha; max 32px quando poucas dezenas */
+  width: min(32px, calc((100% - (var(--n, 6) - 1) * 3px) / var(--n, 6)));
   aspect-ratio: 1;
+  flex-shrink: 0;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: min(calc((min(100vw, 568px) - 80px) / var(--n, 6) * 0.38), 12px);
+  font-size: min(calc((min(100vw, 568px) - 100px) / var(--n, 6) * 0.36), 12px);
   font-weight: 800; font-family: 'JetBrains Mono', monospace;
   background: color-mix(in srgb, var(--lot-cor, #00AB67) 15%, transparent);
   border: 1.5px solid color-mix(in srgb, var(--lot-cor, #00AB67) 40%, transparent);
