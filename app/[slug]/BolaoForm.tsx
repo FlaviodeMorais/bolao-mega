@@ -364,8 +364,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
                     <span className={styles.apostaIdx}>{i + 1}</span>
                     <div className={styles.apostaBolas}>
                       {aposta.map(n => (
-                        <span key={n} className={styles.apostaBola}
-                          style={{ background: loteriaCor }}>
+                        <span key={n} className={styles.apostaBola}>
                           {String(n).padStart(2, '0')}
                         </span>
                       ))}
@@ -499,7 +498,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
                           <div className={styles.sorteioDezenasLabel}>Dezenas sorteadas</div>
                           <div className={styles.sorteioDezenasGrid}>
                             {resultadoConf.dezenas_sorteadas.map(n => (
-                              <span key={n} className={styles.sorteioBall} style={{ background: loteriaCor }}>
+                              <span key={n} className={styles.sorteioBall}>
                                 {String(n).padStart(2, '0')}
                               </span>
                             ))}

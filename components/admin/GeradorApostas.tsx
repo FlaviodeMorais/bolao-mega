@@ -136,14 +136,23 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
     onInserirApostas(texto)
   }
 
+  // Preenchimento por rank: top = cor sólida, meio = cor secundária, baixo = glass
   const corBola = (pos: number, total: number) => {
     const pct = 1 - pos / total
     if (pct > 0.66) return cfg.cor
     if (pct > 0.33) return cfg.corSecundaria
-    return '#CBD5E1'
+    return `${cfg.cor}22`  // glass transparente
   }
-  const corTexto = (pos: number, total: number) =>
-    (1 - pos / total) > 0.33 ? '#fff' : '#0D1B2A'
+  const corBorda = (pos: number, total: number) => {
+    const pct = 1 - pos / total
+    if (pct > 0.66) return 'transparent'
+    if (pct > 0.33) return 'transparent'
+    return `${cfg.cor}55`  // borda glass para os menos frequentes
+  }
+  const corTexto = (pos: number, total: number) => {
+    const pct = 1 - pos / total
+    return pct > 0.33 ? '#fff' : cfg.cor
+  }
 
   const dados   = abaEstat === 'freq' ? freqDados : atrasosDados
   const maxCount = dados.length ? Math.max(...dados.map(d => d.count || d.atraso || 1)) : 1
@@ -194,7 +203,7 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
                     const rank = dados.findIndex(x => x.numero === d.numero)
                     return (
                       <div key={d.numero} className={styles.geradorBallItem}>
-                        <div className={styles.geradorBall} style={{ background: corBola(rank, dados.length) }}>
+                        <div className={styles.geradorBall} style={{ background: corBola(rank, dados.length), borderColor: corBorda(rank, dados.length), color: corTexto(rank, dados.length) }}>
                           {String(d.numero).padStart(2, '0')}
                         </div>
                         <div className={styles.geradorBallCount}>
@@ -209,7 +218,7 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
                   {dados.slice(0, 15).map((d, i) => (
                     <div key={d.numero} className={styles.geradorRankRow}>
                       <span className={styles.geradorRankPos}>{i + 1}º</span>
-                      <span className={styles.geradorRankBall} style={{ background: corBola(i, 15), color: corTexto(i, 15) }}>
+                      <span className={styles.geradorRankBall} style={{ background: corBola(i, 15), borderColor: corBorda(i, 15), color: corTexto(i, 15) }}>
                         {String(d.numero).padStart(2, '0')}
                       </span>
                       <div className={styles.geradorRankBarWrap}>
