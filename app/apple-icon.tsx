@@ -9,16 +9,31 @@ export default function AppleIcon() {
     (
       <div style={{
         width: 180, height: 180,
-        background: 'linear-gradient(145deg, #0D1B2A 0%, #0f2a14 100%)',
+        background: 'linear-gradient(145deg, #0a0f1e 0%, #0d1f0f 60%, #091a1a 100%)',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        borderRadius: 36,
+        borderRadius: 40,
+        position: 'relative',
+        overflow: 'hidden',
       }}>
-        <div style={{ fontSize: 90, lineHeight: 1 }}>🍀</div>
         <div style={{
-          fontFamily: 'sans-serif', fontSize: 28, fontWeight: 900,
-          color: '#00A651', letterSpacing: 1, marginTop: 4,
-        }}>MEGA</div>
+          position: 'absolute', top: -20, left: -20,
+          width: 120, height: 120,
+          background: 'radial-gradient(circle, rgba(0,200,100,0.18) 0%, transparent 70%)',
+          borderRadius: '50%',
+        }} />
+
+        <div style={{
+          fontFamily: 'sans-serif', fontSize: 52, fontWeight: 900,
+          letterSpacing: -2, lineHeight: 1, color: '#fff', display: 'flex',
+        }}>BET</div>
+
+        <div style={{
+          fontFamily: 'sans-serif', fontSize: 38, fontWeight: 900,
+          lineHeight: 0.9,
+          background: 'linear-gradient(135deg, #00c864 0%, #FFB81C 100%)',
+          backgroundClip: 'text', color: 'transparent', display: 'flex',
+        }}>+</div>
       </div>
     ),
     { ...size }
