@@ -145,8 +145,8 @@
 /* ── APOSTAS DO BOLÃO ── */
 .apostasLista { padding: 8px 0; }
 .apostaRow {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 20px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
   border-bottom: 1px solid rgba(255,255,255,0.04);
 }
 .apostaRow:last-child { border-bottom: none; }
@@ -155,20 +155,17 @@
   font-family: 'JetBrains Mono', monospace;
   min-width: 20px;
 }
-/* apostas: space-between, bola até 32px ou menor se muitas dezenas */
+/* apostas: 32px fixo, space-between preenche a linha */
 .apostaBolas {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 .apostaBola {
-  /* cabe exatamente na linha; max 32px quando poucas dezenas */
-  width: min(32px, calc((100% - (var(--n, 6) - 1) * 3px) / var(--n, 6)));
-  aspect-ratio: 1;
-  flex-shrink: 0;
+  width: 32px; height: 32px; flex-shrink: 0;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: min(calc((min(100vw, 568px) - 100px) / var(--n, 6) * 0.36), 12px);
+  font-size: 10px;
   font-weight: 800; font-family: 'JetBrains Mono', monospace;
   background: color-mix(in srgb, var(--lot-cor, #00AB67) 15%, transparent);
   border: 1.5px solid color-mix(in srgb, var(--lot-cor, #00AB67) 40%, transparent);
