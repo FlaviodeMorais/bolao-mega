@@ -218,22 +218,6 @@
   line-height: 1.6;
 }
 
-/* ── LINK ESTATÍSTICAS ── */
-.statLink {
-  display: flex; align-items: center; gap: 10px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 12px; padding: 12px 16px;
-  font-size: 13px; font-weight: 500;
-  color: rgba(255,255,255,0.5);
-  text-decoration: none;
-  transition: all .15s;
-}
-.statLink:hover {
-  border-color: rgba(0,171,103,0.35);
-  color: #00AB67;
-  background: rgba(0,171,103,0.06);
-}
 
 /* ── RODAPÉ ── */
 .footer {
@@ -297,18 +281,3 @@
   border-radius: 8px;
 }
 
-/* ── ÚLTIMOS RESULTADOS (wrapper escuro para LoteriasCards) ── */
-.loteriasWrap {
-  max-width: 600px; margin: 16px auto 0; padding: 0 16px;
-  /* override CSS vars para tema dark */
-  --bg-card: #0d1c2e;
-  --border: rgba(255,255,255,0.08);
-  --text-primary: rgba(255,255,255,0.9);
-  --text-secondary: rgba(255,255,255,0.7);
-  --text-muted: rgba(255,255,255,0.45);
-  --text-faint: rgba(255,255,255,0.28);
-  --e1: 0 1px 4px rgba(0,0,0,0.4);
-  --e2: 0 2px 8px rgba(0,0,0,0.5);
-}
-.loteriasWrap :global(.lot-section) { margin: 0; }
-.loteriasWrap :global(.lot-plain) { border-bottom-color: rgba(255,255,255,0.08); }

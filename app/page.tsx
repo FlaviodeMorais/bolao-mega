@@ -319,13 +319,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Estatísticas */}
-      <div className={styles.secWrap}>
-        <a href="/estatisticas" className={styles.statLink}>
-          📊 Análises &amp; Estatísticas da Mega-Sena
-        </a>
-      </div>
-
 
     </div>
   )
