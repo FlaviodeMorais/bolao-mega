@@ -157,6 +157,7 @@
 }
 /* apostas: 32px fixo, space-between preenche a linha */
 .apostaBolas {
+  flex: 1; min-width: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
