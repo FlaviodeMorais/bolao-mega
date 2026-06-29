@@ -362,7 +362,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
                 {apostasData.bets.map((aposta, i) => (
                   <div key={i} className={styles.apostaRow}>
                     <span className={styles.apostaIdx}>{i + 1}</span>
-                    <div className={styles.apostaBolas}>
+                    <div className={styles.apostaBolas} style={{ '--n': aposta.length } as React.CSSProperties}>
                       {aposta.map(n => (
                         <span key={n} className={styles.apostaBola}>
                           {String(n).padStart(2, '0')}
@@ -496,7 +496,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
                       {resultadoConf.dezenas_sorteadas && resultadoConf.dezenas_sorteadas.length > 0 && (
                         <div className={styles.sorteioDezenas}>
                           <div className={styles.sorteioDezenasLabel}>Dezenas sorteadas</div>
-                          <div className={styles.sorteioDezenasGrid}>
+                          <div className={styles.sorteioDezenasGrid} style={{ '--n': resultadoConf.dezenas_sorteadas.length } as React.CSSProperties}>
                             {resultadoConf.dezenas_sorteadas.map(n => (
                               <span key={n} className={styles.sorteioBall}>
                                 {String(n).padStart(2, '0')}

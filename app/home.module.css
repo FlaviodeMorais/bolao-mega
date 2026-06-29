@@ -126,12 +126,17 @@
   font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.3);
   text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;
 }
-.sorteioBalls { display: flex; gap: 4px; }
+.sorteioBalls {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+}
 .sorteioBall {
-  flex: 1; min-width: 0; aspect-ratio: 1;
+  aspect-ratio: 1;
   border-radius: 50%;
-  /* cor setada via inline style por loteria */
-  font-size: clamp(8px, 2.2vw, 12px); font-weight: 800; font-family: 'JetBrains Mono', monospace;
+  font-size: min(calc((min(100vw, 568px) - 64px) / var(--n, 6) * 0.38), 13px);
+  font-weight: 800; font-family: 'JetBrains Mono', monospace;
   display: flex; align-items: center; justify-content: center;
   color: #F0F4FF;
 }

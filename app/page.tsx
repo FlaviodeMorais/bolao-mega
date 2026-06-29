@@ -109,7 +109,7 @@ function SorteioCard({ s, boloes, host }: { s: SorteioInfo; boloes: Bolao[]; hos
         {s.dezenas.length > 0 && (
           <div className={styles.sorteioUltimo}>
             <div className={styles.sorteioUltimoLabel}>Último resultado</div>
-            <div className={styles.sorteioBalls}>
+            <div className={styles.sorteioBalls} style={{ '--n': s.dezenas.length } as React.CSSProperties}>
               {s.dezenas.map(n => (
                 <span key={n} className={styles.sorteioBall}
                   style={{ background: `${s.corA}18`, border: `1.5px solid ${s.corA}55` }}>
