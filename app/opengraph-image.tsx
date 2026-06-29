@@ -5,9 +5,22 @@ export const runtime     = 'edge'
 export const size        = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
+async function loadFont(family: string, weight: number): Promise<ArrayBuffer | null> {
+  try {
+    const css = await fetch(
+      `https://fonts.googleapis.com/css2?family=${family}:wght@${weight}&display=swap`,
+      { headers: { 'User-Agent': 'Mozilla/5.0' } }
+    ).then(r => r.text())
+    const url = css.match(/src: url\(([^)]+)\) format\('woff2'\)/)?.[1]
+    if (!url) return null
+    return fetch(url).then(r => r.arrayBuffer())
+  } catch { return null }
+}
+
 export default async function OgImage() {
   const app = await getAppSettings()
   const nome = app.nome || 'BetMais'
+  const nunitoData = await loadFont('Nunito', 900)
   const desc = app.descricao || 'Loterias, Brasileirão, Copa, e muito mais!'
 
   return new ImageResponse(
@@ -126,8 +139,8 @@ export default async function OgImage() {
               letterSpacing: -4, color: '#ffffff', display: 'flex',
             }}>Bet</span>
             <span style={{
-              fontFamily: 'sans-serif', fontSize: 104, fontWeight: 900,
-              letterSpacing: -4, color: '#00d464', display: 'flex',
+              fontFamily: nunitoData ? 'Nunito' : 'sans-serif', fontSize: 108, fontWeight: 900,
+              letterSpacing: -2, color: '#00d464', display: 'flex',
             }}>Mais</span>
           </div>
 
@@ -151,6 +164,11 @@ export default async function OgImage() {
 
       </div>
     ),
-    { ...size }
+    {
+      ...size,
+      fonts: nunitoData ? [{
+        name: 'Nunito', data: nunitoData, weight: 900, style: 'normal' as const,
+      }] : [],
+    }
   )
 }
