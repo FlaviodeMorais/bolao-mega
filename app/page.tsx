@@ -1,9 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
-import dynamic from 'next/dynamic'
 import TrevoIcon from '@/components/TrevoIcon'
 import styles from './home.module.css'
-const LoteriasCards = dynamic(() => import('@/components/LoteriasCards'), { ssr: false })
 
 interface Bolao { id: string; nome: string; slug: string; ativo: boolean; dezenas: number; num_apostas: number; loteria?: string }
 interface BolaoEsporte { id: string; nome: string; slug: string; descricao?: string; valor_cota: number }
@@ -328,10 +326,6 @@ export default function Home() {
         </a>
       </div>
 
-      {/* ── Últimos Resultados Caixa ── */}
-      <div className={styles.loteriasWrap}>
-        <LoteriasCards />
-      </div>
 
     </div>
   )

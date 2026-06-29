@@ -1,0 +1,240 @@
+/* ══ ESTATÍSTICAS — Dark Design System ══ */
+
+.page {
+  min-height: 100vh;
+  background: #06090f;
+  padding: 0 0 80px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* ── HEADER ── */
+.header {
+  position: sticky; top: 0; z-index: 100;
+  height: 56px;
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 16px;
+  background: rgba(6,9,15,0.92);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.headerBack {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  text-decoration: none; flex-shrink: 0; transition: all .2s;
+}
+.headerBack:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.headerBrand {
+  flex: 1; font-size: 16px; font-weight: 800;
+  color: #fff; letter-spacing: 0.5px;
+}
+
+/* ── COLUNA CENTRAL ── */
+.col { max-width: 600px; margin: 0 auto; padding: 0 16px; }
+
+/* ── SELETOR DE LOTERIA ── */
+.loteriasRow {
+  max-width: 600px; margin: 16px auto 0; padding: 0 16px;
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.loteriaBtn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 20px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all .2s; border: 2px solid transparent;
+}
+
+/* ── HERO ── */
+.hero {
+  max-width: 600px; margin: 12px auto 0; padding: 0 16px;
+  text-align: center;
+}
+.heroTitle {
+  display: flex; align-items: center; gap: 8px; justify-content: center;
+  font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 4px;
+}
+.heroSub { font-size: 12px; color: rgba(255,255,255,0.3); }
+
+/* ── CARD GENÉRICO ── */
+.secWrap { max-width: 600px; margin: 12px auto 0; padding: 0 16px; }
+.secCard {
+  background: #0d1c2e;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px; overflow: hidden;
+}
+.secBody { padding: 16px 20px; }
+.empty {
+  padding: 24px 20px; text-align: center;
+  font-size: 14px; color: rgba(255,255,255,0.3); line-height: 1.6;
+}
+
+/* ── GERADOR ── */
+.geradorToggle {
+  width: 100%; padding: 14px 20px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.7);
+  cursor: pointer; transition: all .2s; text-align: left;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.geradorToggle:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.geradorBody {
+  margin-top: 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px; padding: 16px;
+}
+.geradorLabel {
+  font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.35);
+  text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;
+}
+.geradorEstrategias { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.geradorEstrategia {
+  padding: 7px 12px; border-radius: 8px; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px; font-weight: 600;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.5); transition: all .2s;
+}
+.geradorEstrategiaAtivo {
+  background: var(--lot-cor, #00AB67);
+  border-color: var(--lot-cor, #00AB67);
+  color: #fff;
+}
+.geradorConfigRow { display: flex; gap: 12px; margin-bottom: 14px; }
+.geradorConfigItem { flex: 1; }
+.geradorStepper {
+  display: flex; align-items: center; gap: 8px; margin-top: 6px;
+}
+.geradorStepper button {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+  color: #fff; font-size: 16px; cursor: pointer; transition: all .15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.geradorStepper button:hover { background: rgba(255,255,255,0.15); }
+.geradorStepper span {
+  font-size: 16px; font-weight: 800; color: #fff;
+  font-family: 'JetBrains Mono', monospace; min-width: 28px; text-align: center;
+}
+.geradorFiltros { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.geradorCheck {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: rgba(255,255,255,0.5); cursor: pointer;
+}
+.geradorCheck input { accent-color: var(--lot-cor, #00AB67); }
+.geradorBtn {
+  width: 100%; padding: 13px;
+  background: var(--lot-cor, #00AB67);
+  border: none; border-radius: 10px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 700; color: #fff;
+  cursor: pointer; transition: all .15s;
+}
+.geradorBtn:hover:not(:disabled) { filter: brightness(1.1); }
+.geradorBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.geradorResultado { margin-top: 14px; }
+.geradorResultadoHeader {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.geradorCopiar {
+  padding: 6px 12px; border-radius: 8px; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px; font-weight: 700;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.6);
+  transition: all .15s;
+}
+.geradorCopiar:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.geradorCopiarPrimary {
+  background: var(--lot-cor, #00AB67);
+  border-color: var(--lot-cor, #00AB67); color: #fff;
+}
+.geradorCopiarPrimary:hover { filter: brightness(1.1); background: var(--lot-cor, #00AB67); }
+.insertMsg {
+  padding: 8px 12px; background: rgba(52,211,153,0.1);
+  border: 1px solid rgba(52,211,153,0.2); border-radius: 8px;
+  font-size: 12px; color: #34D399; margin-bottom: 8px;
+}
+.geradorApostaRow {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.geradorApostaRow:last-child { border-bottom: none; }
+.geradorApostaNum {
+  font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.25);
+  font-family: 'JetBrains Mono', monospace; min-width: 20px;
+}
+.geradorApostaBalls { display: flex; flex-wrap: wrap; gap: 4px; }
+.geradorBall {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; font-family: 'JetBrains Mono', monospace;
+  color: #fff;
+}
+
+/* ── ABAS ── */
+.tabs {
+  max-width: 600px; margin: 12px auto 0; padding: 0 16px;
+  display: flex; gap: 6px;
+}
+.tab {
+  flex: 1; padding: 10px 8px; border-radius: 10px; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px; font-weight: 600; text-align: center;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.4); transition: all .2s;
+}
+.tabAtivo {
+  background: var(--lot-cor, #00AB67);
+  border-color: var(--lot-cor, #00AB67); color: #fff;
+}
+
+/* ── GRID DE BOLINHAS ── */
+.ballsWrap { max-width: 600px; margin: 12px auto 0; padding: 0 16px; }
+.sectionTitle {
+  font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.3);
+  text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px;
+}
+.ballsGrid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 8px;
+}
+.ballItem { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ball {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono', monospace;
+  color: #fff;
+}
+.ballCount { font-size: 9px; color: rgba(255,255,255,0.3); font-family: 'JetBrains Mono', monospace; }
+
+/* ── RANKING ── */
+.rankRow {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.rankRow:last-child { border-bottom: none; }
+.rankPos {
+  font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.25);
+  min-width: 24px; font-family: 'JetBrains Mono', monospace;
+}
+.rankBall {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; font-family: 'JetBrains Mono', monospace;
+  color: #fff; flex-shrink: 0;
+}
+.rankBarWrap {
+  flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden;
+}
+.rankBar { height: 100%; border-radius: 3px; transition: width .3s; }
+.rankVal { font-size: 11px; color: rgba(255,255,255,0.4); white-space: nowrap; font-family: 'JetBrains Mono', monospace; }
