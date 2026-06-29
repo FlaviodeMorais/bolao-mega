@@ -4,7 +4,15 @@ export const runtime     = 'edge'
 export const size        = { width: 512, height: 512 }
 export const contentType = 'image/png'
 
-export default function Icon() {
+export default async function Icon() {
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000'
+
+  const nunitoData = await fetch(`${baseUrl}/fonts/Nunito-Black.ttf`)
+    .then(r => r.arrayBuffer())
+    .catch(() => null)
+
   return new ImageResponse(
     (
       <div style={{
@@ -36,14 +44,13 @@ export default function Icon() {
           gap: 4, position: 'relative', zIndex: 2,
         }}>
           <div style={{
-            fontFamily: 'sans-serif', fontSize: 164,
-            fontWeight: 900, letterSpacing: -8,
-            color: '#ffffff', lineHeight: 1,
-            display: 'flex',
+            fontFamily: nunitoData ? 'Nunito' : 'sans-serif',
+            fontSize: 164, fontWeight: 900, letterSpacing: -6,
+            color: '#ffffff', lineHeight: 1, display: 'flex',
           }}>Bet</div>
           <div style={{
-            fontFamily: 'sans-serif', fontSize: 196,
-            fontWeight: 900, letterSpacing: -4,
+            fontFamily: nunitoData ? 'Nunito' : 'sans-serif',
+            fontSize: 196, fontWeight: 900, letterSpacing: -4,
             color: '#00d464', lineHeight: 1,
             display: 'flex', marginBottom: -10,
           }}>+</div>
@@ -51,6 +58,9 @@ export default function Icon() {
 
       </div>
     ),
-    { ...size }
+    {
+      ...size,
+      fonts: nunitoData ? [{ name: 'Nunito', data: nunitoData, weight: 900, style: 'normal' as const }] : [],
+    }
   )
 }
