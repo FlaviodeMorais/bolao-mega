@@ -89,7 +89,10 @@ export default function IngerirHistorico() {
       }
     }
 
-    if (!abortRef.current) setResumo(`✅ Concluído: ${inseridos} inseridos, ${erros} erros.`)
+    if (!abortRef.current) {
+      const nota = erros > 0 ? ` (erros normais: concursos antigos sem dados na API da Caixa)` : ''
+      setResumo(`✅ Concluído: ${inseridos} inseridos, ${erros} erros.${nota}`)
+    }
     setRodando(false)
     verificar()
   }
@@ -136,7 +139,7 @@ export default function IngerirHistorico() {
             <button key={l.id} type="button"
               className={`${styles.loteriaBotao} ${loteria === l.id ? styles.loteriaBotaoAtivo : ''}`}
               style={loteria === l.id ? { background: l.cor + '18', borderColor: l.cor, color: l.cor } : {}}
-              onClick={() => setLoteria(l.id)}>
+              onClick={() => { setLoteria(l.id); setResumo('') }}>
               <TrevoIcon loteria={l.id} size={14} /> {l.label}
             </button>
           ))}
