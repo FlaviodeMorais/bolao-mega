@@ -431,6 +431,20 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
   return (
     <div className={styles.page}>
 
+      {/* ── Top bar: voltar + admin ── */}
+      <div className={styles.topBar}>
+        <a href="/" className={styles.topBarBack} aria-label="Voltar">
+          <span className="material-icons-round" style={{ fontSize: 18 }}>arrow_back</span>
+        </a>
+        <div className={styles.topBarBrand}>
+          ESPORTE
+          <span className={styles.topBarSub}>{bolao.nome}</span>
+        </div>
+        <a href="/admin" className={styles.topBarBtn} aria-label="Admin">
+          <span className="material-icons-round" style={{ fontSize: 18 }}>settings</span>
+        </a>
+      </div>
+
       {/* ── Header banner ── */}
       <div className={styles.headerWrap}>
         <div className={styles.header}>
