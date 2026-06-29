@@ -8,7 +8,16 @@ interface SettingsData {
   pagamento?: Record<string, unknown>
   whatsapp?:  Record<string, unknown>
   email?:     Record<string, unknown>
-  'paginas.esporte'?: { header_titulo?: string; premiacao?: unknown[] }
+  'paginas.esporte'?: {
+    header_titulo?: string  // legado — substituído por bolao.competicao
+    logo_url_default?: string
+    cor_primaria_default?: string
+    label_cta_default?: string
+    label_palpites_default?: string
+    label_jogo_hoje_default?: string
+    label_noticias_default?: string
+    premiacao?: unknown[]
+  }
   'paginas.bolao'?: Record<string, { regras: string[] }>
 }
 
@@ -261,54 +270,73 @@ export default function AdminSettings() {
             {/* ── ESPORTE ── */}
             {aba === 'esporte' && (
               <div className={styles.settingsGrid}>
-                <Field label="Título do Header" name="header_titulo" value={String(esporte.header_titulo ?? '')} onChange={v => updateNs('paginas.esporte','header_titulo',v)} placeholder="FIFA World Cup 2026" />
                 <div className={styles.settingsInfoBox}>
-                  <b>Premiação por colocação</b>
-                  <p>Os 3 banners de premiação exibidos na página pública. Os dados são atualizados após salvar.</p>
+                  <b>📋 Padrões para novos bolões esportivos</b>
+                  <p>Estes valores são usados como template ao criar um novo bolão. Cada bolão pode sobrescrever individualmente no painel Esporte.</p>
+                </div>
+
+                <Field label="Logo / GIF padrão (URL)" name="logo_url_default"
+                  value={String(esporte.logo_url_default ?? '')}
+                  onChange={v => updateNs('paginas.esporte','logo_url_default',v)}
+                  placeholder="/logos/competicao.gif ou https://..." />
+
+                <Field label="Cor principal padrão" name="cor_primaria_default"
+                  value={String(esporte.cor_primaria_default ?? '#FFB81C')}
+                  onChange={v => updateNs('paginas.esporte','cor_primaria_default',v)}
+                  placeholder="#FFB81C" />
+
+                <Field label="Texto do botão CTA padrão" name="label_cta_default"
+                  value={String(esporte.label_cta_default ?? '⚽ Quero Participar')}
+                  onChange={v => updateNs('paginas.esporte','label_cta_default',v)}
+                  placeholder="⚽ Quero Participar" />
+
+                <Field label="Label do card de palpites padrão" name="label_palpites_default"
+                  value={String(esporte.label_palpites_default ?? '⚽ Seus palpites')}
+                  onChange={v => updateNs('paginas.esporte','label_palpites_default',v)}
+                  placeholder="⚽ Seus palpites" />
+
+                <Field label="Badge jogo de hoje padrão" name="label_jogo_hoje_default"
+                  value={String(esporte.label_jogo_hoje_default ?? '🔥 Jogo de hoje!')}
+                  onChange={v => updateNs('paginas.esporte','label_jogo_hoje_default',v)}
+                  placeholder="🔥 Jogo de hoje!" />
+
+                <Field label="Título da seção de notícias padrão" name="label_noticias_default"
+                  value={String(esporte.label_noticias_default ?? '📺 Notícias')}
+                  onChange={v => updateNs('paginas.esporte','label_noticias_default',v)}
+                  placeholder="📺 CazéTV · Copa do Mundo FIFA 2026" />
+
+                <div className={styles.settingsInfoBox}>
+                  <b>🏆 Premiação padrão por colocação</b>
+                  <p>Template de premiação usado ao criar novos bolões. Pontos e % do prêmio distribuído entre acertadores.</p>
                   {(esporte.premiacao as {lugar:number;emoji:string;label:string;categoria:string;pts:number;pct:number}[] | undefined ?? []).map((item, i) => (
                     <div key={i} className={styles.settingsPremiacaoRow}>
                       <span className={styles.settingsPremiacaoLugar}>{item.emoji} {item.label}</span>
                       <div className={styles.settingsPremiacaoFields}>
-                        <input
-                          className={styles.settingsInputSmall}
-                          placeholder="Categoria"
-                          value={item.categoria}
+                        <input className={styles.settingsInputSmall} placeholder="Categoria" value={item.categoria}
                           onChange={e => {
                             const nova = [...(esporte.premiacao as typeof item[] ?? [])]
                             nova[i] = { ...item, categoria: e.target.value }
                             updateNs('paginas.esporte', 'premiacao', nova)
-                          }}
-                        />
-                        <input
-                          className={styles.settingsInputSmall}
-                          type="number"
-                          placeholder="Pts"
-                          value={item.pts}
+                          }} />
+                        <input className={styles.settingsInputSmall} type="number" placeholder="Pts" value={item.pts} style={{ width: 60 }}
                           onChange={e => {
                             const nova = [...(esporte.premiacao as typeof item[] ?? [])]
                             nova[i] = { ...item, pts: Number(e.target.value) }
                             updateNs('paginas.esporte', 'premiacao', nova)
-                          }}
-                          style={{ width: 60 }}
-                        />
-                        <input
-                          className={styles.settingsInputSmall}
-                          type="number"
-                          placeholder="%"
-                          value={item.pct}
+                          }} />
+                        <input className={styles.settingsInputSmall} type="number" placeholder="%" value={item.pct} style={{ width: 60 }}
                           onChange={e => {
                             const nova = [...(esporte.premiacao as typeof item[] ?? [])]
                             nova[i] = { ...item, pct: Number(e.target.value) }
                             updateNs('paginas.esporte', 'premiacao', nova)
-                          }}
-                          style={{ width: 60 }}
-                        />
+                          }} />
                       </div>
                     </div>
                   ))}
                 </div>
+
                 <button type="button" className={styles.settingsSave} onClick={() => salvar('paginas.esporte')} disabled={saving}>
-                  {saving ? 'Salvando...' : '💾 Salvar Esporte'}
+                  {saving ? 'Salvando...' : '💾 Salvar padrões'}
                 </button>
               </div>
             )}
