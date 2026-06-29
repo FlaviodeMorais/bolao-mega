@@ -126,14 +126,14 @@
   font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.3);
   text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;
 }
-.sorteioBalls { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.sorteioBalls { display: flex; gap: 4px; }
 .sorteioBall {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: rgba(0,171,103,0.15); border: 1.5px solid rgba(0,171,103,0.4);
-  color: #F0F4FF;
-  font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono', monospace;
+  flex: 1; min-width: 0; aspect-ratio: 1;
+  border-radius: 50%;
+  /* cor setada via inline style por loteria */
+  font-size: clamp(8px, 2.2vw, 12px); font-weight: 800; font-family: 'JetBrains Mono', monospace;
   display: flex; align-items: center; justify-content: center;
-  text-shadow: 0 0 8px rgba(255,255,255,0.4);
+  color: #F0F4FF;
 }
 
 /* ── BOLÕES DENTRO DO CARD DE SORTEIO ── */

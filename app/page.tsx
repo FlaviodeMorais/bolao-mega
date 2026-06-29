@@ -112,7 +112,7 @@ function SorteioCard({ s, boloes, host }: { s: SorteioInfo; boloes: Bolao[]; hos
             <div className={styles.sorteioBalls}>
               {s.dezenas.map(n => (
                 <span key={n} className={styles.sorteioBall}
-                  style={{ background: `${s.corA}18`, borderColor: `${s.corA}50`, color: s.corA }}>
+                  style={{ background: `${s.corA}18`, border: `1.5px solid ${s.corA}55` }}>
                   {String(n).padStart(2, '0')}
                 </span>
               ))}
