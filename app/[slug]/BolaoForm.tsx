@@ -19,38 +19,13 @@ function mascaraNome(nome: string): string {
 
 const APPS_URL = process.env.NEXT_PUBLIC_APPS_URL || ''
 
-const REGRAS = [
-  {
-    icon: '⚠️',
-    titulo: 'Bolão particular — não oficial',
-    texto: 'Este bolão é organizado de forma particular e independente, sem qualquer vínculo com a Caixa Econômica Federal. A aposta na loteria é realizada pelo administrador em nome do grupo.',
-    destaque: true,
-  },
-  {
-    icon: '🎰',
-    titulo: 'Como funciona',
-    texto: 'Cada cota representa uma fração proporcional das apostas realizadas. O prêmio líquido (após dedução da taxa de administração) é dividido proporcionalmente ao número de cotas de cada participante em relação ao total de cotas vendidas.',
-  },
-  {
-    icon: '💳',
-    titulo: 'Pagamento via PIX',
-    texto: 'Após selecionar suas cotas, você receberá um código PIX para pagamento. Sua inscrição só é confirmada após a validação do pagamento pelo administrador. Pagamentos não confirmados até o fechamento do bolão serão cancelados.',
-  },
-  {
-    icon: '🔄',
-    titulo: 'Cotas não vendidas',
-    texto: 'Se o bolão encerrar com cotas não vendidas, o valor arrecadado proporcional a essas cotas será rateado entre os participantes com pagamento confirmado, via PIX complementar.',
-  },
-  {
-    icon: '🏆',
-    titulo: 'Premiação e prazo',
-    texto: 'Em caso de prêmio, o administrador tem até 90 dias após o sorteio para resgatar o valor junto à Caixa Econômica Federal. Após dedução da taxa de administração, o saldo é distribuído proporcionalmente entre os participantes.',
-  },
-  {
-    icon: '❌',
-    titulo: 'Cancelamento e reembolso',
-    texto: 'Não há reembolso após confirmação do pagamento, salvo cancelamento do bolão pelo administrador antes do sorteio. Em caso de cancelamento, o valor integral pago será devolvido via PIX.',
-  },
+const REGRAS_DEFAULT = [
+  { icon: '⚠️', titulo: 'Bolão particular — não oficial', texto: 'Este bolão é organizado de forma particular e independente, sem qualquer vínculo com a Caixa Econômica Federal. A aposta na loteria é realizada pelo administrador em nome do grupo.', destaque: true },
+  { icon: '🎰', titulo: 'Como funciona', texto: 'Cada cota representa uma fração proporcional das apostas realizadas. O prêmio líquido (após dedução da taxa de administração) é dividido proporcionalmente ao número de cotas de cada participante em relação ao total de cotas vendidas.' },
+  { icon: '💳', titulo: 'Pagamento via PIX', texto: 'Após selecionar suas cotas, você receberá um código PIX para pagamento. Sua inscrição só é confirmada após a validação do pagamento pelo administrador. Pagamentos não confirmados até o fechamento do bolão serão cancelados.' },
+  { icon: '🔄', titulo: 'Cotas não vendidas', texto: 'Se o bolão encerrar com cotas não vendidas, o valor arrecadado proporcional a essas cotas será rateado entre os participantes com pagamento confirmado, via PIX complementar.' },
+  { icon: '🏆', titulo: 'Premiação e prazo', texto: 'Em caso de prêmio, o administrador tem até 90 dias após o sorteio para resgatar o valor junto à Caixa Econômica Federal. Após dedução da taxa de administração, o saldo é distribuído proporcionalmente entre os participantes.' },
+  { icon: '❌', titulo: 'Cancelamento e reembolso', texto: 'Não há reembolso após confirmação do pagamento, salvo cancelamento do bolão pelo administrador antes do sorteio. Em caso de cancelamento, o valor integral pago será devolvido via PIX.' },
 ]
 
 interface Participante { id: string; nome: string; cotas: string[]; total: number; status: string }
@@ -111,6 +86,22 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
   const statusRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const [apostasData, setApostasData] = useState<{ bets: number[][] } | null>(null)
+  const [regras, setRegras] = useState(REGRAS_DEFAULT)
+
+  useEffect(() => {
+    fetch('/api/config-publica').then(r => r.json()).then(d => {
+      const loteriaKey = (loteria || 'mega').toLowerCase()
+      const r = d?.bolao?.[loteriaKey]?.regras
+      if (Array.isArray(r) && r.length) {
+        setRegras(r.map((txt: string, i: number) => ({
+          icon: REGRAS_DEFAULT[i]?.icon ?? '📌',
+          titulo: REGRAS_DEFAULT[i]?.titulo ?? `Regra ${i + 1}`,
+          texto: txt,
+          destaque: i === 0,
+        })))
+      }
+    }).catch(() => {})
+  }, [loteria])
 
   // Comprovante self-service
   const [resultadoConf, setResultadoConf]     = useState<ResultadoConf | null>(null)
@@ -571,7 +562,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
             </div>
 
             <div className="termos-lista">
-              {REGRAS.map((r, i) => (
+              {regras.map((r, i) => (
                 <div key={i} className="termos-regra">
                   <div className="termos-regra-titulo">{r.icon} {r.titulo}</div>
                   <div className="termos-regra-desc">{r.texto}</div>
@@ -683,7 +674,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
                 {/* Termos aceitos */}
                 <div className="comp-termos-aceitos">
                   <div className="comp-termos-titulo">📋 Termos de Participação Aceitos</div>
-                  {REGRAS.map((r, i) => (
+                  {regras.map((r, i) => (
                     <div key={i} className="comp-termos-item">
                       <span>{r.icon}</span>
                       <span><strong>{r.titulo}:</strong> {r.texto}</span>

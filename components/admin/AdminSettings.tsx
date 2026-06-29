@@ -9,17 +9,25 @@ interface SettingsData {
   whatsapp?:  Record<string, unknown>
   email?:     Record<string, unknown>
   'paginas.esporte'?: { header_titulo?: string; premiacao?: unknown[] }
+  'paginas.bolao'?: Record<string, { regras: string[] }>
 }
 
-type Aba = 'app' | 'pagamento' | 'whatsapp' | 'email' | 'esporte'
+type Aba = 'app' | 'pagamento' | 'whatsapp' | 'email' | 'esporte' | 'loteria'
 
 const ABAS: { id: Aba; label: string; icon: string }[] = [
   { id: 'app',      label: 'App',       icon: '🏠' },
   { id: 'pagamento', label: 'Pagamento', icon: '💳' },
   { id: 'whatsapp', label: 'WhatsApp',  icon: '💬' },
   { id: 'email',    label: 'E-mail',    icon: '📧' },
+  { id: 'loteria',  label: 'Loteria',   icon: '🍀' },
   { id: 'esporte',  label: 'Esporte',   icon: '⚽' },
 ]
+
+const LOTERIAS_LABELS: Record<string, string> = {
+  mega:      '🍀 Mega-Sena',
+  quina:     '🍀 Quina',
+  lotofacil: '🍀 Lotofácil',
+}
 
 function Field({ label, name, value, onChange, type = 'text', placeholder = '' }: {
   label: string; name: string; value: string
@@ -78,11 +86,40 @@ export default function AdminSettings() {
     setTimeout(() => setMsg(''), 4000)
   }
 
-  const app    = (settings.app    ?? {}) as Record<string, string>
-  const pag    = (settings.pagamento ?? {}) as Record<string, unknown>
-  const wa     = (settings.whatsapp  ?? {}) as Record<string, unknown>
-  const em     = (settings.email     ?? {}) as Record<string, unknown>
+  const app     = (settings.app    ?? {}) as Record<string, string>
+  const pag     = (settings.pagamento ?? {}) as Record<string, unknown>
+  const wa      = (settings.whatsapp  ?? {}) as Record<string, unknown>
+  const em      = (settings.email     ?? {}) as Record<string, unknown>
   const esporte = settings['paginas.esporte'] ?? {}
+  const bolao   = (settings['paginas.bolao'] ?? {}) as Record<string, { regras: string[] }>
+  const [loteriaAba, setLoteriaAba] = useState<'mega'|'quina'|'lotofacil'>('mega')
+
+  function updateRegra(loteria: string, idx: number, val: string) {
+    const atual = bolao[loteria]?.regras ?? []
+    const nova  = [...atual]
+    nova[idx]   = val
+    setSettings(prev => ({
+      ...prev,
+      'paginas.bolao': { ...(prev['paginas.bolao'] ?? {}), [loteria]: { regras: nova } },
+    }))
+  }
+
+  function addRegra(loteria: string) {
+    const atual = bolao[loteria]?.regras ?? []
+    setSettings(prev => ({
+      ...prev,
+      'paginas.bolao': { ...(prev['paginas.bolao'] ?? {}), [loteria]: { regras: [...atual, ''] } },
+    }))
+  }
+
+  function removeRegra(loteria: string, idx: number) {
+    const atual = bolao[loteria]?.regras ?? []
+    const nova  = atual.filter((_, i) => i !== idx)
+    setSettings(prev => ({
+      ...prev,
+      'paginas.bolao': { ...(prev['paginas.bolao'] ?? {}), [loteria]: { regras: nova } },
+    }))
+  }
 
   if (!open) {
     return (
@@ -174,6 +211,49 @@ export default function AdminSettings() {
                 <Field label="E-mail Admin (notificações)" name="admin_email" value={String(em.admin_email ?? '')} onChange={v => updateNs('email','admin_email',v)} placeholder="admin@meusite.com" />
                 <button type="button" className={styles.settingsSave} onClick={() => salvar('email')} disabled={saving}>
                   {saving ? 'Salvando...' : '💾 Salvar E-mail'}
+                </button>
+              </div>
+            )}
+
+            {/* ── LOTERIA ── */}
+            {aba === 'loteria' && (
+              <div className={styles.settingsGrid}>
+                <div className={styles.settingsAbas} style={{ padding: 0, marginBottom: 4 }}>
+                  {(['mega','quina','lotofacil'] as const).map(l => (
+                    <button key={l} type="button"
+                      className={`${styles.settingsAba} ${loteriaAba === l ? styles.settingsAbaAtiva : ''}`}
+                      onClick={() => setLoteriaAba(l)}>
+                      {LOTERIAS_LABELS[l]}
+                    </button>
+                  ))}
+                </div>
+
+                <div className={styles.settingsInfoBox}>
+                  <b>Regras de Participação — {LOTERIAS_LABELS[loteriaAba]}</b>
+                  <p>Exibidas no modal &quot;Termos de Participação&quot; antes do participante confirmar. Cada linha é um item separado.</p>
+                  {(bolao[loteriaAba]?.regras ?? []).map((texto, idx) => (
+                    <div key={idx} className={styles.settingsPremiacaoRow} style={{ alignItems: 'flex-start' }}>
+                      <span className={styles.settingsPremiacaoLugar} style={{ paddingTop: 8, minWidth: 28 }}>{idx + 1}.</span>
+                      <textarea
+                        className={styles.settingsInput}
+                        style={{ flex: 1, minHeight: 60, resize: 'vertical', fontFamily: 'inherit', fontSize: 13 }}
+                        value={texto}
+                        onChange={e => updateRegra(loteriaAba, idx, e.target.value)}
+                      />
+                      <button type="button" onClick={() => removeRegra(loteriaAba, idx)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', fontSize: 18, paddingTop: 6 }}>
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => addRegra(loteriaAba)}
+                    className={styles.settingsAba} style={{ alignSelf: 'flex-start', marginTop: 4 }}>
+                    + Adicionar regra
+                  </button>
+                </div>
+
+                <button type="button" className={styles.settingsSave} onClick={() => salvar('paginas.bolao')} disabled={saving}>
+                  {saving ? 'Salvando...' : `💾 Salvar Regras — ${LOTERIAS_LABELS[loteriaAba]}`}
                 </button>
               </div>
             )}
