@@ -89,7 +89,7 @@ export default async function OgImage() {
           {/* "Bet +" igual ao ícone */}
           <div style={{
             display: 'flex', alignItems: 'baseline',
-            gap: 2, position: 'relative', zIndex: 2,
+            gap: 2, position: 'relative', zIndex: '2',
           }}>
             <div style={{
               fontFamily: 'sans-serif', fontSize: 100, fontWeight: 900,
