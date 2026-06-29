@@ -63,64 +63,35 @@ export default async function OgImage() {
           position: 'relative',
         }}>
 
-          {/* Anel externo */}
+          {/* Borda sutil igual ao ícone */}
           <div style={{
-            position: 'absolute',
-            width: 280, height: 280,
-            border: '1px solid rgba(0,200,100,0.2)',
-            borderRadius: '50%', display: 'flex',
+            position: 'absolute', inset: 8,
+            border: '1.5px solid rgba(0,200,100,0.14)',
+            borderRadius: 34, display: 'flex',
           }} />
+
+          {/* Glow verde atrás do "+" */}
           <div style={{
-            position: 'absolute',
-            width: 250, height: 250,
-            border: '1px solid rgba(255,184,28,0.1)',
+            position: 'absolute', right: 30, top: '50%',
+            width: 180, height: 180, marginTop: -90,
+            background: 'radial-gradient(circle, rgba(0,210,100,0.22) 0%, transparent 70%)',
             borderRadius: '50%', display: 'flex',
           }} />
 
-          {/* Glow central */}
+          {/* "Bet +" igual ao ícone */}
           <div style={{
-            position: 'absolute',
-            width: 240, height: 240,
-            background: 'radial-gradient(circle, rgba(0,200,100,0.15) 0%, transparent 70%)',
-            borderRadius: '50%', display: 'flex',
-          }} />
-
-          {/* Texto central do emblema */}
-          <div style={{
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', gap: 0, position: 'relative', zIndex: 2,
+            display: 'flex', alignItems: 'baseline',
+            gap: 2, position: 'relative', zIndex: 2,
           }}>
             <div style={{
-              fontFamily: 'sans-serif', fontSize: 96, fontWeight: 900,
-              letterSpacing: -4, color: '#f0f8ff', lineHeight: 1, display: 'flex',
-            }}>BET</div>
+              fontFamily: 'sans-serif', fontSize: 100, fontWeight: 900,
+              letterSpacing: -5, color: '#ffffff', lineHeight: 1, display: 'flex',
+            }}>Bet</div>
             <div style={{
-              width: 140, height: 2, marginTop: -2, marginBottom: 4,
-              background: 'linear-gradient(90deg, transparent, #00c864, #FFB81C, transparent)',
-              display: 'flex',
-            }} />
-            <div style={{
-              fontFamily: 'sans-serif', fontSize: 32, fontWeight: 900,
-              letterSpacing: 14, color: '#00c864', lineHeight: 1, display: 'flex',
-            }}>MAIS</div>
+              fontFamily: 'sans-serif', fontSize: 120, fontWeight: 900,
+              color: '#00d464', lineHeight: 1, display: 'flex', marginBottom: -8,
+            }}>+</div>
           </div>
-
-          {/* Bolinhas decorativas ao redor */}
-          {[
-            { angle: 30,  r: 145 }, { angle: 150, r: 145 },
-            { angle: 210, r: 145 }, { angle: 330, r: 145 },
-          ].map((b, i) => {
-            const x = 210 + Math.cos(b.angle * Math.PI / 180) * b.r
-            const y = 315 + Math.sin(b.angle * Math.PI / 180) * b.r
-            return (
-              <div key={i} style={{
-                position: 'absolute', left: x - 10, top: y - 10,
-                width: 20, height: 20, borderRadius: '50%',
-                border: '2px solid rgba(0,200,100,0.25)',
-                display: 'flex',
-              }} />
-            )
-          })}
         </div>
 
         {/* ── LADO DIREITO: Tipografia ── */}
@@ -171,20 +142,6 @@ export default async function OgImage() {
             {desc}
           </div>
 
-          {/* Números loteria decorativos */}
-          <div style={{
-            display: 'flex', gap: 12, marginTop: 32,
-          }}>
-            {[13, 27, 42, 55, 61, '+'].map((n, i) => (
-              <div key={i} style={{
-                width: 44, height: 44, borderRadius: '50%',
-                border: `2px solid ${i === 5 ? 'rgba(0,200,100,0.5)' : 'rgba(255,255,255,0.1)'}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: 'sans-serif', fontSize: 14, fontWeight: 800,
-                color: i === 5 ? '#00c864' : 'rgba(255,255,255,0.3)',
-              }}>{n}</div>
-            ))}
-          </div>
 
         </div>
 
