@@ -163,14 +163,36 @@ function EsporteCardCarrossel({ boloesEsporte }: { boloesEsporte: BolaoEsporte[]
   )
 }
 
+const AUTOPLAY_MS = 5000
+
 function CarrosselSorteios({ sorteios, boloes, boloesEsporte, host }: { sorteios: SorteioInfo[]; boloes: Bolao[]; boloesEsporte: BolaoEsporte[]; host: string }) {
   const totalSlides = sorteios.length + 1 // +1 para esporte
   const [ativo, setAtivo] = useState(0)
   const ref = useRef<HTMLDivElement>(null)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const pauseRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  function scrollTo(i: number) {
-    setAtivo(i)
-    ref.current?.children[i]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
+  function scrollTo(i: number, userAction = false) {
+    const idx = (i + totalSlides) % totalSlides
+    setAtivo(idx)
+    ref.current?.children[idx]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
+    if (userAction) {
+      // pausa o autoplay por 8s após interação manual
+      if (timerRef.current) clearInterval(timerRef.current)
+      if (pauseRef.current) clearTimeout(pauseRef.current)
+      pauseRef.current = setTimeout(startAutoplay, 8000)
+    }
+  }
+
+  function startAutoplay() {
+    if (timerRef.current) clearInterval(timerRef.current)
+    timerRef.current = setInterval(() => {
+      setAtivo(prev => {
+        const next = (prev + 1) % totalSlides
+        ref.current?.children[next]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
+        return next
+      })
+    }, AUTOPLAY_MS)
   }
 
   useEffect(() => {
@@ -180,6 +202,15 @@ function CarrosselSorteios({ sorteios, boloes, boloesEsporte, host }: { sorteios
     el.addEventListener('scroll', onScroll, { passive: true })
     return () => el.removeEventListener('scroll', onScroll)
   }, [])
+
+  useEffect(() => {
+    if (totalSlides <= 1) return
+    startAutoplay()
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+      if (pauseRef.current) clearTimeout(pauseRef.current)
+    }
+  }, [totalSlides])
 
   if (sorteios.length === 0) return null
 
@@ -197,7 +228,7 @@ function CarrosselSorteios({ sorteios, boloes, boloesEsporte, host }: { sorteios
       {totalSlides > 1 && (
         <div className={styles.sorteioDots}>
           {dots.map((d, i) => (
-            <button key={d.key} onClick={() => scrollTo(i)} className={styles.sorteioDot}
+            <button key={d.key} onClick={() => scrollTo(i, true)} className={styles.sorteioDot}
               style={{
                 width: ativo === i ? 20 : 6,
                 background: ativo === i ? d.cor : 'rgba(255,255,255,0.15)',
