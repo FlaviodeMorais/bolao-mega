@@ -7,13 +7,23 @@ const LoteriasCards = dynamic(() => import('@/components/LoteriasCards'), { ssr:
 
 interface Bolao { id: string; nome: string; slug: string; ativo: boolean; dezenas: number; num_apostas: number; loteria?: string }
 interface BolaoEsporte { id: string; nome: string; slug: string; descricao?: string; valor_cota: number }
-interface ConcursoAtivo { concurso: string; data: string; premio: string }
-interface SorteioInfo { id: string; label: string; concurso: number; premio: string; data: string; dezenas: number[] }
 
-const LOTERIAS_HOME = [
-  { id: 'mega',      label: 'Mega-Sena',  apiSlug: 'megasena'  },
-  { id: 'quina',     label: 'Quina',      apiSlug: 'quina'     },
-  { id: 'lotofacil', label: 'Lotofácil',  apiSlug: 'lotofacil' },
+interface SorteioInfo {
+  id: string
+  label: string
+  apiSlug: string
+  concurso: number
+  premio: string
+  data: string
+  dezenas: number[]
+  corA: string
+  corGlow: string
+}
+
+const LOTERIAS_HOME: Omit<SorteioInfo, 'concurso' | 'premio' | 'data' | 'dezenas'>[] = [
+  { id: 'mega',      label: 'Mega-Sena',  apiSlug: 'megasena',  corA: '#00AB67', corGlow: 'rgba(0,171,103,0.18)' },
+  { id: 'quina',     label: 'Quina',      apiSlug: 'quina',     corA: '#005DA4', corGlow: 'rgba(0,93,164,0.18)'  },
+  { id: 'lotofacil', label: 'Lotofácil',  apiSlug: 'lotofacil', corA: '#803594', corGlow: 'rgba(128,53,148,0.18)'},
 ]
 
 function useCountdown(dataStr: string) {
@@ -39,21 +49,29 @@ function useCountdown(dataStr: string) {
   return texto
 }
 
-function SorteioCard({ s }: { s: SorteioInfo }) {
+function SorteioCard({ s, boloes, host }: { s: SorteioInfo; boloes: Bolao[]; host: string }) {
   const countdown = useCountdown(s.data)
+  const boloesLoteria = boloes.filter(b => b.ativo && (b.loteria ?? 'mega') === s.id)
+
   return (
     <div className={styles.sorteioCard}>
-      <div className={styles.sorteioCardHead}>
+      {/* Header */}
+      <div className={styles.sorteioCardHead} style={{ borderBottom: `1px solid ${s.corA}20` }}>
         <TrevoIcon size={22} loteria={s.id} />
         <span className={styles.sorteioCardTitle}>{s.label}</span>
-        <span className={styles.sorteioBadge}>#{s.concurso}</span>
+        {s.concurso > 0 && (
+          <span className={styles.sorteioBadge}>#{s.concurso}</span>
+        )}
       </div>
+
       <div className={styles.sorteioCardBody}>
-        <div className={`${styles.sorteioPremio}${s.premio === 'Acumulando' ? ' ' + styles.sorteioPremioAcc : ''}`}>
+        {/* Prêmio */}
+        <div className={styles.sorteioPremio} style={{ color: s.corA }}>
           {s.premio}
         </div>
-        <div className={styles.sorteioLabel}>Prêmio estimado próximo concurso</div>
+        <div className={styles.sorteioLabel}>Prêmio estimado · próximo concurso</div>
 
+        {/* Data + Countdown */}
         {s.data && (
           <div className={styles.sorteioRow}>
             <div className={styles.sorteioInfo}>
@@ -69,12 +87,36 @@ function SorteioCard({ s }: { s: SorteioInfo }) {
           </div>
         )}
 
+        {/* Bolões desta loteria */}
+        {boloesLoteria.length > 0 && (
+          <div className={styles.cardBoloes}>
+            <div className={styles.cardBoloesTitulo} style={{ color: s.corA }}>
+              🎰 Bolões disponíveis
+            </div>
+            {boloesLoteria.map(b => (
+              <a key={b.id} href={`/${b.slug}`} className={styles.cardBolaoItem}
+                style={{ borderColor: `${s.corA}25` }}>
+                <div className={styles.cardBolaoInfo}>
+                  <span className={styles.cardBolaoNome}>{b.nome}</span>
+                  <span className={styles.cardBolaoMeta}>{b.num_apostas || 1} apostas · {b.dezenas || 6} dezenas</span>
+                </div>
+                <span className={`material-icons-round ${styles.cardBolaoArrow}`}
+                  style={{ color: s.corA }}>arrow_forward_ios</span>
+              </a>
+            ))}
+          </div>
+        )}
+
+        {/* Último resultado */}
         {s.dezenas.length > 0 && (
           <div className={styles.sorteioUltimo}>
             <div className={styles.sorteioUltimoLabel}>Último resultado</div>
             <div className={styles.sorteioBalls}>
               {s.dezenas.map(n => (
-                <span key={n} className={styles.sorteioBall}>{String(n).padStart(2, '0')}</span>
+                <span key={n} className={styles.sorteioBall}
+                  style={{ background: `${s.corA}18`, borderColor: `${s.corA}50`, color: s.corA }}>
+                  {String(n).padStart(2, '0')}
+                </span>
               ))}
             </div>
           </div>
@@ -84,7 +126,7 @@ function SorteioCard({ s }: { s: SorteioInfo }) {
   )
 }
 
-function CarrosselSorteios({ sorteios }: { sorteios: SorteioInfo[] }) {
+function CarrosselSorteios({ sorteios, boloes, host }: { sorteios: SorteioInfo[]; boloes: Bolao[]; host: string }) {
   const [ativo, setAtivo] = useState(0)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -106,7 +148,7 @@ function CarrosselSorteios({ sorteios }: { sorteios: SorteioInfo[] }) {
   return (
     <div className={styles.sorteioWrap}>
       <div ref={ref} className={styles.sorteioTrack}>
-        {sorteios.map(s => <SorteioCard key={s.id} s={s} />)}
+        {sorteios.map(s => <SorteioCard key={s.id} s={s} boloes={boloes} host={host} />)}
       </div>
       {sorteios.length > 1 && (
         <div className={styles.sorteioDots}>
@@ -114,7 +156,7 @@ function CarrosselSorteios({ sorteios }: { sorteios: SorteioInfo[] }) {
             <button key={s.id} onClick={() => scrollTo(i)} className={styles.sorteioDot}
               style={{
                 width: ativo === i ? 20 : 6,
-                background: ativo === i ? '#00AB67' : 'rgba(255,255,255,0.15)',
+                background: ativo === i ? s.corA : 'rgba(255,255,255,0.15)',
               }}
               aria-label={s.label}
             />
@@ -128,7 +170,6 @@ function CarrosselSorteios({ sorteios }: { sorteios: SorteioInfo[] }) {
 export default function Home() {
   const [boloes, setBoloes]               = useState<Bolao[]>([])
   const [boloesEsporte, setBoloesEsporte] = useState<BolaoEsporte[]>([])
-  const [concursoAtivo, setConcursoAtivo] = useState<ConcursoAtivo | null>(null)
   const [loading, setLoading]             = useState(true)
   const [host, setHost]                   = useState('')
   const [sorteios, setSorteios]           = useState<SorteioInfo[]>([])
@@ -137,11 +178,9 @@ export default function Home() {
   const carregar = useCallback((inicial = false) => {
     Promise.all([
       fetch('/api/boloes').then(r => r.json()),
-      fetch('/api/concurso-ativo').then(r => r.json()),
       fetch('/api/esporte/boloes').then(r => r.json()).catch(() => ({ boloes: [] })),
-    ]).then(([b, c, e]) => {
+    ]).then(([b, e]) => {
       setBoloes(b.boloes || [])
-      setConcursoAtivo(c)
       setBoloesEsporte(e.boloes || [])
       if (inicial) setLoading(false)
     }).catch(() => { if (inicial) setLoading(false) })
@@ -168,18 +207,28 @@ export default function Home() {
       const lista: SorteioInfo[] = []
       LOTERIAS_HOME.forEach((l, i) => {
         const d = results[i]
-        if (!d || !d.numero) return
-        const val = d.valorEstimadoProximoConcurso
+        const val = d?.valorEstimadoProximoConcurso
         const premio = val
           ? `R$ ${(val / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} mi`
           : 'Acumulando'
-        lista.push({ id: l.id, label: l.label, concurso: (d.numero || 0) + 1, premio, data: d.dataProximoConcurso || '', dezenas: d.dezenasSorteadas || [] })
+        lista.push({
+          ...l,
+          concurso: d?.numero ? (d.numero + 1) : 0,
+          premio,
+          data: d?.dataProximoConcurso || '',
+          dezenas: (d?.listaDezenas || []).map(Number),
+        })
       })
       setSorteios(lista)
     })
   }, [])
 
+  // Bolões sem loteria específica ou que não estão no carrossel
   const boloesAtivos = boloes.filter(b => b.ativo)
+  // Loterias com bolões (para exibir no carrossel)
+  const loteriasNoCarrossel = new Set(LOTERIAS_HOME.map(l => l.id))
+  // Bolões de loterias fora do carrossel (edge case)
+  const boloesForaDoCarrossel = boloesAtivos.filter(b => !loteriasNoCarrossel.has(b.loteria ?? 'mega'))
 
   return (
     <div className={styles.page}>
@@ -196,67 +245,41 @@ export default function Home() {
         </a>
       </div>
 
-      {/* ── Carrossel de Sorteios ── */}
-      <CarrosselSorteios sorteios={sorteios} />
+      {/* ── Carrossel: um card por loteria com seus bolões e resultados ── */}
+      {loading
+        ? <div className={styles.sorteioWrap}><div className={styles.empty}>Carregando...</div></div>
+        : <CarrosselSorteios sorteios={sorteios} boloes={boloes} host={host} />
+      }
 
-      {/* Fallback enquanto carrossel carrega */}
-      {sorteios.length === 0 && concursoAtivo?.concurso && (
-        <div className={styles.sorteioWrap}>
-          <div className={styles.sorteioCard}>
-            <div className={styles.sorteioCardHead}>
-              <TrevoIcon size={22} loteria="mega" />
-              <span className={styles.sorteioCardTitle}>Mega-Sena</span>
-              <span className={styles.sorteioBadge}>#{concursoAtivo.concurso}</span>
+      {/* Bolões de loterias fora do carrossel (raro) */}
+      {boloesForaDoCarrossel.length > 0 && (
+        <div className={styles.secWrap}>
+          <div className={styles.secCard}>
+            <div className={styles.secHead}>
+              <span className={styles.secTitle}>🎰 Outros Bolões</span>
             </div>
-            <div className={styles.sorteioCardBody}>
-              <div className={styles.sorteioPremio}>{concursoAtivo.premio || 'Acumulando'}</div>
-              <div className={styles.sorteioLabel}>Prêmio estimado próximo concurso</div>
+            <div className={styles.secBody}>
+              {boloesForaDoCarrossel.map(b => (
+                <a key={b.id} href={`/${b.slug}`} className={styles.bolaoCard}>
+                  <TrevoIcon size={28} loteria={b.loteria ?? 'mega'} />
+                  <div className={styles.bolaoInfo}>
+                    <div className={styles.bolaoNome}>{b.nome}</div>
+                    <div className={styles.bolaoMeta}>{b.num_apostas || 1} Apostas · {b.dezenas || 6} dezenas</div>
+                    <div className={styles.bolaoSlug}>{host}/{b.slug}</div>
+                  </div>
+                  <span className={`material-icons-round ${styles.bolaoArrow}`}>arrow_forward_ios</span>
+                </a>
+              ))}
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Bolões de Loteria ── */}
+      {/* Estatísticas */}
       <div className={styles.secWrap}>
-        <div className={styles.secCard}>
-          <div className={styles.secHead}>
-            <span className={styles.secTitle}>🎰 Escolha seu Bolão</span>
-          </div>
-          <div className={styles.secBody}>
-
-            {loading && <div className={styles.empty}>Carregando...</div>}
-
-            {!loading && boloesAtivos.length === 0 && (
-              <div className={styles.empty}>
-                Nenhum bolão disponível no momento.<br />
-                Aguarde o administrador criar um.
-              </div>
-            )}
-
-            {boloesAtivos.map(b => (
-              <a key={b.id} href={`/${b.slug}`} className={styles.bolaoCard}>
-                <TrevoIcon size={28} loteria={b.loteria ?? 'mega'} />
-                <div className={styles.bolaoInfo}>
-                  <div className={styles.bolaoNome}>{b.nome}</div>
-                  {(b.num_apostas || b.dezenas) && (
-                    <div className={styles.bolaoMeta}>{b.num_apostas || 1} Apostas · {b.dezenas || 6} dezenas</div>
-                  )}
-                  <div className={styles.bolaoSlug}>{host}/{b.slug}</div>
-                </div>
-                <span className={`material-icons-round ${styles.bolaoArrow}`}>arrow_forward_ios</span>
-              </a>
-            ))}
-
-            <a href="/estatisticas" className={styles.statLink}>
-              📊 Análises &amp; Estatísticas da Mega-Sena
-            </a>
-
-          </div>
-          <div className={styles.footer}>
-            <strong>Boa sorte a todos! 🍀</strong><br />
-            Dúvidas? Fale com o administrador do grupo.
-          </div>
-        </div>
+        <a href="/estatisticas" className={styles.statLink}>
+          📊 Análises &amp; Estatísticas da Mega-Sena
+        </a>
       </div>
 
       {/* ── Bolões Esportivos ── */}

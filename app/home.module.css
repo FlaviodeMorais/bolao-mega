@@ -135,6 +135,37 @@
   display: flex; align-items: center; justify-content: center;
 }
 
+/* ── BOLÕES DENTRO DO CARD DE SORTEIO ── */
+.cardBoloes {
+  margin: 0 0 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 14px;
+}
+.cardBoloesTitulo {
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.8px;
+  margin-bottom: 8px;
+}
+.cardBolaoItem {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px; padding: 12px 14px;
+  text-decoration: none;
+  transition: all .2s;
+  margin-bottom: 6px;
+}
+.cardBolaoItem:last-child { margin-bottom: 0; }
+.cardBolaoItem:hover { background: rgba(255,255,255,0.08); transform: translateX(2px); }
+.cardBolaoInfo { flex: 1; min-width: 0; text-align: left; }
+.cardBolaoNome {
+  display: block;
+  font-size: 13px; font-weight: 700; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cardBolaoMeta { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; display: block; }
+.cardBolaoArrow { font-size: 12px !important; flex-shrink: 0; }
+
 /* ── SEÇÃO BOLÕES ── */
 .secWrap { max-width: 600px; margin: 16px auto 0; padding: 0 16px; }
 .secCard {
