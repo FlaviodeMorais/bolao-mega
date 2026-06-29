@@ -43,10 +43,12 @@ export default function AdminPage() {
   const [senha, setSenha]       = useState('')
   const [errLogin, setErrLogin] = useState('')
   const [grupoNome, setGrupoNome] = useState('BOLÃO 💯')
+  const [appNome, setAppNome]     = useState('Bolões')
 
   useEffect(() => {
     fetch('/api/config-publica').then(r => r.json()).then(d => {
       if (d?.app?.grupo_nome) setGrupoNome(d.app.grupo_nome)
+      if (d?.app?.nome)       setAppNome(d.app.nome)
     }).catch(() => {})
   }, [])
 
@@ -254,6 +256,7 @@ export default function AdminPage() {
         concursoAtivo={concursoAtivo}
         waStatus={waStatus}
         waMsg={waMsg}
+        appNome={appNome}
       />
 
       <div className={styles.content}>
