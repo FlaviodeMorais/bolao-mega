@@ -48,7 +48,7 @@ export const LOTERIAS: Record<LoteriaId, LoteriaConfig> = {
     drawDays: [1, 2, 3, 4, 5],  // seg–sex
     tabelaNome: 'loteria_historico',
     precos: {
-      15:       3,
+      15:     3.5,
       16:      48,
       17:     408,
       18:    2380,
@@ -70,9 +70,9 @@ export const LOTERIAS: Record<LoteriaId, LoteriaConfig> = {
     drawDays: [1, 2, 3, 4, 5, 6],  // seg–sáb
     tabelaNome: 'loteria_historico',
     precos: {
-       5:    2,   6:   12,   7:   42,   8:  112,   9:  252,
-      10:  504,  11:  924,  12: 1584,  13: 2574,  14: 4004,
-      15: 6006,
+       5:    3,   6:   18,   7:   63,   8:  168,   9:  378,
+      10:  756,  11: 1386,  12: 2376,  13: 3861,  14: 6006,
+      15: 9009,
     },
   },
 }
