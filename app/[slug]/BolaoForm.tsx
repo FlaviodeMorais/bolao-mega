@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import TrevoIcon from '@/components/TrevoIcon'
+import LoginModal from '@/components/LoginModal'
 import { getLoteria } from '@/lib/loterias'
 import styles from './bolao.module.css'
 
@@ -95,6 +96,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
   const [apostasData, setApostasData] = useState<{ bets: number[][] } | null>(null)
   const [regras, setRegras] = useState(REGRAS_DEFAULT)
   const [resultadoConf, setResultadoConf] = useState<ResultadoConf | null>(null)
+  const [loginAberto, setLoginAberto]     = useState(false)
   const [modalPart, setModalPart]         = useState<Participante | null>(null)
   const [nomeVerif, setNomeVerif]         = useState('')
   const [verfErr, setVerfErr]             = useState('')
@@ -286,10 +288,11 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
             {loteriaLabel.toUpperCase()}
             <span className={styles.headerSub}>{bolaoNome}</span>
           </div>
-          <a href="/admin" className={styles.headerBtn} aria-label="Admin">
+          <button className={styles.headerBtn} aria-label="Admin" onClick={() => setLoginAberto(true)}>
             <span className="material-icons-round" style={{ fontSize: 18 }}>settings</span>
-          </a>
+          </button>
         </div>
+        {loginAberto && <LoginModal onClose={() => setLoginAberto(false)} />}
 
         {/* ── Hero: concurso ── */}
         {concursoAtivo?.concurso && (

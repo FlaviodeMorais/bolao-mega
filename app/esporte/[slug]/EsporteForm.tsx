@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import LoginModal from '@/components/LoginModal'
 import styles from './esporte.module.css'
 import { getFlagCode } from '@/lib/bandeiras'
 
@@ -259,6 +260,7 @@ const PTS_COR:     Record<number, string>                    = { 1: 'gold',   2:
 export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
   const [step, setStep]         = useState<'form'|'pix'|'ok'>('form')
   const [cadastrando, setCadastrando] = useState(false)
+  const [loginAberto, setLoginAberto] = useState(false)
   const [logado, setLogado]     = useState(false)
   // premiacao vem do bolão; fallback para settings globais; fallback para default
   const [premiacao, setPremiacao] = useState<PremiacaoItem[]>(bolao.premiacao?.length ? bolao.premiacao : PREMIACAO_DEFAULT)
@@ -454,10 +456,11 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
           ESPORTE
           <span className={styles.topBarSub}>{bolao.nome}</span>
         </div>
-        <a href="/admin" className={styles.topBarBtn} aria-label="Admin">
+        <button className={styles.topBarBtn} aria-label="Admin" onClick={() => setLoginAberto(true)}>
           <span className="material-icons-round" style={{ fontSize: 18 }}>settings</span>
-        </a>
+        </button>
       </div>
+      {loginAberto && <LoginModal onClose={() => setLoginAberto(false)} />}
 
       {/* ── Header banner ── */}
       <div className={styles.headerWrap}>

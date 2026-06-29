@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import TrevoIcon from '@/components/TrevoIcon'
+import LoginModal from '@/components/LoginModal'
 import styles from './home.module.css'
 
 interface Bolao { id: string; nome: string; slug: string; ativo: boolean; dezenas: number; num_apostas: number; loteria?: string }
@@ -249,6 +250,8 @@ export default function Home() {
   const [host, setHost]                   = useState('')
   const [sorteios, setSorteios]           = useState<SorteioInfo[]>([])
   const [grupoNome, setGrupoNome]         = useState('BOLÃO 💯')
+  const [appNome, setAppNome]             = useState('Bolões')
+  const [loginAberto, setLoginAberto]     = useState(false)
 
   const carregar = useCallback((inicial = false) => {
     Promise.all([
@@ -266,6 +269,7 @@ export default function Home() {
     carregar(true)
     fetch('/api/config-publica').then(r => r.json()).then(d => {
       if (d?.app?.grupo_nome) setGrupoNome(d.app.grupo_nome)
+      if (d?.app?.nome)       setAppNome(d.app.nome)
     }).catch(() => {})
     const id = setInterval(() => carregar(), 60000)
     const onFocus = () => carregar()
@@ -315,10 +319,12 @@ export default function Home() {
           {grupoNome}
           <span className={styles.headerSub}>Bolões de Loteria & Esportes</span>
         </div>
-        <a href="/admin" className={styles.headerBtn} aria-label="Admin">
+        <button className={styles.headerBtn} aria-label="Admin" onClick={() => setLoginAberto(true)}>
           <span className="material-icons-round" style={{ fontSize: 18 }}>settings</span>
-        </a>
+        </button>
       </div>
+
+      {loginAberto && <LoginModal onClose={() => setLoginAberto(false)} appNome={appNome} />}
 
       {/* ── Carrossel: um card por loteria com seus bolões e resultados ── */}
       {loading
