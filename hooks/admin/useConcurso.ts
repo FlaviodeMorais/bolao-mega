@@ -22,6 +22,7 @@ function formatPremio(v: number): string {
 }
 
 export function useConcurso() {
+  const [loteriaPanel, setLoteriaPanel]   = useState<LoteriaId>('mega')
   const [concursoAtivo, setConcursoAtivo] = useState('')
   const [dataAtiva, setDataAtiva]         = useState('')
   const [premioAtivo, setPremioAtivo]     = useState('')
@@ -35,11 +36,27 @@ export function useConcurso() {
     setPremioAtivo(premio)
   }
 
-  async function buscarCaixa(loteria: LoteriaId = 'mega') {
+  async function carregarConcursoAtivo(loteria: LoteriaId) {
+    try {
+      const res = await fetch(`/api/concurso-ativo?loteria=${loteria}`)
+      const d = await res.json()
+      setConcursoAtivo(d.concurso || '')
+      setDataAtiva(d.data || '')
+      setPremioAtivo(d.premio || '')
+    } catch { /* mantém estado atual */ }
+  }
+
+  function mudarLoteria(loteria: LoteriaId) {
+    setLoteriaPanel(loteria)
+    setProximos([])
+    setEditDatas({})
+    carregarConcursoAtivo(loteria)
+  }
+
+  async function buscarCaixa(loteria: LoteriaId = loteriaPanel) {
     setLoadingCaixa(true)
     try {
       const cfg = getLoteria(loteria)
-      // Usa nossa API de resultados (já tem cache + fallback)
       const res = await fetch(`/api/resultados/${cfg.apiSlug}`)
       if (!res.ok) throw new Error('Falha')
       const data: Record<string, unknown> = await res.json()
@@ -62,7 +79,7 @@ export function useConcurso() {
   async function selecionarConcurso(c: Concurso) {
     await fetch('/api/concurso-ativo', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ concurso: c.num, data: c.data, premio: c.premio }),
+      body: JSON.stringify({ concurso: c.num, data: c.data, premio: c.premio, loteria: loteriaPanel }),
     })
     setConcursoAtivo(String(c.num))
     setDataAtiva(c.data)
@@ -70,6 +87,7 @@ export function useConcurso() {
   }
 
   return {
+    loteriaPanel, mudarLoteria,
     concursoAtivo, dataAtiva, premioAtivo,
     proximos, setProximos, loadingCaixa,
     editDatas, setEditDatas,

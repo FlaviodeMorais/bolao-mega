@@ -78,10 +78,8 @@ export default function AdminPage() {
   const renomearBolao  = boloes.renomearBolao
   const criarBolao     = boloes.criarBolao
 
-  const loteriaAtualPanel = (bolaoAtual?.loteria || novaLoteria) as import('@/lib/loterias').LoteriaId
-
   // ConcursoPanel
-  const { proximos, setProximos, loadingCaixa, editDatas, setEditDatas, buscarCaixa } = concurso
+  const { loteriaPanel, mudarLoteria, proximos, setProximos, loadingCaixa, editDatas, setEditDatas, buscarCaixa } = concurso
 
   // BolaoDetailPanel — participantes
   const { loadingParts, confirmandoTodos, selecionados, enviandoComp,
@@ -394,7 +392,8 @@ export default function AdminPage() {
                 concursoAtivo={concursoAtivo}
                 loadingCaixa={loadingCaixa}
                 editDatas={editDatas}
-                loteriaAtual={loteriaAtualPanel}
+                loteriaAtual={loteriaPanel}
+                onMudarLoteria={mudarLoteria}
                 onEditData={(num, val) => setEditDatas(prev => ({ ...prev, [num]: val }))}
                 onBuscarCaixa={buscarCaixa}
                 onSelecionar={selecionarConcurso}
