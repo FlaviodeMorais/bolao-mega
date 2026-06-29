@@ -2,6 +2,15 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import TrevoIcon from '@/components/TrevoIcon'
 import { getLoteria } from '@/lib/loterias'
+import styles from './bolao.module.css'
+
+// Cor principal por loteria
+const LOTERIA_COR: Record<string, string> = {
+  mega:      '#00AB67',
+  quina:     '#005DA4',
+  lotofacil: '#803594',
+  lotomania: '#F58220',
+}
 
 function mascaraNome(nome: string): string {
   const words = nome.trim().split(/\s+/)
@@ -16,8 +25,6 @@ function mascaraNome(nome: string): string {
   const lm = maskWord(words[words.length - 1], 'last')
   return `${fm} ${lm}`
 }
-
-const APPS_URL = process.env.NEXT_PUBLIC_APPS_URL || ''
 
 const REGRAS_DEFAULT = [
   { icon: '⚠️', titulo: 'Bolão particular — não oficial', texto: 'Este bolão é organizado de forma particular e independente, sem qualquer vínculo com a Caixa Econômica Federal. A aposta na loteria é realizada pelo administrador em nome do grupo.', destaque: true },
@@ -55,10 +62,11 @@ interface Props {
 export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria, valorCota, totalCotas, dezenas: dezenasProp, numApostas: numApostasProp, taxaAdmin: taxaAdminProp, encerrado: encerradoProp }: Props) {
   const loteriaCfg   = getLoteria(loteria)
   const loteriaLabel = loteriaCfg.label
-  // Config do bolão — sempre confirmada pela API antes de liberar a seleção
+  const loteriaCor   = LOTERIA_COR[loteria ?? 'mega'] ?? '#00AB67'
+
   const [VALOR_COTA, setValorCota]     = useState(0)
   const [TOTAL_COTAS, setTotalCotas]   = useState(Number(totalCotas) || 20)
-  const [dezenas, setDezenas]          = useState(Number(dezenasProp)    || 6)
+  const [dezenas, setDezenas]          = useState(Number(dezenasProp) || 6)
   const [numApostas, setNumApostas]    = useState(Number(numApostasProp) || 1)
   const [bolaoNome, setBolaoNome]      = useState(bolaoNomeProp)
   const [encerrado, setEncerrado]      = useState(encerradoProp)
@@ -75,7 +83,6 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
   const [enviando, setEnviando]           = useState(false)
   const [showTermos, setShowTermos]       = useState(false)
   const [aceitouTermos, setAceitouTermos] = useState(false)
-  const [relogio, setRelogio]             = useState('')
   const [countdown, setCountdown]         = useState('')
   const [payTimer, setPayTimer]           = useState('')
   const [payStep, setPayStep]             = useState(0)
@@ -87,6 +94,12 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
 
   const [apostasData, setApostasData] = useState<{ bets: number[][] } | null>(null)
   const [regras, setRegras] = useState(REGRAS_DEFAULT)
+  const [resultadoConf, setResultadoConf] = useState<ResultadoConf | null>(null)
+  const [modalPart, setModalPart]         = useState<Participante | null>(null)
+  const [nomeVerif, setNomeVerif]         = useState('')
+  const [verfErr, setVerfErr]             = useState('')
+
+  const concurso = concursoAtivo?.concurso
 
   useEffect(() => {
     fetch('/api/config-publica').then(r => r.json()).then(d => {
@@ -103,66 +116,34 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
     }).catch(() => {})
   }, [loteria])
 
-  // Comprovante self-service
-  const [resultadoConf, setResultadoConf]     = useState<ResultadoConf | null>(null)
-  const [modalPart, setModalPart]             = useState<Participante | null>(null)
-  const [nomeVerif, setNomeVerif]             = useState('')
-  const [verfErr, setVerfErr]                 = useState('')
-
-  const concurso = concursoAtivo?.concurso
-
   function verificarIdentidade() {
     if (!modalPart) return
     const entrada    = nomeVerif.trim().toLowerCase()
     const cadastrado = modalPart.nome.trim().toLowerCase()
     if (entrada === cadastrado) {
-      // Abre a mesma página de comprovantes do admin em modo público (sem auth)
       const url = `/comprovante?id=${modalPart.id}&pub=1`
         + (bolaoSlug ? `&bolao=${bolaoSlug}` : '')
         + (concurso  ? `&concurso=${concurso}` : '')
       window.open(url, '_blank')
-      setModalPart(null)
-      setNomeVerif('')
-      setVerfErr('')
+      setModalPart(null); setNomeVerif(''); setVerfErr('')
     } else {
       setVerfErr('❌ Nome não confere com o cadastro. Tente novamente.')
     }
   }
 
-  // Relógio
-  useEffect(() => {
-    const tick = () => {
-      const d = new Date(); const p = (n: number) => String(n).padStart(2, '0')
-      setRelogio(`📅 ${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}  ·  ⏱ ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`)
-    }
-    tick(); const id = setInterval(tick, 1000); return () => clearInterval(id)
-  }, [])
-
-  // ── INIT: busca tudo em paralelo, sem corrida de dados ──────────
   useEffect(() => {
     setConfigOk(false)
-
     const concursoFetch = loteriaCfg.id !== 'mega'
       ? fetch(`/api/resultados/${loteriaCfg.apiSlug}`).then(r => r.json()).then(d => {
           if (!d?.numero) return null
           const val = d.valorEstimadoProximoConcurso
-          return {
-            concurso: String((d.numero || 0) + 1),
-            data: d.dataProximoConcurso || '',
-            premio: val ? `R$ ${(val / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} mi` : 'Acumulando',
-          }
+          return { concurso: String((d.numero || 0) + 1), data: d.dataProximoConcurso || '', premio: val ? `R$ ${(val / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} mi` : 'Acumulando' }
         }).catch(() => null)
       : fetch('/api/concurso-ativo').then(r => r.json())
 
-    Promise.all([
-      concursoFetch,
-      fetch('/api/boloes').then(r => r.json()),
-    ]).then(([ca, d]) => {
-      // 1. Concurso
+    Promise.all([concursoFetch, fetch('/api/boloes').then(r => r.json())]).then(([ca, d]) => {
       if (ca) setConcursoAtivo(ca)
       const num = String(ca?.concurso || '')
-
-      // 2. Config do bolão
       const b = (d.boloes || []).find((x: { slug: string }) => x.slug === bolaoSlug)
       if (b) {
         setValorCota(Number(b.valor_cota) || 0)
@@ -174,52 +155,34 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
         setResultadoConf(b.resultado_conferencia || null)
         setApostasData(b.apostas_data || null)
       }
-
-      // 3. Cotas e participantes — usa concurso já confirmado (sem depender de state)
       if (num) {
         Promise.all([
           fetch(`/api/cotas?concurso=${num}&bolao=${bolaoSlug}`).then(r => r.json()),
           fetch(`/api/participantes?concurso=${num}&bolao=${bolaoSlug}`).then(r => r.json()),
         ]).then(([c, p]) => {
-          setCotasOcupadas(c.cotas || [])
-          setParticipantes(p.participantes || [])
-          setConfigOk(true)
+          setCotasOcupadas(c.cotas || []); setParticipantes(p.participantes || []); setConfigOk(true)
         })
-      } else {
-        setConfigOk(true)
-      }
+      } else { setConfigOk(true) }
     }).catch(() => setConfigOk(false))
   }, [bolaoSlug, bolaoNomeProp])
 
-  // Revalida config ao focar a aba e a cada 60s
   useEffect(() => {
     const atualizar = () => {
       const caFetch = loteriaCfg.id !== 'mega'
         ? fetch(`/api/resultados/${loteriaCfg.apiSlug}`).then(r => r.json()).then(d => {
             if (!d?.numero) return null
             const val = d.valorEstimadoProximoConcurso
-            return {
-              concurso: String((d.numero || 0) + 1),
-              data: d.dataProximoConcurso || '',
-              premio: val ? `R$ ${(val / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} mi` : 'Acumulando',
-            }
+            return { concurso: String((d.numero || 0) + 1), data: d.dataProximoConcurso || '', premio: val ? `R$ ${(val / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} mi` : 'Acumulando' }
           }).catch(() => null)
         : fetch('/api/concurso-ativo').then(r => r.json())
-      Promise.all([
-        fetch('/api/boloes').then(r => r.json()),
-        caFetch,
-      ]).then(([d, ca]) => {
+      Promise.all([fetch('/api/boloes').then(r => r.json()), caFetch]).then(([d, ca]) => {
         if (ca) setConcursoAtivo(ca)
         const b = (d.boloes || []).find((x: { slug: string }) => x.slug === bolaoSlug)
         if (!b) return
-        setValorCota(Number(b.valor_cota) || 0)
-        setTotalCotas(Number(b.total_cotas) || 20)
-        setDezenas(Number(b.dezenas) || 6)
-        setNumApostas(Number(b.num_apostas) || 1)
-        setBolaoNome(b.nome || bolaoNomeProp)
-        setEncerrado(!!b.encerrado)
-        setResultadoConf(b.resultado_conferencia || null)
-        setApostasData(b.apostas_data || null)
+        setValorCota(Number(b.valor_cota) || 0); setTotalCotas(Number(b.total_cotas) || 20)
+        setDezenas(Number(b.dezenas) || 6); setNumApostas(Number(b.num_apostas) || 1)
+        setBolaoNome(b.nome || bolaoNomeProp); setEncerrado(!!b.encerrado)
+        setResultadoConf(b.resultado_conferencia || null); setApostasData(b.apostas_data || null)
       }).catch(() => {})
     }
     window.addEventListener('focus', atualizar)
@@ -227,7 +190,6 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
     return () => { window.removeEventListener('focus', atualizar); clearInterval(intervalo) }
   }, [bolaoSlug, bolaoNomeProp])
 
-  // Countdown — usa hora do campo data se vier no formato "DD/MM · Dia · HHhMM", senão 20h00
   useEffect(() => {
     if (!concursoAtivo?.data) return
     const dateMatch = concursoAtivo.data.match(/(\d{1,2})\/(\d{2})/)
@@ -252,8 +214,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
       fetch(`/api/cotas?concurso=${num}&bolao=${bolaoSlug}`).then(r => r.json()),
       fetch(`/api/participantes?concurso=${num}&bolao=${bolaoSlug}`).then(r => r.json()),
     ])
-    setCotasOcupadas(c.cotas || [])
-    setParticipantes(p.participantes || [])
+    setCotasOcupadas(c.cotas || []); setParticipantes(p.participantes || [])
   }, [concursoAtivo?.concurso, bolaoSlug])
 
   useEffect(() => {
@@ -262,8 +223,6 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
     pollRef.current = setInterval(recarregar, 10000)
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [recarregar, concursoAtivo?.concurso])
-
-
 
   async function confirmar() {
     if (!nome.trim())            { alert('⚠️ Informe seu nome completo!'); return }
@@ -305,60 +264,85 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
     alert('✅ Código PIX copiado!')
   }
 
-  const todasCotas = Array.from({ length: TOTAL_COTAS }, (_, i) => String(i + 1).padStart(2, '0'))
+  const todasCotas    = Array.from({ length: TOTAL_COTAS }, (_, i) => String(i + 1).padStart(2, '0'))
   const disponiveisList = todasCotas.filter(c => !cotasOcupadas.includes(c))
-  const selecionadas = disponiveisList.slice(0, Math.min(qtdCotas, disponiveisList.length))
-  const total = selecionadas.length * VALOR_COTA
-  const disp  = TOTAL_COTAS - cotasOcupadas.length
+  const selecionadas  = disponiveisList.slice(0, Math.min(qtdCotas, disponiveisList.length))
+  const total         = selecionadas.length * VALOR_COTA
+  const disp          = TOTAL_COTAS - cotasOcupadas.length
+
+  // CSS var injetada inline para que todas as classes com var(--lot-cor) usem a cor certa
+  const corStyle = { '--lot-cor': loteriaCor } as React.CSSProperties
 
   return (
     <>
-      <div className="page-wrap">
-        <div className="site-header">
-          <a href="/" className="header-link" title="Voltar">
-            <span className="material-icons-round">arrow_back</span>
+      <div className={styles.page} style={corStyle}>
+
+        {/* ── Header ── */}
+        <div className={styles.header}>
+          <a href="/" className={styles.headerBack} aria-label="Voltar">
+            <span className="material-icons-round" style={{ fontSize: 18 }}>arrow_back</span>
           </a>
-          <div className="header-brand">
-            <span className="brand">{loteriaLabel.toUpperCase()}</span>
+          <div className={styles.headerBrand}>
+            {loteriaLabel.toUpperCase()}
+            <span className={styles.headerSub}>{bolaoNome}</span>
           </div>
-          <a href="/admin" className="header-link"><span className="material-icons-round">settings</span></a>
+          <a href="/admin" className={styles.headerBtn} aria-label="Admin">
+            <span className="material-icons-round" style={{ fontSize: 18 }}>settings</span>
+          </a>
         </div>
 
-        <div className="bolao-tag">{bolaoNome}</div>
-
+        {/* ── Hero: concurso ── */}
         {concursoAtivo?.concurso && (
-          <div className="mega-card">
-            <div className="mega-header">
-              <TrevoIcon size={24} loteria={loteria ?? 'mega'} />
-              <span className="mega-title">{loteriaLabel.toUpperCase()}</span>
-              <span className="mega-concurso">Concurso #{concursoAtivo.concurso}</span>
-            </div>
-            <div className="mega-body">
-              {concursoAtivo.premio ? <div className="mega-prize">{concursoAtivo.premio}</div> : <div className="mega-prize">—</div>}
-              <div className="mega-prize-label">Prêmio estimado</div>
-              {concursoAtivo.data && (
-                <div className="mega-draw-row">
-                  <div>
-                    <div className="mega-draw-label">Sorteio</div>
-                    <div className="mega-draw-date">{concursoAtivo.data}</div>
-                  </div>
-                  {countdown && (
-                    <div className="mega-countdown-box">
-                      <div className="mega-draw-label">Faltam</div>
-                      <div className="mega-countdown-val">{countdown}</div>
-                    </div>
-                  )}
+          <div className={styles.heroCard}>
+            <div className={styles.heroInner}>
+              <div className={styles.heroHead}>
+                <TrevoIcon size={22} loteria={loteria ?? 'mega'} />
+                <span className={styles.heroTitle}>{loteriaLabel.toUpperCase()}</span>
+                <span className={styles.heroBadge}>Concurso #{concursoAtivo.concurso}</span>
+              </div>
+              <div className={styles.heroBody}>
+                <div className={styles.heroPremio} style={{ color: loteriaCor }}>
+                  {concursoAtivo.premio || '—'}
                 </div>
-              )}
-              <div className="mega-divider" />
-              <div className="mega-stats">
-                <div className="mega-stat"><div className="mega-stat-val">{disp}/{TOTAL_COTAS}</div><div className="mega-stat-lbl">Cotas Livres</div></div>
-                <div className="mega-stat-sep" />
-                <div className="mega-stat"><div className="mega-stat-val">{participantes.length}</div><div className="mega-stat-lbl">Participantes</div></div>
-                <div className="mega-stat-sep" />
-                <div className="mega-stat"><div className="mega-stat-val">{numApostas}</div><div className="mega-stat-lbl">Apostas</div></div>
-                <div className="mega-stat-sep" />
-                <div className="mega-stat"><div className="mega-stat-val">{dezenas}</div><div className="mega-stat-lbl">Dezenas</div></div>
+                <div className={styles.heroPremioLabel}>Prêmio estimado</div>
+
+                {concursoAtivo.data && (
+                  <div className={styles.heroRow}>
+                    <div className={styles.heroInfo}>
+                      <div className={styles.heroInfoLabel}>Sorteio</div>
+                      <div className={styles.heroInfoVal}>{concursoAtivo.data}</div>
+                    </div>
+                    {countdown && (
+                      <div className={styles.heroCountdown}>
+                        <div className={styles.heroInfoLabel}>Faltam</div>
+                        <div className={styles.heroCountdownVal}>{countdown}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <hr className={styles.heroDivider} />
+                <div className={styles.heroStats}>
+                  <div className={styles.heroStat}>
+                    <div className={styles.heroStatVal} style={{ color: loteriaCor }}>{disp}/{TOTAL_COTAS}</div>
+                    <span className={styles.heroStatLbl}>Cotas Livres</span>
+                  </div>
+                  <div className={styles.heroStatSep} />
+                  <div className={styles.heroStat}>
+                    <div className={styles.heroStatVal} style={{ color: loteriaCor }}>{participantes.length}</div>
+                    <span className={styles.heroStatLbl}>Participantes</span>
+                  </div>
+                  <div className={styles.heroStatSep} />
+                  <div className={styles.heroStat}>
+                    <div className={styles.heroStatVal} style={{ color: loteriaCor }}>{numApostas}</div>
+                    <span className={styles.heroStatLbl}>Apostas</span>
+                  </div>
+                  <div className={styles.heroStatSep} />
+                  <div className={styles.heroStat}>
+                    <div className={styles.heroStatVal} style={{ color: loteriaCor }}>{dezenas}</div>
+                    <span className={styles.heroStatLbl}>Dezenas</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -366,34 +350,41 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
 
         {/* ── Apostas do bolão ── */}
         {apostasData?.bets && apostasData.bets.length > 0 && (
-          <div className="mega-card">
-            <div className="mega-header">
-              <TrevoIcon size={24} loteria={loteria ?? 'mega'} />
-              <span className="mega-title">{loteriaLabel.toUpperCase()}</span>
-              <span className="mega-concurso">{apostasData.bets.length} apostas · {apostasData.bets[0]?.length} dezenas</span>
-            </div>
-            <div className="apostas-lista">
-              {apostasData.bets.map((aposta, i) => (
-                <div key={i} className="aposta-row">
-                  <span className="aposta-idx">{i + 1}</span>
-                  <div className="aposta-bolas">
-                    {aposta.map(n => (
-                      <span key={n} className="aposta-bola">{String(n).padStart(2, '0')}</span>
-                    ))}
+          <div className={styles.secWrap}>
+            <div className={styles.secCard}>
+              <div className={styles.secHead}>
+                <TrevoIcon size={18} loteria={loteria ?? 'mega'} />
+                <span className={styles.secTitle}>
+                  {apostasData.bets.length} apostas · {apostasData.bets[0]?.length} dezenas
+                </span>
+              </div>
+              <div className={styles.apostasLista}>
+                {apostasData.bets.map((aposta, i) => (
+                  <div key={i} className={styles.apostaRow}>
+                    <span className={styles.apostaIdx}>{i + 1}</span>
+                    <div className={styles.apostaBolas}>
+                      {aposta.map(n => (
+                        <span key={n} className={styles.apostaBola}
+                          style={{ background: loteriaCor }}>
+                          {String(n).padStart(2, '0')}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}
 
+        {/* ── Bolão encerrado ── */}
         {encerrado && (
-          <div className="card">
-            <div className="form-body">
-              <div className="bolao-encerrado-banner">
-                <div className="enc-icon">⛔</div>
-                <div className="enc-title">Bolão Encerrado</div>
-                <div className="enc-sub">
+          <div className={styles.secWrap}>
+            <div className={styles.secCard}>
+              <div className={styles.encerradoBanner}>
+                <div className={styles.encIcon}>⛔</div>
+                <div className={styles.encTitle}>Bolão Encerrado</div>
+                <div className={styles.encSub}>
                   Este bolão foi encerrado pelo administrador.<br/>
                   Se você é participante, verifique seu <strong>WhatsApp</strong> para o PIX de complemento de pagamento.
                 </div>
@@ -402,280 +393,275 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
           </div>
         )}
 
-        {!encerrado && <div className="card">
-          <div className="form-body">
-            <div className="field">
-              <label className="field-label">Nome completo *</label>
-              <input
-                type="text"
-                value={nome}
-                onChange={e => setNome(e.target.value.toUpperCase())}
-                placeholder="SEU NOME COMPLETO"
-                className="input-upper"
-              />
-            </div>
-            <div className="field">
-              <label className="field-label">Celular com DDD (WhatsApp) *</label>
-              <input
-                type="tel"
-                value={telefone}
-                onChange={e => {
-                  const v = e.target.value.replace(/\D/g,'').slice(0,11)
-                  const f = v.length <= 2 ? v
-                    : v.length <= 7  ? `(${v.slice(0,2)}) ${v.slice(2)}`
-                    : `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`
-                  setTelefone(f)
-                }}
-                placeholder="(19) 99999-9999"
-                inputMode="numeric"
-              />
-            </div>
-            <div className="field">
-              <label className="field-label">E-mail (opcional — para receber comprovante)</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                inputMode="email"
-                autoComplete="email"
-              />
-            </div>
-            <hr />
-            <div className="sec-title">🎟️ Selecionar Cotas</div>
-            {!configOk && (
-              <div className="bolao-nao-config">⏳ Carregando configuração...</div>
-            )}
-            {configOk && VALOR_COTA === 0 && (
-              <div className="bolao-nao-config">
-                ⚠️ Bolão aguardando configuração do administrador.
-              </div>
-            )}
-            {configOk && VALOR_COTA > 0 && (
-              <>
-                <div className="cotas-progress-wrap">
-                  <div className="cotas-progress-info">
-                    <span className="cotas-progress-label">Cotas vendidas</span>
-                    <span className="cotas-progress-nums"><strong>{cotasOcupadas.length}</strong>/{TOTAL_COTAS}</span>
-                  </div>
-                  <div className="cotas-progress-bar">
-                    <div className="cotas-progress-fill" style={{ width: `${Math.round((cotasOcupadas.length / TOTAL_COTAS) * 100)}%` }} />
-                  </div>
-                  {disp <= 2 && disp > 0 && <div className="cotas-progress-urgente">⚡ Últimas {disp} cota{disp !== 1 ? 's' : ''}!</div>}
-                </div>
-                <div className="qtd-cotas-wrap">
-                  <div>
-                    <label className="qtd-cotas-label" htmlFor="qtd-cotas">Quantidade de cotas</label>
-                    <div className="qtd-cota-preco">R$ {VALOR_COTA.toFixed(2).replace('.', ',')} / cota</div>
-                  </div>
-                  <div className="qtd-cotas-row">
-                    <button type="button" className="qtd-btn" onClick={() => setQtdCotas(q => Math.max(1, q - 1))} aria-label="Diminuir">−</button>
-                    <input
-                      id="qtd-cotas"
-                      type="number"
-                      min={1}
-                      max={disp}
-                      value={qtdCotas}
-                      onChange={e => setQtdCotas(Math.min(disp, Math.max(1, parseInt(e.target.value) || 1)))}
-                      className="qtd-input"
-                    />
-                    <button type="button" className="qtd-btn" onClick={() => setQtdCotas(q => Math.min(disp, q + 1))} aria-label="Aumentar">+</button>
-                  </div>
-                </div>
-                <div className="total-bar">
-                  <div><div className="t-label">Total a pagar</div><div className="t-cotas">{selecionadas.length} cota{selecionadas.length !== 1 ? 's' : ''}</div></div>
-                  <div className="t-value">R$ {total.toFixed(2).replace('.', ',')}</div>
-                </div>
-                <button type="button" className="btn"
-                  onClick={() => { if (!selecionadas.length) { alert('⚠️ Selecione ao menos uma cota!'); return } setAceitouTermos(false); setShowTermos(true) }}
-                  disabled={enviando || !selecionadas.length}>
-                  Ir para Pagamento
-                </button>
-              </>
-            )}
-            {participantes.length > 0 && (
-              <>
-                <hr />
-                <div className="sec-title">👥 Participantes</div>
+        {/* ── Formulário de inscrição ── */}
+        {!encerrado && (
+          <div className={styles.secWrap}>
+            <div className={styles.secCard}>
+              <div className={styles.secBody}>
 
-                {/* Status do sorteio */}
-                {resultadoConf && (
-                  <div className="sorteio-resultado-wrap">
-                    <div className={`status-sorteio status-${resultadoConf.status}`}>
-                      {resultadoConf.status === 'nao_apurado'         && `⏳ Sorteio não apurado${resultadoConf.data_sorteio ? ` — ${resultadoConf.data_sorteio}` : ''}`}
-                      {resultadoConf.status === 'aguardando_apuracao'  && `🎲 Aguardando apuração — resultado após 22h`}
-                      {resultadoConf.status === 'apurando'             && '🔄 Apuração em andamento...'}
-                      {resultadoConf.status === 'nao_premiada'         && '😔 Não premiada neste concurso'}
-                      {resultadoConf.status === 'ganhamos'             && `🏆 GANHAMOS! — ${resultadoConf.maior_premio}`}
-                    </div>
-                    {resultadoConf.dezenas_sorteadas && resultadoConf.dezenas_sorteadas.length === 6 && (
-                      <div className="sorteio-dezenas">
-                        <span className="sorteio-dezenas-label">Dezenas sorteadas</span>
-                        <div className="sorteio-dezenas-grid">
-                          {resultadoConf.dezenas_sorteadas.map(n => (
-                            <span key={n} className="sorteio-dez-ball">{String(n).padStart(2, '0')}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                {/* Dados pessoais */}
+                <div className={styles.field}>
+                  <label className={styles.fieldLabel}>Nome completo *</label>
+                  <input className={`${styles.fieldInput} ${styles.fieldInputUpper}`}
+                    type="text" value={nome}
+                    onChange={e => setNome(e.target.value.toUpperCase())}
+                    placeholder="SEU NOME COMPLETO" />
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.fieldLabel}>Celular com DDD (WhatsApp) *</label>
+                  <input className={styles.fieldInput}
+                    type="tel" value={telefone} inputMode="numeric"
+                    onChange={e => {
+                      const v = e.target.value.replace(/\D/g,'').slice(0,11)
+                      const f = v.length <= 2 ? v : v.length <= 7 ? `(${v.slice(0,2)}) ${v.slice(2)}` : `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`
+                      setTelefone(f)
+                    }}
+                    placeholder="(19) 99999-9999" />
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.fieldLabel}>E-mail (opcional)</label>
+                  <input className={styles.fieldInput}
+                    type="email" value={email} inputMode="email" autoComplete="email"
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="seu@email.com" />
+                </div>
+
+                <hr className={styles.divider} />
+                <div className={styles.secSubTitle}>🎟️ Selecionar Cotas</div>
+
+                {!configOk && <div className={styles.loadingMsg}>⏳ Carregando configuração...</div>}
+                {configOk && VALOR_COTA === 0 && (
+                  <div className={styles.loadingMsg}>⚠️ Bolão aguardando configuração do administrador.</div>
                 )}
 
-                <div className="p-box">
-                  {participantes.map(p => (
-                    <div className="p-row" key={p.id}>
-                      <span className="p-nome">{mascaraNome(p.nome)}</span>
-                      <span className="p-cotas">{Array.isArray(p.cotas) ? p.cotas.join(', ') : p.cotas}</span>
-                      {p.status === 'pago' ? (
-                        <button
-                          type="button"
-                          className="p-pago"
-                          onClick={() => { setModalPart(p); setNomeVerif(''); setVerfErr('') }}
-                          title="Clique para ver seu comprovante"
-                        >✅ PAGO</button>
-                      ) : (
-                        <span className="p-pending">⏳</span>
+                {configOk && VALOR_COTA > 0 && (<>
+                  <div className={styles.cotasProgress}>
+                    <div className={styles.cotasProgressInfo}>
+                      <span className={styles.cotasProgressLabel}>Cotas vendidas</span>
+                      <span className={styles.cotasProgressNums}><strong>{cotasOcupadas.length}</strong>/{TOTAL_COTAS}</span>
+                    </div>
+                    <div className={styles.cotasProgressBar}>
+                      <div className={styles.cotasProgressFill}
+                        style={{ width: `${Math.round((cotasOcupadas.length / TOTAL_COTAS) * 100)}%` }} />
+                    </div>
+                    {disp <= 2 && disp > 0 && (
+                      <div className={styles.cotasUrgente}>⚡ Últimas {disp} cota{disp !== 1 ? 's' : ''}!</div>
+                    )}
+                  </div>
+
+                  <div className={styles.qtdWrap}>
+                    <div className={styles.qtdInfo}>
+                      <div className={styles.qtdLabel}>Quantidade de cotas</div>
+                      <div className={styles.qtdPreco}>R$ {VALOR_COTA.toFixed(2).replace('.', ',')} / cota</div>
+                    </div>
+                    <div className={styles.qtdRow}>
+                      <button type="button" className={styles.qtdBtn} onClick={() => setQtdCotas(q => Math.max(1, q - 1))}>−</button>
+                      <input className={styles.qtdInput} type="number" min={1} max={disp} value={qtdCotas}
+                        onChange={e => setQtdCotas(Math.min(disp, Math.max(1, parseInt(e.target.value) || 1)))} />
+                      <button type="button" className={styles.qtdBtn} onClick={() => setQtdCotas(q => Math.min(disp, q + 1))}>+</button>
+                    </div>
+                  </div>
+
+                  <div className={styles.totalBar}>
+                    <div>
+                      <div className={styles.totalLabel}>Total a pagar</div>
+                      <div className={styles.totalCotas}>{selecionadas.length} cota{selecionadas.length !== 1 ? 's' : ''}</div>
+                    </div>
+                    <div className={styles.totalVal} style={{ color: loteriaCor }}>
+                      R$ {total.toFixed(2).replace('.', ',')}
+                    </div>
+                  </div>
+
+                  <button type="button" className={styles.btn}
+                    onClick={() => { if (!selecionadas.length) { alert('⚠️ Selecione ao menos uma cota!'); return } setAceitouTermos(false); setShowTermos(true) }}
+                    disabled={enviando || !selecionadas.length}>
+                    Ir para Pagamento
+                  </button>
+                </>)}
+
+                {/* Participantes */}
+                {participantes.length > 0 && (<>
+                  <hr className={styles.divider} />
+                  <div className={styles.secSubTitle}>👥 Participantes</div>
+
+                  {resultadoConf && (
+                    <div className={styles.sorteioResultado}>
+                      <div className={`${styles.statusSorteio} ${resultadoConf.status === 'ganhamos' ? styles.statusGanhamos : ''}`}>
+                        {resultadoConf.status === 'nao_apurado'        && `⏳ Sorteio não apurado${resultadoConf.data_sorteio ? ` — ${resultadoConf.data_sorteio}` : ''}`}
+                        {resultadoConf.status === 'aguardando_apuracao' && '🎲 Aguardando apuração — resultado após 22h'}
+                        {resultadoConf.status === 'apurando'            && '🔄 Apuração em andamento...'}
+                        {resultadoConf.status === 'nao_premiada'        && '😔 Não premiada neste concurso'}
+                        {resultadoConf.status === 'ganhamos'            && `🏆 GANHAMOS! — ${resultadoConf.maior_premio}`}
+                      </div>
+                      {/* BUG CORRIGIDO: era === 6, agora funciona para qualquer loteria */}
+                      {resultadoConf.dezenas_sorteadas && resultadoConf.dezenas_sorteadas.length > 0 && (
+                        <div className={styles.sorteioDezenas}>
+                          <div className={styles.sorteioDezenasLabel}>Dezenas sorteadas</div>
+                          <div className={styles.sorteioDezenasGrid}>
+                            {resultadoConf.dezenas_sorteadas.map(n => (
+                              <span key={n} className={styles.sorteioBall} style={{ background: loteriaCor }}>
+                                {String(n).padStart(2, '0')}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
                       )}
                     </div>
-                  ))}
+                  )}
+
+                  <div className={styles.pBox}>
+                    {participantes.map(p => (
+                      <div className={styles.pRow} key={p.id}>
+                        <span className={styles.pNome}>{mascaraNome(p.nome)}</span>
+                        <span className={styles.pCotas}>{Array.isArray(p.cotas) ? p.cotas.join(', ') : p.cotas}</span>
+                        {p.status === 'pago' ? (
+                          <button type="button" className={styles.pPago}
+                            onClick={() => { setModalPart(p); setNomeVerif(''); setVerfErr('') }}>
+                            ✅ PAGO
+                          </button>
+                        ) : (
+                          <span className={styles.pPendente}>⏳</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>)}
+
+                <div className={styles.footer}>
+                  <strong>Boa sorte! 🍀</strong><br />Dúvidas? Fale com o administrador.
                 </div>
-              </>
-            )}
-            <div className="footer"><strong>Boa sorte! 🍀</strong><br />Dúvidas? Fale com o administrador.</div>
+              </div>
+            </div>
           </div>
-        </div>}
+        )}
+
       </div>
 
-      {/* Modal de Termos */}
+      {/* ── Modal de Termos ── */}
       {showTermos && !pix && (
-        <div className="pay-overlay">
-          <div className="pay-box termos-box">
-            <div className="termos-header">
-              <div className="termos-titulo">📋 Termos de Participação</div>
-              <div className="termos-bolao">{bolaoNome}</div>
+        <div className={styles.overlay} style={corStyle}>
+          <div className={styles.overlayBox}>
+            <div className={styles.termosHeader}>
+              <div className={styles.termosTitulo}>📋 Termos de Participação</div>
+              <div className={styles.termosBolao}>{bolaoNome}</div>
             </div>
-
-            <div className="termos-resumo">
-              <div className="termos-linha"><span className="termos-ic">🎟️</span><span>Cotas selecionadas: <strong>{selecionadas.sort().join(', ')}</strong></span></div>
-              <div className="termos-linha"><span className="termos-ic">💰</span><span>Total a pagar: <strong>R$ {total.toFixed(2).replace('.', ',')}</strong></span></div>
-              <div className="termos-linha"><span className="termos-ic">🎲</span><span>Apostas: <strong>{numApostas}</strong> de <strong>{dezenas}</strong> dezenas</span></div>
+            <div className={styles.termosResumo}>
+              <div className={styles.termosLinha}><span className={styles.termosIc}>🎟️</span><span>Cotas: <strong>{selecionadas.sort().join(', ')}</strong></span></div>
+              <div className={styles.termosLinha}><span className={styles.termosIc}>💰</span><span>Total: <strong>R$ {total.toFixed(2).replace('.', ',')}</strong></span></div>
+              <div className={styles.termosLinha}><span className={styles.termosIc}>🎲</span><span>Apostas: <strong>{numApostas}</strong> de <strong>{dezenas}</strong> dezenas</span></div>
             </div>
-
-            <div className="termos-lista">
+            <div className={styles.termosLista}>
               {regras.map((r, i) => (
-                <div key={i} className="termos-regra">
-                  <div className="termos-regra-titulo">{r.icon} {r.titulo}</div>
-                  <div className="termos-regra-desc">{r.texto}</div>
+                <div key={i} className={styles.termosRegra}>
+                  <div className={styles.termosRegraTitulo}>{r.icon} {r.titulo}</div>
+                  <div className={styles.termosRegraDesc}>{r.texto}</div>
                 </div>
               ))}
             </div>
-
-            <label className="termos-check-label">
-              <input type="checkbox" className="termos-check"
-                checked={aceitouTermos}
-                onChange={e => setAceitouTermos(e.target.checked)} />
+            <label className={styles.termosCheckLabel}>
+              <input type="checkbox" className={styles.termosCheck} checked={aceitouTermos} onChange={e => setAceitouTermos(e.target.checked)} />
               <span>Li e concordo com as regras de participação deste bolão</span>
             </label>
-
-            <button type="button" className={`btn ${!aceitouTermos ? 'btn-disabled' : ''}`}
+            <button type="button" className={styles.btn}
               onClick={() => { if (aceitouTermos) { setShowTermos(false); confirmar() } }}
               disabled={!aceitouTermos || enviando}>
               {enviando ? '⏳ Gerando PIX...' : '✅ Confirmar e Gerar PIX'}
             </button>
-            <button type="button" className="pay-fechar" onClick={() => setShowTermos(false)}>
-              Cancelar
-            </button>
+            <button type="button" className={styles.btnFechar} onClick={() => setShowTermos(false)}>Cancelar</button>
           </div>
         </div>
       )}
 
+      {/* ── Modal PIX ── */}
       {pix && (
-        <div className="pay-overlay">
-          <div className="pay-box">
-            <div className="pay-stepper">
-              {['Aguardando\nPagamento Pix','Em\nProcessamento','Pagamento\nConfirmado'].map((label, i) => (
-                <div key={i} className="pay-step-wrap">
-                  {i > 0 && <div className={`pay-line${payStep >= i ? ' done' : ''}`} />}
-                  <div className="pay-step-item" key={`item-${i}`}>
-                    <div className={`pay-dot${payStep >= i ? ' active' : ''}${payStep === i ? ' current' : ''}`}>{payStep > i ? '✓' : payStep === i ? '◆' : ''}</div>
-                    {payStep === i && <div className="pay-step-label">{label.split('\n').map((l,k) => <span key={k}>{l}<br/></span>)}</div>}
+        <div className={styles.overlay} style={corStyle}>
+          <div className={styles.overlayBox}>
+            {/* Stepper */}
+            <div className={styles.stepper}>
+              {['Aguardando\nPagamento', 'Em\nProcessamento', 'Pagamento\nConfirmado'].map((label, i) => (
+                <div key={i} className={styles.stepWrap}>
+                  {i > 0 && <div className={`${styles.stepLine} ${payStep >= i ? styles.stepLineDone : ''}`} />}
+                  <div className={styles.stepItem}>
+                    <div className={`${styles.stepDot} ${payStep >= i ? styles.stepDotActive : ''} ${payStep === i ? styles.stepDotCurrent : ''}`}>
+                      {payStep > i ? '✓' : payStep === i ? '◆' : ''}
+                    </div>
+                    {payStep === i && <div className={styles.stepLabel}>{label.split('\n').map((l,k) => <span key={k}>{l}<br/></span>)}</div>}
                   </div>
                 </div>
               ))}
             </div>
-            <div className="receipt-card">
-              <div className="receipt-pix-row"><span className="receipt-meio">Meio de pagamento:</span><span className="pix-logo">◈ pix</span></div>
-              <div className="receipt-grid">
-                <div><span className="receipt-lbl">Bolão: </span><span className="receipt-val">{bolaoNome}</span></div>
-                <div><span className="receipt-lbl">ID: </span><span className="receipt-val">{pix.paymentId.substring(0,16)}</span></div>
-                <div><span className="receipt-lbl">Situação: </span><span className={`receipt-situacao${payStatus === 'pago' ? ' pago' : ''}`}>{payStatus === 'pago' ? 'Confirmado' : 'Em Processamento'}</span></div>
-                <div><span className="receipt-lbl">Data: </span><span className="receipt-val">{payCreated}</span></div>
+
+            {/* Recibo */}
+            <div className={styles.receiptCard}>
+              <div className={styles.receiptPixRow}>
+                <span className={styles.receiptMeio}>Meio de pagamento:</span>
+                <span className={styles.pixLogo}>◈ pix</span>
+              </div>
+              <div className={styles.receiptGrid}>
+                <div><span className={styles.receiptLbl}>Bolão: </span><span className={styles.receiptVal}>{bolaoNome}</span></div>
+                <div><span className={styles.receiptLbl}>ID: </span><span className={styles.receiptVal}>{pix.paymentId.substring(0,16)}</span></div>
+                <div>
+                  <span className={styles.receiptLbl}>Situação: </span>
+                  <span className={`${styles.receiptSituacao} ${payStatus === 'pago' ? styles.receiptSituacaoPago : ''}`}>
+                    {payStatus === 'pago' ? 'Confirmado' : 'Em Processamento'}
+                  </span>
+                </div>
+                <div><span className={styles.receiptLbl}>Data: </span><span className={styles.receiptVal}>{payCreated}</span></div>
               </div>
             </div>
+
             {payStatus !== 'pago' && (<>
-              <div className="pay-scan-title">Escaneie o código a seguir</div>
-              <img className="pay-qr" src={`data:image/png;base64,${pix.qrCodeBase64}`} alt="QR Code PIX" />
-              <div className="pay-copy-title">Ou copie este código para efetuar o pagamento</div>
-              <div className="pay-instruction">No seu internet Banking ou app escolha pagamento via pix. Depois copie e cole o seguinte código</div>
-              <div className="pay-code-row">
-                <div className="pay-code">{pix.pixCode}</div>
-                <button type="button" className="pay-copy-btn" onClick={copiarPix}>📋 Copiar código</button>
+              <div className={styles.scanTitle}>Escaneie o código a seguir</div>
+              <img className={styles.qrCode} src={`data:image/png;base64,${pix.qrCodeBase64}`} alt="QR Code PIX" />
+              <div className={styles.copyTitle}>Ou copie este código</div>
+              <div className={styles.copyInstruction}>No app do seu banco, escolha pagamento via PIX e cole o código abaixo</div>
+              <div className={styles.codeRow}>
+                <div className={styles.codeText}>{pix.pixCode}</div>
+                <button type="button" className={styles.copyBtn} onClick={copiarPix}>📋 Copiar código PIX</button>
               </div>
-              {payTimer && <div className="pay-timer">⊙ Você tem <strong>{payTimer} minutos</strong> para efetuar o pagamento</div>}
+              {payTimer && <div className={styles.payTimer}>⊙ Você tem <strong>{payTimer}</strong> para efetuar o pagamento</div>}
             </>)}
+
             {payStatus === 'pago' && (
-              <div className="comprovante">
-                {/* Header */}
-                <div className="comp-header">
-                  <span className="comp-check-icon">✅</span>
-                  <div className="comp-titulo">Comprovante de Participação</div>
-                  <div className="comp-data">{payCreated}</div>
+              <div className={styles.comprovante}>
+                <div className={styles.compHeader}>
+                  <span className={styles.compCheckIcon}>✅</span>
+                  <div className={styles.compTitulo}>Comprovante de Participação</div>
+                  <div className={styles.compData}>{payCreated}</div>
                 </div>
-
-                {/* Valor */}
-                <div className="comp-valor">R$ {pix.total.toFixed(2).replace('.', ',')}</div>
-
-                {/* Timeline De → Para */}
-                <div className="comp-timeline">
-                  <div className="comp-timeline-col">
-                    <div className="comp-dot comp-dot-blue" />
-                    <div className="comp-vline" />
-                    <div className="comp-dot comp-dot-blue" />
+                <div className={styles.compValor} style={{ color: loteriaCor }}>
+                  R$ {pix.total.toFixed(2).replace('.', ',')}
+                </div>
+                <div className={styles.compTimeline}>
+                  <div className={styles.compTimelineCol}>
+                    <div className={styles.compDot} />
+                    <div className={styles.compVline} />
+                    <div className={styles.compDot} />
                   </div>
-                  <div className="comp-timeline-info">
-                    <div className="comp-party">
-                      <div className="comp-party-label">De</div>
-                      <div className="comp-party-nome">{pix.nome}</div>
-                      <div className="comp-party-detalhe">Cotas adquiridas: {pix.cotas.join(', ')}</div>
+                  <div className={styles.compTimelineInfo}>
+                    <div className={styles.compParty}>
+                      <div className={styles.compPartyLabel}>De</div>
+                      <div className={styles.compPartyNome}>{pix.nome}</div>
+                      <div className={styles.compPartyDetalhe}>Cotas adquiridas: {pix.cotas.join(', ')}</div>
                     </div>
-                    <div className="comp-party comp-party-second">
-                      <div className="comp-party-label">Para</div>
-                      <div className="comp-party-nome">{bolaoNome}</div>
-                      <div className="comp-party-detalhe">Administrador do Bolão</div>
-                      <div className="comp-party-detalhe">{numApostas} apostas · {dezenas} dezenas</div>
+                    <div className={styles.compParty}>
+                      <div className={styles.compPartyLabel}>Para</div>
+                      <div className={styles.compPartyNome}>{bolaoNome}</div>
+                      <div className={styles.compPartyDetalhe}>Administrador do Bolão</div>
+                      <div className={styles.compPartyDetalhe}>{numApostas} apostas · {dezenas} dezenas</div>
                     </div>
                   </div>
                 </div>
-
-                {/* IDs da transação */}
-                <div className="comp-ids">
-                  <div className="comp-id-row">
-                    <span className="comp-id-lbl">ID da transação</span>
-                    <span className="comp-id-val">{pix.paymentId}</span>
+                <div className={styles.compIds}>
+                  <div className={styles.compIdRow}>
+                    <span className={styles.compIdLbl}>ID da transação</span>
+                    <span className={styles.compIdVal}>{pix.paymentId}</span>
                   </div>
-                  {pix.fonte === 'mp' && (
-                    <div className="comp-id-row">
-                      <span className="comp-id-lbl">Mercado Pago</span>
-                      <span className="comp-id-val">{pix.paymentId}</span>
-                    </div>
-                  )}
                 </div>
-
-                {/* Termos aceitos */}
-                <div className="comp-termos-aceitos">
-                  <div className="comp-termos-titulo">📋 Termos de Participação Aceitos</div>
+                <div className={styles.compTermos}>
+                  <div className={styles.compTermosTitulo}>📋 Termos Aceitos</div>
                   {regras.map((r, i) => (
-                    <div key={i} className="comp-termos-item">
+                    <div key={i} className={styles.compTermosItem}>
                       <span>{r.icon}</span>
                       <span><strong>{r.titulo}:</strong> {r.texto}</span>
                     </div>
@@ -683,34 +669,33 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
                 </div>
               </div>
             )}
-            <button type="button" className="pay-fechar" onClick={() => { setPix(null); if(timerRef.current) clearInterval(timerRef.current); if(statusRef.current) clearInterval(statusRef.current) }}>Fechar</button>
-          </div>
-        </div>
-      )}
-      {/* ── Modal de verificação de identidade ── */}
-      {modalPart && (
-        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setModalPart(null) }}>
-          <div className="modal-box">
-            <div className="modal-title">🔒 Verificar identidade</div>
-            <p className="modal-desc">Digite seu <strong>nome completo</strong> conforme cadastrado para visualizar seu comprovante.</p>
-            <input
-              type="text"
-              className="modal-input"
-              placeholder="Seu nome completo"
-              value={nomeVerif}
-              autoFocus
-              onChange={e => { setNomeVerif(e.target.value); setVerfErr('') }}
-              onKeyDown={e => { if (e.key === 'Enter') verificarIdentidade() }}
-            />
-            {verfErr && <div className="modal-err">{verfErr}</div>}
-            <div className="modal-actions">
-              <button type="button" className="modal-btn-cancel" onClick={() => setModalPart(null)}>Cancelar</button>
-              <button type="button" className="modal-btn-confirm" onClick={verificarIdentidade}>Confirmar</button>
-            </div>
+
+            <button type="button" className={styles.btnFechar}
+              onClick={() => { setPix(null); if(timerRef.current) clearInterval(timerRef.current); if(statusRef.current) clearInterval(statusRef.current) }}>
+              Fechar
+            </button>
           </div>
         </div>
       )}
 
+      {/* ── Modal verificação de identidade ── */}
+      {modalPart && (
+        <div className={styles.modalOverlay} style={corStyle} onClick={e => { if (e.target === e.currentTarget) setModalPart(null) }}>
+          <div className={styles.modalBox}>
+            <div className={styles.modalTitle}>🔒 Verificar identidade</div>
+            <p className={styles.modalDesc}>Digite seu <strong>nome completo</strong> conforme cadastrado para visualizar seu comprovante.</p>
+            <input className={styles.modalInput} type="text" placeholder="Seu nome completo"
+              value={nomeVerif} autoFocus
+              onChange={e => { setNomeVerif(e.target.value); setVerfErr('') }}
+              onKeyDown={e => { if (e.key === 'Enter') verificarIdentidade() }} />
+            {verfErr && <div className={styles.modalErr}>{verfErr}</div>}
+            <div className={styles.modalActions}>
+              <button type="button" className={styles.modalBtnCancel} onClick={() => setModalPart(null)}>Cancelar</button>
+              <button type="button" className={styles.modalBtnConfirm} onClick={verificarIdentidade}>Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
