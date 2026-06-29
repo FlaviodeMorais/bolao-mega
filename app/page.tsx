@@ -126,7 +126,47 @@ function SorteioCard({ s, boloes, host }: { s: SorteioInfo; boloes: Bolao[]; hos
   )
 }
 
-function CarrosselSorteios({ sorteios, boloes, host }: { sorteios: SorteioInfo[]; boloes: Bolao[]; host: string }) {
+function EsporteCardCarrossel({ boloesEsporte }: { boloesEsporte: BolaoEsporte[] }) {
+  return (
+    <div className={`${styles.sorteioCard} ${styles.esporteCarrosselCard}`}>
+      <div className={styles.sorteioCardHead} style={{ borderBottom: '1px solid rgba(29,110,166,0.25)' }}>
+        <span style={{ fontSize: 20 }}>⚽</span>
+        <span className={styles.sorteioCardTitle}>Bolão Esportivo</span>
+        <span className={styles.sorteioBadge} style={{ background: 'rgba(29,110,166,0.2)', borderColor: 'rgba(29,110,166,0.35)', color: '#60b4f0' }}>
+          FIFA 2026
+        </span>
+      </div>
+      <div className={styles.sorteioCardBody}>
+        <img src="/1684502982782.gif" alt="FIFA 2026" className={styles.esporteCarrosselGif} />
+        {boloesEsporte.length > 0 ? (
+          <div className={styles.cardBoloes} style={{ marginTop: 16 }}>
+            <div className={styles.cardBoloesTitulo} style={{ color: '#60b4f0' }}>
+              ⚽ Bolões disponíveis
+            </div>
+            {boloesEsporte.map(b => (
+              <a key={b.id} href={`/esporte/${b.slug}`} className={styles.cardBolaoItem}
+                style={{ borderColor: 'rgba(29,110,166,0.25)' }}>
+                <div className={styles.cardBolaoInfo}>
+                  <span className={styles.cardBolaoNome}>{b.nome}</span>
+                  {b.descricao && <span className={styles.cardBolaoMeta}>{b.descricao}</span>}
+                </div>
+                <span className={`material-icons-round ${styles.cardBolaoArrow}`}
+                  style={{ color: '#60b4f0' }}>arrow_forward_ios</span>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div className={styles.empty} style={{ marginTop: 16 }}>
+            Nenhum bolão esportivo ativo no momento.
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function CarrosselSorteios({ sorteios, boloes, boloesEsporte, host }: { sorteios: SorteioInfo[]; boloes: Bolao[]; boloesEsporte: BolaoEsporte[]; host: string }) {
+  const totalSlides = sorteios.length + 1 // +1 para esporte
   const [ativo, setAtivo] = useState(0)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -145,20 +185,26 @@ function CarrosselSorteios({ sorteios, boloes, host }: { sorteios: SorteioInfo[]
 
   if (sorteios.length === 0) return null
 
+  const dots = [
+    ...sorteios.map(s => ({ key: s.id, label: s.label, cor: s.corA })),
+    { key: 'esporte', label: 'Esportivo', cor: '#1D6EA6' },
+  ]
+
   return (
     <div className={styles.sorteioWrap}>
       <div ref={ref} className={styles.sorteioTrack}>
         {sorteios.map(s => <SorteioCard key={s.id} s={s} boloes={boloes} host={host} />)}
+        <EsporteCardCarrossel boloesEsporte={boloesEsporte} />
       </div>
-      {sorteios.length > 1 && (
+      {totalSlides > 1 && (
         <div className={styles.sorteioDots}>
-          {sorteios.map((s, i) => (
-            <button key={s.id} onClick={() => scrollTo(i)} className={styles.sorteioDot}
+          {dots.map((d, i) => (
+            <button key={d.key} onClick={() => scrollTo(i)} className={styles.sorteioDot}
               style={{
                 width: ativo === i ? 20 : 6,
-                background: ativo === i ? s.corA : 'rgba(255,255,255,0.15)',
+                background: ativo === i ? d.cor : 'rgba(255,255,255,0.15)',
               }}
-              aria-label={s.label}
+              aria-label={d.label}
             />
           ))}
         </div>
@@ -248,7 +294,7 @@ export default function Home() {
       {/* ── Carrossel: um card por loteria com seus bolões e resultados ── */}
       {loading
         ? <div className={styles.sorteioWrap}><div className={styles.empty}>Carregando...</div></div>
-        : <CarrosselSorteios sorteios={sorteios} boloes={boloes} host={host} />
+        : <CarrosselSorteios sorteios={sorteios} boloes={boloes} boloesEsporte={boloesEsporte} host={host} />
       }
 
       {/* Bolões de loterias fora do carrossel (raro) */}
@@ -281,23 +327,6 @@ export default function Home() {
           📊 Análises &amp; Estatísticas da Mega-Sena
         </a>
       </div>
-
-      {/* ── Bolões Esportivos ── */}
-      {boloesEsporte.map(b => (
-        <div key={b.id} className={styles.secWrap}>
-          <a href={`/esporte/${b.slug}`} className={styles.esporteCard}>
-            <div className={styles.esporteCardHead}>
-              <span style={{ fontSize: 20 }}>⚽</span>
-              <span className={styles.esporteCardLabel}>Bolão Esportivo</span>
-            </div>
-            <div className={styles.esporteCardBody}>
-              <img src="/1684502982782.gif" alt="FIFA 2026" className={styles.esporteCardGif} />
-              <div className={styles.esporteCardNome}>{b.nome}</div>
-              {b.descricao && <div className={styles.esporteCardDesc}>{b.descricao}</div>}
-            </div>
-          </a>
-        </div>
-      ))}
 
       {/* ── Últimos Resultados Caixa ── */}
       <div className={styles.loteriasWrap}>

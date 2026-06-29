@@ -285,6 +285,18 @@
   letter-spacing: 1px;
 }
 
+/* ── CARD ESPORTIVO NO CARROSSEL ── */
+.esporteCarrosselCard {
+  background: linear-gradient(180deg, #0d1f3a 0%, #091629 60%, #06090f 100%);
+  border-color: rgba(29,110,166,0.2);
+}
+.esporteCarrosselGif {
+  width: 100px; height: auto;
+  display: block; margin: 0 auto;
+  filter: drop-shadow(0 4px 24px rgba(255,184,28,0.4));
+  border-radius: 8px;
+}
+
 /* ── ÚLTIMOS RESULTADOS (wrapper escuro para LoteriasCards) ── */
 .loteriasWrap {
   max-width: 600px; margin: 16px auto 0; padding: 0 16px;
