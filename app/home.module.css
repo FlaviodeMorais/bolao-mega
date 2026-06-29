@@ -91,33 +91,47 @@
   letter-spacing: 0.3px;
 }
 .sorteioCardBody { padding: 20px; text-align: center; }
+
+/* Prêmio principal */
 .sorteioPremio {
-  font-size: clamp(28px, 8vw, 38px); font-weight: 800;
-  color: #00AB67; letter-spacing: -1px; line-height: 1;
+  font-size: clamp(30px, 8vw, 40px); font-weight: 800;
+  letter-spacing: -1px; line-height: 1.05;
 }
-.sorteioPremioAcc { opacity: 0.55; }
-.sorteioLabel {
-  font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.3);
-  text-transform: uppercase; letter-spacing: 1.5px;
-  margin: 4px 0 16px;
+/* "(R$23 Milhões)" */
+.sorteioPremioLabel {
+  font-size: clamp(14px, 4vw, 17px); font-weight: 700;
+  letter-spacing: -0.3px; line-height: 1;
+  margin-top: 4px; opacity: 0.85;
 }
-.sorteioRow {
-  display: flex; justify-content: space-between; align-items: flex-end;
+/* "Prêmio estimado do concurso 3025" */
+.sorteioConcurso {
+  font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.35);
+  margin: 6px 0 18px;
+}
+
+/* Bloco de data centralizado */
+.sorteioDataWrap {
   margin-bottom: 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
 }
-.sorteioInfo { text-align: left; }
-.sorteioInfoLabel {
-  font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.3);
-  text-transform: uppercase; letter-spacing: 1.5px;
+.sorteioDataLabel {
+  font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.3);
+  text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 2px;
 }
-.sorteioInfoVal {
-  font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.8);
-  margin-top: 2px;
+.sorteioDataDia {
+  font-size: 15px; font-weight: 700; color: rgba(255,255,255,0.85);
 }
-.sorteioCountdown { text-align: right; }
-.sorteioCountdownVal {
-  font-size: 14px; font-weight: 700; color: #EF4444;
-  font-family: 'JetBrains Mono', monospace; margin-top: 2px;
+.sorteioDataVal {
+  font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.55);
+}
+.sorteioDataEnc {
+  margin-top: 6px;
+  font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.3);
+  line-height: 1.5;
+}
+.sorteioDataEncVal {
+  font-size: 13px; font-weight: 700; color: #EF4444;
+  font-family: 'JetBrains Mono', monospace;
 }
 .sorteioUltimo {
   border-top: 1px solid rgba(255,255,255,0.06);

@@ -13,13 +13,27 @@ interface SorteioInfo {
   apiSlug: string
   concurso: number
   premio: string
+  premioLabel: string
   data: string
+  diaSemana: string
   dezenas: number[]
   corA: string
   corGlow: string
 }
 
-const LOTERIAS_HOME: Omit<SorteioInfo, 'concurso' | 'premio' | 'data' | 'dezenas'>[] = [
+const DIAS = ['Domingo','Segunda-Feira','Terça-Feira','Quarta-Feira','Quinta-Feira','Sexta-Feira','Sábado']
+
+function premioEmPalavras(val: number): string {
+  if (val >= 1e9) return `R$${(val / 1e9).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} Bilhão`
+  if (val >= 1e6) {
+    const m = val / 1e6
+    return m < 2 ? `R$${m.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} Milhão`
+                 : `R$${m.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} Milhões`
+  }
+  return `R$${(val / 1e3).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} Mil`
+}
+
+const LOTERIAS_HOME: Omit<SorteioInfo, 'concurso' | 'premio' | 'premioLabel' | 'data' | 'diaSemana' | 'dezenas'>[] = [
   { id: 'mega',      label: 'Mega-Sena',  apiSlug: 'megasena',  corA: '#00AB67', corGlow: 'rgba(0,171,103,0.18)' },
   { id: 'quina',     label: 'Quina',      apiSlug: 'quina',     corA: '#005DA4', corGlow: 'rgba(0,93,164,0.18)'  },
   { id: 'lotofacil', label: 'Lotofácil',  apiSlug: 'lotofacil', corA: '#803594', corGlow: 'rgba(128,53,148,0.18)'},
@@ -68,19 +82,29 @@ function SorteioCard({ s, boloes, host }: { s: SorteioInfo; boloes: Bolao[]; hos
         <div className={styles.sorteioPremio} style={{ color: s.corA }}>
           {s.premio}
         </div>
-        <div className={styles.sorteioLabel}>Prêmio estimado · próximo concurso</div>
+        {s.premioLabel && (
+          <div className={styles.sorteioPremioLabel} style={{ color: s.corA }}>
+            {s.premioLabel}
+          </div>
+        )}
+        {s.concurso > 0 && (
+          <div className={styles.sorteioConcurso}>
+            Prêmio estimado do concurso {s.concurso}
+          </div>
+        )}
 
         {/* Data + Countdown */}
         {s.data && (
-          <div className={styles.sorteioRow}>
-            <div className={styles.sorteioInfo}>
-              <div className={styles.sorteioInfoLabel}>Sorteio</div>
-              <div className={styles.sorteioInfoVal}>{s.data}</div>
-            </div>
+          <div className={styles.sorteioDataWrap}>
+            <div className={styles.sorteioDataLabel}>Sorteio</div>
+            {s.diaSemana && (
+              <div className={styles.sorteioDataDia}>{s.diaSemana}</div>
+            )}
+            <div className={styles.sorteioDataVal}>{s.data}</div>
             {countdown && (
-              <div className={styles.sorteioCountdown}>
-                <div className={styles.sorteioInfoLabel}>Faltam</div>
-                <div className={styles.sorteioCountdownVal}>{countdown}</div>
+              <div className={styles.sorteioDataEnc}>
+                Apostas se encerram em<br />
+                <span className={styles.sorteioDataEncVal}>{countdown}</span>
               </div>
             )}
           </div>
@@ -288,13 +312,23 @@ export default function Home() {
         const d = results[i]
         const val = d?.valorEstimadoProximoConcurso
         const premio = val
-          ? `R$ ${(val / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} mi`
+          ? `R$ ${val.toLocaleString('pt-BR')}`
           : 'Acumulando'
+        const premioLabel = val ? `(${premioEmPalavras(val)})` : ''
+        const dataStr: string = d?.dataProximoConcurso || ''
+        let diaSemana = ''
+        const mData = dataStr.match(/^(\d{1,2})\/(\d{2})\/(\d{4})/)
+        if (mData) {
+          const dt = new Date(+mData[3], +mData[2] - 1, +mData[1])
+          diaSemana = DIAS[dt.getDay()] || ''
+        }
         lista.push({
           ...l,
           concurso: d?.numero ? (d.numero + 1) : 0,
           premio,
-          data: d?.dataProximoConcurso || '',
+          premioLabel,
+          data: dataStr,
+          diaSemana,
           dezenas: (d?.listaDezenas || []).map(Number),
         })
       })
