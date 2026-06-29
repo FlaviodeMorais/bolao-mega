@@ -14,7 +14,7 @@ export default async function OgImage() {
     ? `https://${process.env.VERCEL_URL}`
     : 'http://localhost:3000'
 
-  const nunitoData = await fetch(`${baseUrl}/fonts/Nunito-Black.woff2`)
+  const nunitoData = await fetch(`${baseUrl}/fonts/Nunito-Black.ttf`)
     .then(r => r.arrayBuffer())
     .catch(() => null)
 
