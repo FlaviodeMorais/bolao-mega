@@ -9,24 +9,26 @@ export default function AppleIcon() {
     (
       <div style={{
         width: 180, height: 180,
-        background: 'linear-gradient(145deg, #0a0f1e 0%, #0b1e10 100%)',
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
+        background: 'linear-gradient(150deg, #06090f 0%, #081508 60%, #06090f 100%)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
         borderRadius: 40, overflow: 'hidden', position: 'relative',
       }}>
         <div style={{
-          position: 'absolute', top: -30, left: -30, width: 130, height: 130,
-          background: 'radial-gradient(circle, rgba(0,180,90,0.22) 0%, transparent 70%)',
+          position: 'absolute', right: 10, top: '50%',
+          width: 100, height: 100, marginTop: -50,
+          background: 'radial-gradient(circle, rgba(0,210,100,0.22) 0%, transparent 70%)',
           borderRadius: '50%', display: 'flex',
         }} />
-        <div style={{
-          fontFamily: 'sans-serif', fontSize: 58, fontWeight: 900,
-          letterSpacing: -3, lineHeight: 1, color: '#fff', display: 'flex',
-        }}>BET</div>
-        <div style={{
-          fontFamily: 'sans-serif', fontSize: 50, fontWeight: 900,
-          lineHeight: 0.85, color: '#00c864', display: 'flex',
-        }}>+</div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, position: 'relative', zIndex: 2 }}>
+          <div style={{
+            fontFamily: 'sans-serif', fontSize: 58, fontWeight: 900,
+            letterSpacing: -3, color: '#fff', lineHeight: 1, display: 'flex',
+          }}>Bet</div>
+          <div style={{
+            fontFamily: 'sans-serif', fontSize: 70, fontWeight: 900,
+            color: '#00d464', lineHeight: 1, display: 'flex', marginBottom: -4,
+          }}>+</div>
+        </div>
       </div>
     ),
     { ...size }
