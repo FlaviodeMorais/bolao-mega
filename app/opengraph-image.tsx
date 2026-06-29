@@ -10,6 +10,14 @@ export default async function OgImage() {
   const nome = app.nome || 'BetMais'
   const desc = app.descricao || 'Loterias, Brasileirão, Copa, e muito mais!'
 
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000'
+
+  const nunitoData = await fetch(`${baseUrl}/fonts/Nunito-Black.woff2`)
+    .then(r => r.arrayBuffer())
+    .catch(() => null)
+
   return new ImageResponse(
     (
       <div style={{
@@ -126,7 +134,7 @@ export default async function OgImage() {
               letterSpacing: -4, color: '#ffffff', display: 'flex',
             }}>Bet</span>
             <span style={{
-              fontFamily: 'sans-serif', fontSize: 108, fontWeight: 900,
+              fontFamily: nunitoData ? 'Nunito' : 'sans-serif', fontSize: 108, fontWeight: 900,
               letterSpacing: -2, color: '#00d464', display: 'flex',
             }}>Mais</span>
           </div>
@@ -151,6 +159,9 @@ export default async function OgImage() {
 
       </div>
     ),
-    { ...size }
+    {
+      ...size,
+      fonts: nunitoData ? [{ name: 'Nunito', data: nunitoData, weight: 900, style: 'normal' as const }] : [],
+    }
   )
 }
