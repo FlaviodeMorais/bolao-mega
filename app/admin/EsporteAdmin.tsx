@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
 import styles from './admin.module.css'
+import BolaoEsporteEditor from '@/components/admin/BolaoEsporteEditor'
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 interface BolaoEsporte {
@@ -234,17 +235,7 @@ export default function EsporteAdmin() {
   const [participantes, setParticipantes] = useState<Participante[]>([])
   const [show, setShow]                   = useState(true)
   const [aba, setAba]                     = useState<'jogos'|'participantes'|'ranking'|'novo'>('jogos')
-
-  // Form novo bolão
-  const [nSlug, setNSlug]   = useState('')
-  const [nNome, setNNome]   = useState('')
-  const [nDesc, setNDesc]   = useState('')
-  const [nComp, setNComp]   = useState('Copa do Mundo 2026')
-  const [nValor, setNValor] = useState('50')
-  const [nTaxa, setNTaxa]   = useState('10')
-  const [nTotal, setNTotal] = useState('30')
-  const [criando, setCriando] = useState(false)
-  const [erroB, setErroB]     = useState('')
+  const [editorAberto, setEditorAberto]   = useState<'novo'|'editar'|null>(null)
 
   // Form novo jogo
   const [jCasa, setJCasa]   = useState('')
@@ -299,30 +290,6 @@ export default function EsporteAdmin() {
 
   useEffect(() => { if (show) carregar() }, [show])
 
-  async function criarBolao() {
-    if (!nSlug || !nNome) { setErroB('Slug e nome são obrigatórios'); return }
-    setCriando(true); setErroB('')
-    const res = await fetch('/api/esporte/boloes', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug: nSlug, nome: nNome, descricao: nDesc, competicao: nComp, valor_cota: parseFloat(nValor), taxa_admin: parseFloat(nTaxa), total_cotas: parseInt(nTotal) }),
-    }).then(r => r.json())
-    setCriando(false)
-    if (res.error) { setErroB(res.error); return }
-    await carregar(); setNSlug(''); setNNome(''); setNDesc(''); setAba('jogos')
-  }
-
-  async function salvarBolao() {
-    if (!bolaoSel) return
-    setSalvando(true); setEditMsg('')
-    const res = await fetch('/api/esporte/boloes', {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug: bolaoSel.slug, nome: editNome, valor_cota: parseFloat(editValor), taxa_admin: parseFloat(editTaxa), ativo: editAtivo }),
-    }).then(r => r.json())
-    setSalvando(false)
-    if (res.error) { setEditMsg('❌ ' + res.error); return }
-    setEditMsg('✅ Salvo!'); setBolaoSel(res.bolao); await carregar()
-    setTimeout(() => setEditMsg(''), 3000)
-  }
 
   async function excluirBolao() {
     if (!bolaoSel) return
@@ -476,36 +443,23 @@ export default function EsporteAdmin() {
                 </a>
               </div>
 
-              {/* Editar bolão */}
-              <div className={styles.esporteEditWrap}>
-                <div className={styles.esporteEditRow}>
-                  <div style={{ flex: 2 }}>
-                    <div className={styles.configLabel}>Nome do bolão</div>
-                    <input value={editNome} onChange={e => setEditNome(e.target.value)} className={styles.configInput} />
-                  </div>
-                  <div>
-                    <div className={styles.configLabel}>Valor da cota (R$)</div>
-                    <input type="number" value={editValor} onChange={e => setEditValor(e.target.value)} className={styles.configInput} />
-                  </div>
-                  <div>
-                    <div className={styles.configLabel}>Taxa admin (%)</div>
-                    <input type="number" value={editTaxa} onChange={e => setEditTaxa(e.target.value)} className={styles.configInput} />
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 18 }}>
-                    <input type="checkbox" id="editAtivo" checked={editAtivo} onChange={e => setEditAtivo(e.target.checked)} />
-                    <label htmlFor="editAtivo" className={styles.configLabel} style={{ margin: 0 }}>Ativo</label>
-                  </div>
-                </div>
-                <div className={styles.esporteEditBtns}>
-                  <button type="button" className={styles.btnSalvar} onClick={salvarBolao} disabled={salvando}>
-                    {salvando ? 'Salvando…' : '💾 Salvar alterações'}
+              {/* Editar bolão — editor completo */}
+              {editorAberto === 'editar' ? (
+                <BolaoEsporteEditor
+                  bolao={bolaoSel}
+                  onSaved={b => { carregar(); setBolaoSel(b as BolaoEsporte); setEditorAberto(null) }}
+                  onCancel={() => setEditorAberto(null)}
+                />
+              ) : (
+                <div className={styles.esporteEditBtns} style={{ marginBottom: 12 }}>
+                  <button type="button" className={styles.btnSalvar} onClick={() => setEditorAberto('editar')}>
+                    ✏️ Editar bolão
                   </button>
                   <button type="button" className={styles.btnPerigo} onClick={excluirBolao}>
                     🗑 Excluir bolão
                   </button>
-                  {editMsg && <span className={styles.esporteImportMsg}>{editMsg}</span>}
                 </div>
-              </div>
+              )}
 
               {/* ── Calculadora de Arrecadação ── */}
               {(() => {
@@ -707,35 +661,12 @@ export default function EsporteAdmin() {
             </div>
           )}
 
-          {/* ABA NOVO BOLÃO */}
+          {/* ABA NOVO BOLÃO → editor completo */}
           {aba === 'novo' && (
-            <div className={styles.esporteNovoBolaoForm}>
-              <div className={styles.esporteFormTitle}>Novo bolão esportivo</div>
-              <div className={styles.esporteFormGrid1}>
-                <input value={nSlug} onChange={e => setNSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''))} placeholder="slug (ex: copa-2026)" className={styles.configInput} />
-                <input value={nNome} onChange={e => setNNome(e.target.value)} placeholder="Nome do bolão" className={styles.configInput} />
-                <input value={nDesc} onChange={e => setNDesc(e.target.value)} placeholder="Descrição (opcional)" className={styles.configInput} />
-                <input value={nComp} onChange={e => setNComp(e.target.value)} placeholder="Competição" className={styles.configInput} />
-              </div>
-              <div className={styles.esporteFormGrid3}>
-                <div>
-                  <label className={styles.configLabel}>Valor da cota (R$)</label>
-                  <input value={nValor} onChange={e => setNValor(e.target.value)} type="number" className={styles.configInput} />
-                </div>
-                <div>
-                  <label className={styles.configLabel}>Taxa admin (%)</label>
-                  <input value={nTaxa} onChange={e => setNTaxa(e.target.value)} type="number" className={styles.configInput} />
-                </div>
-                <div>
-                  <label className={styles.configLabel}>Total de cotas</label>
-                  <input value={nTotal} onChange={e => setNTotal(e.target.value)} type="number" className={styles.configInput} />
-                </div>
-              </div>
-              {erroB && <div className={styles.msgErro}>{erroB}</div>}
-              <button type="button" onClick={criarBolao} disabled={criando} className={styles.btnSalvar} style={{ width: '100%', marginTop: 8 }}>
-                {criando ? 'Criando…' : '✅ Criar bolão'}
-              </button>
-            </div>
+            <BolaoEsporteEditor
+              onSaved={b => { carregar(); setBolaoSel(b as BolaoEsporte); setAba('jogos') }}
+              onCancel={() => setAba('jogos')}
+            />
           )}
 
         </div>

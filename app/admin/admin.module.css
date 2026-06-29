@@ -1422,6 +1422,110 @@
 }
 .geradorBallCount { font-size: 8px; color: #94A3B8; font-family: 'JetBrains Mono', monospace; }
 
+/* ── BOLÃO ESPORTE EDITOR ── */
+.esporteEditorWrap {
+  background: #0d1c2e;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.esporteEditorHeader {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.esporteEditorTitle { font-size: 14px; font-weight: 700; color: #fff; }
+.esporteEditorClose {
+  background: none; border: none; color: rgba(255,255,255,0.4);
+  font-size: 16px; cursor: pointer; padding: 4px 8px;
+  border-radius: 6px; transition: all .15s;
+}
+.esporteEditorClose:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.esporteEditorTabs {
+  display: flex; border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 0 12px;
+}
+.esporteEditorTab {
+  background: none; border: none; border-bottom: 2px solid transparent;
+  padding: 10px 14px; font-size: 12px; font-weight: 600;
+  color: rgba(255,255,255,0.35); cursor: pointer;
+  transition: all .15s; margin-bottom: -1px;
+}
+.esporteEditorTabActive { color: #fff; border-bottom-color: #00AB67; }
+.esporteEditorBody { padding: 20px; }
+.esporteEditorGrid { display: flex; flex-direction: column; gap: 14px; }
+.esporteEditorLabel {
+  display: flex; flex-direction: column; gap: 6px;
+  font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.4);
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.esporteEditorInput {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px; padding: 9px 12px;
+  font-size: 13px; color: #fff;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  outline: none; transition: border-color .15s;
+  width: 100%;
+}
+.esporteEditorInput:focus { border-color: rgba(0,171,103,0.5); }
+.esporteEditorInput:disabled { opacity: 0.4; cursor: not-allowed; }
+.esporteEditorRow3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.esporteEditorColorRow { display: flex; gap: 8px; align-items: center; }
+.esporteEditorColorPicker {
+  width: 44px; height: 36px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
+  cursor: pointer; background: none; padding: 2px;
+}
+.esporteEditorColorRef { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 11px; color: rgba(255,255,255,0.3); }
+.esporteEditorColorChip {
+  padding: 4px 10px; border-radius: 100px; border: none; cursor: pointer;
+  font-size: 11px; font-weight: 700; color: #fff;
+  transition: transform .1s;
+}
+.esporteEditorColorChip:hover { transform: scale(1.08); }
+.esporteEditorPreview { display: flex; justify-content: center; padding: 8px 0; }
+.esporteEditorHint { font-size: 12px; color: rgba(255,255,255,0.35); line-height: 1.5; }
+/* premiação */
+.esportePremioRow {
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr 52px 52px 28px;
+  gap: 6px; align-items: center;
+}
+.esportePremioEmoji   { text-align: center; padding: 8px 4px !important; }
+.esportePremioLabel   {}
+.esportePremioCategoria {}
+.esportePremioPts     { text-align: center; }
+.esportePremioPct     { text-align: center; }
+.esportePremioRemove {
+  background: none; border: none; color: rgba(255,255,255,0.25);
+  cursor: pointer; font-size: 13px; padding: 4px;
+  border-radius: 4px; transition: all .15s;
+}
+.esportePremioRemove:hover { color: #EF4444; background: rgba(239,68,68,0.1); }
+/* footer / botões */
+.esporteEditorFooter {
+  padding: 14px 20px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex; justify-content: flex-end; gap: 10px;
+}
+.esporteEditorBtnSecundario {
+  padding: 8px 18px; border-radius: 8px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.6);
+  cursor: pointer; transition: all .15s;
+}
+.esporteEditorBtnSecundario:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.esporteEditorBtnSalvar {
+  padding: 8px 22px; border-radius: 8px;
+  background: #00AB67; border: none;
+  font-size: 13px; font-weight: 700; color: #fff;
+  cursor: pointer; transition: all .15s;
+}
+.esporteEditorBtnSalvar:hover { background: #009B63; }
+.esporteEditorBtnSalvar:disabled { opacity: 0.5; cursor: not-allowed; }
+.esporteEditorErro { padding: 0 20px 12px; font-size: 12px; color: #EF4444; }
+
 .geradorRankTitle {
   font-size: 10px; font-weight: 700; color: #64748B;
   text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;

@@ -7,6 +7,15 @@ interface Bolao {
   slug: string; nome: string; descricao?: string; competicao: string
   valor_cota: number; taxa_admin: number; total_cotas: number
   ativo: boolean; encerrado: boolean
+  // configuração visual e textual por bolão
+  logo_url?:        string
+  cor_primaria?:    string
+  header_desc?:     string
+  label_cta?:       string
+  label_palpites?:  string
+  label_jogo_hoje?: string
+  label_noticias?:  string
+  premiacao?:       PremiacaoItem[]
 }
 interface Jogo {
   id: string; time_casa: string; time_fora: string
@@ -110,12 +119,14 @@ function formatReal(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-function JogosCarrossel({ jogos, palpites, setPalpite, preenchidos, styles }: {
+function JogosCarrossel({ jogos, palpites, setPalpite, preenchidos, styles, labelPalpites, labelJogoHoje }: {
   jogos: Jogo[]
   palpites: Record<string, Palpite>
   setPalpite: (id: string, campo: 'gol_casa'|'gol_fora', val: string) => void
   preenchidos: number
   styles: StylesMod
+  labelPalpites: string
+  labelJogoHoje: string
 }) {
   const trackRef = useRef<HTMLDivElement>(null)
   const [slideAtual, setSlideAtual] = useState(0)
@@ -141,14 +152,14 @@ function JogosCarrossel({ jogos, palpites, setPalpite, preenchidos, styles }: {
     <div className={styles.jogosCarrosselWrap}>
       <div className={styles.jogosCarrossel}>
         <div className={styles.jogosCarrosselHeader}>
-          <span className={styles.jogosCarrosselTitle}>⚽ Seus palpites</span>
+          <span className={styles.jogosCarrosselTitle}>{labelPalpites}</span>
           <span className={styles.jogosCarrosselCounter}>{slideAtual + 1} / {total}</span>
         </div>
         <div className={styles.jogosCarrosselTrack} ref={trackRef} onScroll={onScroll}>
           {jogos.map(jogo => (
             <div key={jogo.id} className={styles.jogosCarrosselSlide}>
               {jogo.data_jogo === hoje && (
-                <div className={styles.jogosCarrosselBadgeHoje}>🔥 Jogo de hoje!</div>
+                <div className={styles.jogosCarrosselBadgeHoje}>{labelJogoHoje}</div>
               )}
               <JogoCard jogo={jogo} palpites={palpites} bloqueado={false} setPalpite={setPalpite} styles={styles} />
             </div>
@@ -171,7 +182,7 @@ function JogosCarrossel({ jogos, palpites, setPalpite, preenchidos, styles }: {
 
 interface Video { id: string; titulo: string; thumb: string; link: string; data: string }
 
-function MomentosCarousel() {
+function MomentosCarousel({ label }: { label: string }) {
   const [aoVivo, setAoVivo]     = useState<Video[]>([])
   const [momentos, setMomentos] = useState<Video[]>([])
   const [loading, setLoading]   = useState(true)
@@ -217,7 +228,7 @@ function MomentosCarousel() {
 
   return (
     <div className={styles.momentosSec}>
-      <div className={styles.momentosTitle}>📺 CazéTV · Copa do Mundo FIFA 2026</div>
+      <div className={styles.momentosTitle}>{label}</div>
 
       {loading && <div className={styles.momentosLoading}>Carregando vídeos...</div>}
       {vazio   && <div className={styles.momentosLoading}>Nenhum vídeo disponível.</div>}
@@ -249,13 +260,16 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
   const [step, setStep]         = useState<'form'|'pix'|'ok'>('form')
   const [cadastrando, setCadastrando] = useState(false)
   const [logado, setLogado]     = useState(false)
-  const [premiacao, setPremiacao] = useState<PremiacaoItem[]>(PREMIACAO_DEFAULT)
+  // premiacao vem do bolão; fallback para settings globais; fallback para default
+  const [premiacao, setPremiacao] = useState<PremiacaoItem[]>(bolao.premiacao?.length ? bolao.premiacao : PREMIACAO_DEFAULT)
 
   useEffect(() => {
-    fetch('/api/config-publica').then(r => r.json()).then(d => {
-      if (d?.esporte?.premiacao?.length) setPremiacao(d.esporte.premiacao)
-    }).catch(() => {})
-  }, [])
+    if (!bolao.premiacao?.length) {
+      fetch('/api/config-publica').then(r => r.json()).then(d => {
+        if (d?.esporte?.premiacao?.length) setPremiacao(d.esporte.premiacao)
+      }).catch(() => {})
+    }
+  }, [bolao.premiacao])
   const [nome, setNome]         = useState('')
   const [telefone, setTelefone] = useState('')
   const [email, setEmail]       = useState('')
@@ -447,14 +461,16 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
 
       {/* ── Header banner ── */}
       <div className={styles.headerWrap}>
-        <div className={styles.header}>
+        <div className={styles.header} style={{ '--comp-cor': bolao.cor_primaria || '#FFB81C' } as React.CSSProperties}>
           <div className={styles.headerTop}>
-            <img src="/1684502982782.gif" alt="FIFA World Cup 2026" className={styles.headerLogo} />
+            {bolao.logo_url && (
+              <img src={bolao.logo_url} alt={bolao.competicao} className={styles.headerLogo} />
+            )}
             <div className={styles.headerInfo}>
-              <span className={styles.headerLabel}>FIFA World Cup 2026</span>
+              <span className={styles.headerLabel}>{bolao.competicao}</span>
             </div>
           </div>
-          {bolao.descricao && <p className={styles.headerDesc}>{bolao.descricao}</p>}
+          {bolao.header_desc && <p className={styles.headerDesc}>{bolao.header_desc}</p>}
         </div>
       </div>
 
@@ -466,18 +482,22 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
           setPalpite={setPalpite}
           preenchidos={preenchidos}
           styles={styles}
+          labelPalpites={bolao.label_palpites || '⚽ Seus palpites'}
+          labelJogoHoje={bolao.label_jogo_hoje || '🔥 Jogo de hoje!'}
         />
       )}
       {step === 'form' && !cadastrando && jogosDisponiveis.length > 0 && (
         <div className={styles.ctaWrap}>
           <button type="button" className={styles.btnConfirmar} onClick={() => setCadastrando(true)}>
-            {logado ? `⚽ Continuar como ${nome.split(' ')[0]}` : '⚽ Quero Participar'}
+            {logado
+              ? `${bolao.label_cta?.split(' ')[0] || '⚽'} Continuar como ${nome.split(' ')[0]}`
+              : bolao.label_cta || '⚽ Quero Participar'}
           </button>
         </div>
       )}
 
-      {/* ── Momentos FIFA ── */}
-      <MomentosCarousel />
+      {/* ── Notícias / Momentos ── */}
+      <MomentosCarousel label={bolao.label_noticias || '📺 Notícias'} />
 
       {/* ── Premiação — banners dinâmicos ── */}
       <div className={styles.premiacaoWrap}>
