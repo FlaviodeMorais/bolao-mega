@@ -117,14 +117,19 @@ export default async function OgImage() {
             }}>Bolões</div>
           </div>
 
-          {/* Nome principal */}
+          {/* Nome principal: "Bet" normal + "Mais" subscrito negrito */}
           <div style={{
-            fontFamily: 'sans-serif', fontSize: 90, fontWeight: 900,
-            letterSpacing: -4, color: '#ffffff', lineHeight: 0.95,
-            display: 'flex', flexDirection: 'column',
+            display: 'flex', alignItems: 'flex-end', gap: 6, lineHeight: 1,
           }}>
-            <span style={{ display: 'flex' }}>Bet</span>
-            <span style={{ color: '#00c864', display: 'flex' }}>Mais</span>
+            <span style={{
+              fontFamily: 'sans-serif', fontSize: 104, fontWeight: 400,
+              letterSpacing: -4, color: '#ffffff', display: 'flex', lineHeight: 1,
+            }}>Bet</span>
+            <span style={{
+              fontFamily: 'sans-serif', fontSize: 64, fontWeight: 900,
+              letterSpacing: -2, color: '#00d464', display: 'flex',
+              marginBottom: 8,
+            }}>Mais</span>
           </div>
 
           {/* Linha decorativa */}
