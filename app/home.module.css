@@ -127,16 +127,15 @@
   text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;
 }
 .sorteioBalls {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
+/* tamanho fixo — o espaçamento preenche, não a bolinha */
 .sorteioBall {
-  aspect-ratio: 1;
+  width: 28px; height: 28px; flex-shrink: 0;
   border-radius: 50%;
-  font-size: min(calc((min(100vw, 568px) - 64px) / var(--n, 6) * 0.38), 13px);
-  font-weight: 800; font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 800; font-family: 'JetBrains Mono', monospace;
   display: flex; align-items: center; justify-content: center;
   color: #F0F4FF;
 }

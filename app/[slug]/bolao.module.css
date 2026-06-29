@@ -155,18 +155,18 @@
   font-family: 'JetBrains Mono', monospace;
   min-width: 20px;
 }
+/* apostas: bolinhas adaptativas (dezenas variam por config do bolão) */
 .apostaBolas {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  gap: 4px;
+  gap: 3px;
 }
 .apostaBola {
   aspect-ratio: 1;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  /* fonte proporcional ao tamanho da bola: (largura disponível / n) × 0.38, max 13px */
-  font-size: min(calc((min(100vw, 568px) - 64px) / var(--n, 6) * 0.38), 13px);
+  font-size: min(calc((min(100vw, 568px) - 80px) / var(--n, 6) * 0.38), 12px);
   font-weight: 800; font-family: 'JetBrains Mono', monospace;
   background: color-mix(in srgb, var(--lot-cor, #00AB67) 15%, transparent);
   border: 1.5px solid color-mix(in srgb, var(--lot-cor, #00AB67) 40%, transparent);
@@ -343,18 +343,17 @@
   font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.3);
   text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;
 }
+/* resultado sorteado: contagem fixa → tamanho fixo, espaçamento preenche */
 .sorteioDezenasGrid {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 .sorteioBall {
-  aspect-ratio: 1;
+  width: 28px; height: 28px; flex-shrink: 0;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: min(calc((min(100vw, 568px) - 64px) / var(--n, 6) * 0.38), 13px);
-  font-weight: 800; font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 800; font-family: 'JetBrains Mono', monospace;
   background: color-mix(in srgb, var(--lot-cor, #00AB67) 15%, transparent);
   border: 1.5px solid color-mix(in srgb, var(--lot-cor, #00AB67) 40%, transparent);
   color: #F0F4FF;
