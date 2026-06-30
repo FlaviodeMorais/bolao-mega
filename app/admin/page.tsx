@@ -161,6 +161,11 @@ export default function AdminPage() {
 
   useEffect(() => { if (logado) carregarInicio() }, [logado, carregarInicio])
 
+  // Restaura sessão existente (cookie admin_token ainda válido) sem pedir senha de novo
+  useEffect(() => {
+    fetch('/api/auth').then(r => r.json()).then(d => { if (d.ok) setLogado(true) }).catch(() => {})
+  }, [])
+
   // ── ORQUESTRAÇÃO: bolão + participantes + conferência ─────────
   function selecionarBolao(b: Bolao) {
     boloes.setBolaoAtual(b)
