@@ -12,15 +12,16 @@ interface ConcursoPanelProps {
   loadingCaixa: boolean
   editDatas: Record<number, string>
   loteriaAtual: LoteriaId
+  resultadoInfo?: { atualizadoEm: string; stale: boolean } | null
   onMudarLoteria: (l: LoteriaId) => void
   onEditData: (num: number, val: string) => void
-  onBuscarCaixa: (loteria: LoteriaId) => void
+  onBuscarCaixa: (loteria: LoteriaId, force?: boolean) => void
   onSelecionar: (c: Concurso & { data: string }) => void
 }
 
 export default function ConcursoPanel({
   proximos, concursoAtivo, loadingCaixa, editDatas,
-  loteriaAtual, onMudarLoteria, onEditData, onBuscarCaixa, onSelecionar,
+  loteriaAtual, resultadoInfo, onMudarLoteria, onEditData, onBuscarCaixa, onSelecionar,
 }: ConcursoPanelProps) {
   const cfg = getLoteria(loteriaAtual)
 
@@ -51,9 +52,16 @@ export default function ConcursoPanel({
       </div>
 
       <button type="button" className={styles.btnLoad}
-        onClick={() => onBuscarCaixa(loteriaAtual)} disabled={loadingCaixa}>
+        onClick={() => onBuscarCaixa(loteriaAtual, true)} disabled={loadingCaixa}>
         {loadingCaixa ? '⟳ Carregando...' : `🔄 Buscar na Caixa (${cfg.label})`}
       </button>
+
+      {resultadoInfo?.atualizadoEm && (
+        <p className={styles.ccAvisoData} style={resultadoInfo.stale ? { color: '#e25555' } : undefined}>
+          {resultadoInfo.stale ? '⚠️ Dados desatualizados (fontes externas indisponíveis) — ' : '✅ '}
+          Último resultado atualizado em {new Date(resultadoInfo.atualizadoEm).toLocaleString('pt-BR')}
+        </p>
+      )}
 
       {proximos.length > 0 && (
         <p className={styles.ccAvisoData}>

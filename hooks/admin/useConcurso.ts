@@ -29,6 +29,7 @@ export function useConcurso() {
   const [proximos, setProximos]           = useState<Concurso[]>([])
   const [loadingCaixa, setLoadingCaixa]   = useState(false)
   const [editDatas, setEditDatas]         = useState<Record<number, string>>({})
+  const [resultadoInfo, setResultadoInfo] = useState<{ atualizadoEm: string; stale: boolean } | null>(null)
 
   function setFromApi(concurso: string, data: string, premio: string) {
     setConcursoAtivo(concurso)
@@ -53,13 +54,17 @@ export function useConcurso() {
     carregarConcursoAtivo(loteria)
   }
 
-  async function buscarCaixa(loteria: LoteriaId = loteriaPanel) {
+  async function buscarCaixa(loteria: LoteriaId = loteriaPanel, force = false) {
     setLoadingCaixa(true)
     try {
       const cfg = getLoteria(loteria)
-      const res = await fetch(`/api/resultados/${cfg.apiSlug}`)
+      const res = await fetch(`/api/resultados/${cfg.apiSlug}${force ? '?force=1' : ''}`)
       if (!res.ok) throw new Error('Falha')
       const data: Record<string, unknown> = await res.json()
+      setResultadoInfo({
+        atualizadoEm: String(data.atualizadoEm || ''),
+        stale: Boolean(data.stale),
+      })
 
       const ultimo    = parseInt(String(data.numero || data.numeroConcurso || 0))
       const proxData  = String(data.dataProximoConcurso || '')
@@ -91,6 +96,7 @@ export function useConcurso() {
     concursoAtivo, dataAtiva, premioAtivo,
     proximos, setProximos, loadingCaixa,
     editDatas, setEditDatas,
+    resultadoInfo,
     setFromApi,
     buscarCaixa, selecionarConcurso,
   }

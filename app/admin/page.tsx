@@ -70,7 +70,7 @@ export default function AdminPage() {
   const criarBolao     = boloes.criarBolao
 
   // ConcursoPanel
-  const { loteriaPanel, mudarLoteria, proximos, setProximos, loadingCaixa, editDatas, setEditDatas, buscarCaixa } = concurso
+  const { loteriaPanel, mudarLoteria, proximos, setProximos, loadingCaixa, editDatas, setEditDatas, buscarCaixa, resultadoInfo } = concurso
 
   // BolaoDetailPanel — participantes
   const { loadingParts, confirmandoTodos, selecionados, enviandoComp,
@@ -377,6 +377,7 @@ export default function AdminPage() {
                 loadingCaixa={loadingCaixa}
                 editDatas={editDatas}
                 loteriaAtual={loteriaPanel}
+                resultadoInfo={resultadoInfo}
                 onMudarLoteria={mudarLoteria}
                 onEditData={(num, val) => setEditDatas(prev => ({ ...prev, [num]: val }))}
                 onBuscarCaixa={buscarCaixa}
