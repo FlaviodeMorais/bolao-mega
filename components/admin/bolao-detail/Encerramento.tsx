@@ -33,7 +33,7 @@ export default function Encerramento(p: Props) {
       {p.encerrarOk && (
         <div className={styles.encerrarSucesso}>
           ✅ Encerrado com sucesso!&nbsp;
-          Acréscimo de <strong>R$ {p.encerrarOk.acrescimo.toFixed(2).replace('.', ',')}</strong>&nbsp;
+          Acréscimo de <strong>R$ {p.encerrarOk.acrescimo.toFixed(2).replace('.', ',')}</strong> por cota&nbsp;
           enviado para {p.encerrarOk.participantes} participante(s) por e-mail.
         </div>
       )}
