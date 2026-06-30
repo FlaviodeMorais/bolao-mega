@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { notificarLembrete } from '@/lib/whatsapp'
+import { enviarLembrete } from '@/lib/email'
 import { supabase } from '@/lib/supabase'
 import { LOTERIA_LIST } from '@/lib/loterias'
 
@@ -35,20 +36,31 @@ export async function GET(req: NextRequest) {
       continue
     }
 
-    const { count } = await supabase
+    const { data: pendentes } = await supabase
       .from('participantes')
-      .select('*', { count: 'exact', head: true })
+      .select('nome, email, cotas, pix_code, bolao_slug')
       .eq('concurso', concurso)
       .eq('status', 'aguardando')
       .in('bolao_slug', slugs)
 
-    if (!count || count === 0) {
+    if (!pendentes || pendentes.length === 0) {
       resultados[loteria.id] = { ok: true, msg: 'Sem pendências' }
       continue
     }
 
-    await notificarLembrete(concurso, count)
-    resultados[loteria.id] = { ok: true, pendentes: count }
+    await notificarLembrete(concurso, pendentes.length)
+
+    const { data: boloesInfo } = await supabase.from('boloes').select('slug, nome').in('slug', slugs)
+    const nomesPorSlug = new Map((boloesInfo || []).map(b => [b.slug, b.nome]))
+
+    await Promise.all(pendentes.filter(p => p.email).map(p =>
+      enviarLembrete(
+        p.email, p.nome, p.cotas, concurso,
+        nomesPorSlug.get(p.bolao_slug) || 'Bolão', p.pix_code, loteria.label
+      ).catch(() => {})
+    ))
+
+    resultados[loteria.id] = { ok: true, pendentes: pendentes.length }
   }
 
   return NextResponse.json({ ok: true, resultados })

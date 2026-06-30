@@ -109,7 +109,7 @@ export default function Conferencia(p: Props) {
         bolao.apostas_data && p.pagosLista.length > 0 && (
         <button type="button" className={styles.btnLembrete}
           onClick={p.onEnviarAcertos}>
-          📊 Enviar Acertos por WhatsApp
+          📊 Enviar Acertos por E-mail
         </button>
       )}
       {p.enviarAcertosMsg && <div className={styles.lembreteMsg}>{p.enviarAcertosMsg}</div>}

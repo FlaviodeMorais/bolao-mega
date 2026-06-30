@@ -4,6 +4,7 @@ import { verificarToken } from '@/lib/auth'
 import { criarPixMP } from '@/lib/mercadopago'
 import { gerarPixLocal } from '@/lib/pix-local'
 import { notificarAcrescimo } from '@/lib/whatsapp'
+import { enviarAcrescimo } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
   const token = req.cookies.get('admin_token')?.value
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
   // 2. Participantes pagos
   const { data: parts } = await supabase
     .from('participantes')
-    .select('id, nome, cotas, telefone')
+    .select('id, nome, cotas, telefone, email')
     .eq('concurso', concurso)
     .eq('bolao_slug', bolao_slug)
     .eq('status', 'pago')
@@ -78,7 +79,13 @@ export async function POST(req: NextRequest) {
         await notificarAcrescimo(
           part.telefone, part.nome, part.cotas as string[],
           acrescimo, pixCode, bolao.nome
-        )
+        ).catch(() => {})
+      }
+      if (acrescimo > 0 && part.email) {
+        await enviarAcrescimo(
+          part.email, part.nome, part.cotas as string[],
+          acrescimo, pixCode, bolao.nome
+        ).catch(() => {})
       }
     } catch (err) {
       erros.push(`${part.nome}: ${String(err)}`)
