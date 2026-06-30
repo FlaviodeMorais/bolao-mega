@@ -200,7 +200,7 @@ export function useParticipantes(
     setEncerrando(false)
     if (res.ok) {
       setShowEncerrar(false)
-      setEncerrarOk({ acrescimo: res.acrescimo, participantes: res.participantes })
+      setEncerrarOk({ acrescimo: res.acrescimo_por_cota, participantes: res.participantes })
       onBoloesChange()
       await carregarPartsBolao(bolaoSlug, concursoAtivo)
     } else {

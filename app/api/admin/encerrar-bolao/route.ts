@@ -39,12 +39,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Nenhum participante pago encontrado' }, { status: 400 })
   }
 
-  // 3. Calcular cotas restantes e acréscimo
+  // 3. Calcular cotas restantes e acréscimo (proporcional ao nº de cotas de cada participante)
   const cotasVendidas = [...new Set(parts.flatMap(p => p.cotas as string[]))]
   const cotas_restantes = Number(bolao.total_cotas) - cotasVendidas.length
   const valor_restante  = cotas_restantes * Number(bolao.valor_cota)
-  const acrescimo       = cotas_restantes > 0
-    ? parseFloat((valor_restante / parts.length).toFixed(2))
+  const totalCotasPagas = parts.reduce((sum, p) => sum + (p.cotas as string[]).length, 0)
+  const acrescimoPorCota = cotas_restantes > 0 && totalCotasPagas > 0
+    ? valor_restante / totalCotasPagas
     : 0
 
   const erros: string[] = []
@@ -52,6 +53,7 @@ export async function POST(req: NextRequest) {
   // 4. Processar cada participante
   for (const part of parts) {
     try {
+      const acrescimo = parseFloat((acrescimoPorCota * (part.cotas as string[]).length).toFixed(2))
       let pixCode = ''
       let paymentId = `local-${part.id.slice(0, 20)}`
 
@@ -99,7 +101,7 @@ export async function POST(req: NextRequest) {
     ok: true,
     cotas_restantes,
     valor_restante,
-    acrescimo,
+    acrescimo_por_cota: parseFloat(acrescimoPorCota.toFixed(2)),
     participantes: parts.length,
     erros,
   })

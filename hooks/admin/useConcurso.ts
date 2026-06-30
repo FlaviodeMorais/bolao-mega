@@ -15,7 +15,7 @@ function nextDrawDate(d: Date, drawDays: number[]): Date {
 }
 function formatData(d: Date | null): string {
   if (!d) return '—'
-  return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
+  return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 function formatPremio(v: number): string {
   return `R$ ${(v / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} mi`

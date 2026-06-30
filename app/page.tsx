@@ -304,27 +304,31 @@ export default function Home() {
   useEffect(() => {
     Promise.all(
       LOTERIAS_HOME.map(l =>
-        fetch(`/api/resultados/${l.apiSlug}`).then(r => r.json()).catch(() => null)
+        Promise.all([
+          fetch(`/api/resultados/${l.apiSlug}`).then(r => r.json()).catch(() => null),
+          fetch(`/api/concurso-ativo?loteria=${l.id}`).then(r => r.json()).catch(() => null),
+        ])
       )
     ).then(results => {
       const lista: SorteioInfo[] = []
       LOTERIAS_HOME.forEach((l, i) => {
-        const d = results[i]
+        const [d, ativo] = results[i]
         const val = d?.valorEstimadoProximoConcurso
         const premio = val
           ? `R$ ${val.toLocaleString('pt-BR')}`
           : 'Acumulando'
         const premioLabel = val ? `(${premioEmPalavras(val)})` : ''
-        const dataStr: string = d?.dataProximoConcurso || ''
+        const dataStr: string = ativo?.data || d?.dataProximoConcurso || ''
         let diaSemana = ''
         const mData = dataStr.match(/^(\d{1,2})\/(\d{2})\/(\d{4})/)
         if (mData) {
           const dt = new Date(+mData[3], +mData[2] - 1, +mData[1])
           diaSemana = DIAS[dt.getDay()] || ''
         }
+        const concursoAtivo = parseInt(ativo?.concurso || '', 10)
         lista.push({
           ...l,
-          concurso: d?.numero ? (d.numero + 1) : 0,
+          concurso: concursoAtivo || (d?.numero ? (d.numero + 1) : 0),
           premio,
           premioLabel,
           data: dataStr,

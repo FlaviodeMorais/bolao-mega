@@ -3,17 +3,21 @@ import { SignJWT, jwtVerify } from 'jose'
 import { supabase } from './supabase'
 
 if (!process.env.JWT_SECRET) {
-  console.error('[auth] JWT_SECRET não configurado — usando segredo de fallback inseguro. Configure a env var em produção.')
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('[auth] JWT_SECRET não configurado. Defina a env var antes de iniciar em produção.')
+  }
+  console.error('[auth] JWT_SECRET não configurado — usando segredo de fallback inseguro (apenas para desenvolvimento).')
 }
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'bolao-mega-secret-2026')
 
-async function getSenhaConfig(): Promise<string> {
+async function getSenhaConfig(): Promise<string | null> {
   const { data } = await supabase.from('config').select('value').eq('key', 'admin_password').single()
-  return data?.value || process.env.ADMIN_PASSWORD_HASH || 'MEGA2026'
+  return data?.value || process.env.ADMIN_PASSWORD_HASH || null
 }
 
 export async function verificarSenha(senha: string): Promise<boolean> {
   const stored = await getSenhaConfig()
+  if (!stored) return false
   if (stored.startsWith('$2b$') || stored.startsWith('$2a$')) {
     return bcrypt.compare(senha, stored)
   }
