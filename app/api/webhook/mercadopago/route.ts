@@ -68,7 +68,9 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ ok: true })
-  } catch {
-    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error('[webhook/mercadopago] erro ao processar notificação:', err)
+    // Status != 2xx faz o Mercado Pago reenviar a notificação mais tarde
+    return NextResponse.json({ ok: false, error: String(err) }, { status: 500 })
   }
 }

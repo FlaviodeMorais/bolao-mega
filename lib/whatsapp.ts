@@ -174,9 +174,9 @@ export async function notificarPagamento(
   }
 }
 
-export async function notificarResultado(concurso: number, numeros: string[], premio: string) {
+export async function notificarResultado(concurso: number, numeros: string[], premio: string, loteriaLabel = 'MEGA-SENA') {
   await toGroup(
-    `🍀 *RESULTADO MEGA-SENA #${concurso}*\n\n` +
+    `🍀 *RESULTADO ${loteriaLabel.toUpperCase()} #${concurso}*\n\n` +
     `🔢 *${numeros.join(' · ')}*\n\n` +
     `🏆 Prêmio estimado próximo: ${premio}\n\n` +
     `_Confira seus números! Acesse o painel para ver os resultados._`
