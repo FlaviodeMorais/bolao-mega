@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verificarToken } from '@/lib/auth'
-import { criarPixMP } from '@/lib/mercadopago'
-import { gerarPixLocal, gerarTxId } from '@/lib/pix-local'
 import { enviarPremioEsporte } from '@/lib/email'
 import { getEsporteSettings } from '@/lib/settings'
 
@@ -17,7 +15,7 @@ export async function POST(req: NextRequest) {
 
   const { data: bolao } = await supabase
     .from('boloes_esporte')
-    .select('nome, valor_cota, taxa_admin, encerrado')
+    .select('nome, valor_cota, taxa_admin, encerrado, premiacao')
     .eq('slug', bolao_slug)
     .single()
 
@@ -39,13 +37,15 @@ export async function POST(req: NextRequest) {
   const taxa = arrecadado * (Number(bolao.taxa_admin || 20) / 100)
   const liquido = arrecadado - taxa
 
-  const { premiacao } = await getEsporteSettings()
+  const premiacaoBolao = Array.isArray(bolao.premiacao) && bolao.premiacao.length > 0
+    ? bolao.premiacao
+    : (await getEsporteSettings()).premiacao
   const ranking = participantes.map((p, i) => ({ ...p, posicao: i + 1 }))
 
   const erros: string[] = []
   const premiados: { nome: string; posicao: number; premio: number }[] = []
 
-  for (const item of premiacao) {
+  for (const item of premiacaoBolao) {
     const ganhador = ranking.find(p => p.posicao === item.lugar)
     if (!ganhador) continue
 
@@ -53,19 +53,11 @@ export async function POST(req: NextRequest) {
     if (premio <= 0) continue
 
     try {
-      let pixCode = ''
-      const mp = await criarPixMP(premio, 0, [], `${ganhador.nome} Prêmio`)
-      if (mp.success && mp.qrCode) {
-        pixCode = mp.qrCode
-      } else {
-        pixCode = await gerarPixLocal(premio, gerarTxId(item.lugar))
-      }
-
       if (ganhador.email) {
         await enviarPremioEsporte(
           ganhador.email, ganhador.nome, bolao.nome,
           item.lugar, item.emoji, item.label, item.categoria,
-          ganhador.pontos_total || 0, premio, pixCode
+          ganhador.pontos_total || 0, premio
         ).catch(() => {})
       }
 

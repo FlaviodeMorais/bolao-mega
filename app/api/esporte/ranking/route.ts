@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
 
   const { data: bolao } = await supabase
     .from('boloes_esporte')
-    .select('valor_cota, taxa_admin')
+    .select('valor_cota, taxa_admin, premiacao')
     .eq('slug', slug).single()
 
   const { data: participantes } = await supabase
@@ -27,7 +27,9 @@ export async function GET(req: NextRequest) {
   const taxa = arrecadado * (Number(bolao?.taxa_admin || 20) / 100)
   const liquido = arrecadado - taxa
 
-  const { premiacao } = await getEsporteSettings()
+  const premiacao = Array.isArray(bolao?.premiacao) && bolao.premiacao.length > 0
+    ? bolao.premiacao
+    : (await getEsporteSettings()).premiacao
 
   const premios = premiacao.map(item => ({
     lugar:     item.lugar,

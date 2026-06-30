@@ -42,7 +42,9 @@ export async function GET(req: NextRequest) {
       }
 
       const notificadoKey = `ultimo_resultado_notificado_${loteria.id}`
-      if (map[notificadoKey] === String(concurso)) {
+      const jaNotificado = map[notificadoKey] === String(concurso) ||
+        (loteria.id === 'mega' && map['ultimo_resultado_notificado'] === String(concurso))
+      if (jaNotificado) {
         resultados[loteria.id] = { ok: true, msg: 'Já notificado' }
         continue
       }

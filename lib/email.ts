@@ -281,7 +281,7 @@ export async function enviarAcertosIndividual(
 export async function enviarPremioEsporte(
   email: string, nome: string, bolaoNome: string,
   posicao: number, emoji: string, label: string, categoria: string,
-  pontos: number, premio: number, pixCode: string
+  pontos: number, premio: number
 ) {
   const valorStr = `R$ ${premio.toFixed(2).replace('.', ',')}`
   const corpo = `
@@ -295,9 +295,8 @@ export async function enviarPremioEsporte(
       <div style="color:#00AB67;font-size:32px;font-weight:800;margin:8px 0;">${valorStr}</div>
       <div style="color:#94A3B8;font-size:12px;">${categoria} · ${pontos} pontos</div>
     </div>
-    <div style="background:#F8FAFB;border:1px solid #E2E8F0;border-radius:10px;padding:16px;">
-      <div style="color:#94A3B8;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Código PIX para pagamento</div>
-      <div style="color:#0D1B2A;font-size:11px;word-break:break-all;font-family:monospace;line-height:1.6;">${pixCode}</div>
+    <div style="background:#F8FAFB;border:1px solid #E2E8F0;border-radius:10px;padding:16px;text-align:center;">
+      <div style="color:#475569;font-size:13px;">O administrador entrará em contato em breve para combinar o pagamento do seu prêmio via PIX.</div>
     </div>
   `
   return send(email, `${emoji} Você ganhou! ${label} — ${bolaoNome}`, layout('Premiação do Bolão', corpo, 'Esporte'))
