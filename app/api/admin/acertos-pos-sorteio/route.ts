@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verificarToken } from '@/lib/auth'
 import { notificarAcertosIndividual } from '@/lib/whatsapp'
+import { enviarAcertosIndividual } from '@/lib/email'
 
-// POST — envia WhatsApp com acertos individuais para cada participante pago
+// POST — envia e-mail (e WhatsApp, se ativo) com acertos individuais para cada participante pago
 export async function POST(req: NextRequest) {
   const token = req.cookies.get('admin_token')?.value
   if (!token || !(await verificarToken(token))) {
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
 
   const { data: participantes } = await supabase
     .from('participantes')
-    .select('id, nome, telefone, cotas')
+    .select('id, nome, telefone, email, cotas')
     .eq('bolao_slug', bolao_slug)
     .eq('concurso', parseInt(concurso))
     .eq('status', 'pago')
@@ -55,16 +56,17 @@ export async function POST(req: NextRequest) {
 
   await Promise.all(
     participantes.map(async (p) => {
-      if (!p.telefone) { erros++; return }
-      try {
+      if (p.telefone) {
         await notificarAcertosIndividual(
-          p.telefone,
-          p.nome,
-          bolao.nome,
-          parseInt(concurso),
-          rc.dezenas_sorteadas!,
-          apostas,
-          p.cotas as string[]
+          p.telefone, p.nome, bolao.nome, parseInt(concurso),
+          rc.dezenas_sorteadas!, apostas, p.cotas as string[]
+        ).catch(() => {})
+      }
+      if (!p.email) { erros++; return }
+      try {
+        await enviarAcertosIndividual(
+          p.email, p.nome, bolao.nome, parseInt(concurso),
+          rc.dezenas_sorteadas!, apostas, p.cotas as string[]
         )
         enviados++
       } catch {

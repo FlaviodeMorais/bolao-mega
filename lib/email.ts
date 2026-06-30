@@ -231,6 +231,77 @@ export async function enviarAcrescimo(
   return send(email, `🔔 Complemento de pagamento — ${bolaoNome}`, layout('Complemento de Pagamento', corpo, loteriaLabel))
 }
 
+// ── Acertos individuais por aposta (pós-conferência) ───────────────────────────
+export async function enviarAcertosIndividual(
+  email: string, nome: string, bolaoNome: string, concurso: number,
+  dezenasSorteadas: number[], apostas: number[][], cotas: string[], loteriaLabel = 'Mega-Sena'
+) {
+  const set = new Set(dezenasSorteadas)
+  const acertosPorAposta = apostas.map(bet => bet.filter(n => set.has(n)).length)
+  const maxAcertos = acertosPorAposta.length > 0 ? Math.max(...acertosPorAposta) : 0
+  const dezStr = dezenasSorteadas.map(n => String(n).padStart(2, '0')).join('  ')
+
+  const linhasApostas = apostas.map((bet, i) => {
+    const ac = acertosPorAposta[i]
+    const betStr = bet.map(n => String(n).padStart(2, '0')).join(' ')
+    const cor = ac >= 4 ? '#00AB67' : '#64748B'
+    return `<tr>
+      <td style="color:#64748B;font-size:12px;padding:6px 0;border-bottom:1px solid #F1F5F9;">Jogo ${String(i + 1).padStart(2, '0')}: ${betStr}</td>
+      <td style="color:${cor};font-size:13px;font-weight:700;text-align:right;padding:6px 0;border-bottom:1px solid #F1F5F9;">${ac} acerto${ac !== 1 ? 's' : ''}</td>
+    </tr>`
+  }).join('')
+
+  const corpo = `
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:36px;margin-bottom:8px;">${maxAcertos >= 6 ? '🏆' : maxAcertos === 5 ? '🥈' : maxAcertos === 4 ? '🥉' : '🎲'}</div>
+      <h2 style="color:#0D1B2A;margin:0 0 4px;font-size:20px;">Resultado — Concurso #${concurso}</h2>
+      <p style="color:#64748B;margin:0;font-size:14px;">${bolaoNome}</p>
+    </div>
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="color:#64748B;font-size:12px;margin-bottom:8px;">Dezenas sorteadas</div>
+      <div style="font-size:20px;font-weight:800;color:#005DA9;letter-spacing:4px;">${dezStr}</div>
+    </div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+      ${stat('Suas cotas', cotas.map(c => `Nº ${c}`).join(' · '), '#0D1B2A')}
+    </table>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">${linhasApostas}</table>
+    ${maxAcertos >= 4
+      ? `<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px;text-align:center;">
+          <div style="color:#00AB67;font-size:14px;font-weight:700;">🏆 Parabéns! Você acertou ${maxAcertos} dezenas!</div>
+          <div style="color:#475569;font-size:13px;margin-top:4px;">O administrador entrará em contato com detalhes do prêmio.</div>
+        </div>`
+      : `<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:14px;text-align:center;">
+          <div style="color:#64748B;font-size:13px;">Não foi dessa vez — mas a sorte está chegando! 💪🍀</div>
+        </div>`}
+  `
+  return send(email, `${maxAcertos >= 4 ? '🏆' : '🎲'} Seu resultado — Concurso #${concurso}`, layout('Acertos do Bolão', corpo, loteriaLabel))
+}
+
+// ── Premiação do bolão esportivo (encerramento) ────────────────────────────────
+export async function enviarPremioEsporte(
+  email: string, nome: string, bolaoNome: string,
+  posicao: number, emoji: string, label: string, categoria: string,
+  pontos: number, premio: number
+) {
+  const valorStr = `R$ ${premio.toFixed(2).replace('.', ',')}`
+  const corpo = `
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:40px;margin-bottom:8px;">${emoji}</div>
+      <h2 style="color:#00AB67;margin:0 0 8px;font-size:22px;">Parabéns, ${nome}!</h2>
+      <p style="color:#64748B;margin:0;">Você ficou em ${posicao}º lugar — ${label} — ${bolaoNome}</p>
+    </div>
+    <div style="background:#F0FDF4;border:1.5px solid #00AB67;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px;">
+      <div style="color:#64748B;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Seu prêmio</div>
+      <div style="color:#00AB67;font-size:32px;font-weight:800;margin:8px 0;">${valorStr}</div>
+      <div style="color:#94A3B8;font-size:12px;">${categoria} · ${pontos} pontos</div>
+    </div>
+    <div style="background:#F8FAFB;border:1px solid #E2E8F0;border-radius:10px;padding:16px;text-align:center;">
+      <div style="color:#475569;font-size:13px;">O administrador entrará em contato em breve para combinar o pagamento do seu prêmio via PIX.</div>
+    </div>
+  `
+  return send(email, `${emoji} Você ganhou! ${label} — ${bolaoNome}`, layout('Premiação do Bolão', corpo, 'Esporte'))
+}
+
 // ── Notifica admin sobre nova inscrição ───────────────────────────────────────
 export async function notificarAdminInscricao(
   nome: string, cotas: string[], total: number, concurso: number, telefone: string

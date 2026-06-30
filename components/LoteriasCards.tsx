@@ -48,7 +48,7 @@ export default function LoteriasCards() {
           const json: LotResult = await r.json()
           setDados(prev => ({ ...prev, [lot.id]: json }))
         }
-      } catch { /* silently fail */ }
+      } catch (err) { console.error(`[LoteriasCards] erro ao buscar ${lot.id}:`, err) }
       setCarregando(prev => ({ ...prev, [lot.id]: false }))
     })
   }, [])

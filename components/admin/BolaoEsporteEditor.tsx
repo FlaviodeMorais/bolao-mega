@@ -18,12 +18,11 @@ interface BolaoEsporte {
   premiacao?: PremiacaoItem[]
 }
 
+// Mantido em sincronia com DEFAULTS['paginas.esporte'].premiacao em lib/settings.ts
 const PREMIACAO_DEFAULT: PremiacaoItem[] = [
-  { lugar: 1, emoji: '🥇', label: '1º Lugar',  categoria: 'Craque',      pts: 10, pct: 50 },
-  { lugar: 2, emoji: '🥈', label: '2º Lugar',  categoria: 'Ás',          pts: 7,  pct: 30 },
-  { lugar: 3, emoji: '🥉', label: '3º Lugar',  categoria: 'Talento',     pts: 5,  pct: 20 },
-  { lugar: 4, emoji: '🎖️', label: '4º Lugar',  categoria: 'Destaque',    pts: 3,  pct: 0  },
-  { lugar: 5, emoji: '⭐', label: 'Top 5',     categoria: 'Participante', pts: 1,  pct: 0  },
+  { lugar: 1, emoji: '🏆', label: '1º lugar', categoria: 'Acertou o Placar e o Vencedor', pts: 5, pct: 40 },
+  { lugar: 2, emoji: '🥈', label: '2º lugar', categoria: 'Acertou o Vencedor',            pts: 3, pct: 30 },
+  { lugar: 3, emoji: '🥉', label: '3º lugar', categoria: 'Acertou o Placar',              pts: 2, pct: 20 },
 ]
 
 interface Props {

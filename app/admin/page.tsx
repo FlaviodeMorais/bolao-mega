@@ -6,6 +6,7 @@ import { useConferencia } from '@/hooks/admin/useConferencia'
 import { useBoloes } from '@/hooks/admin/useBoloes'
 import { useConcurso } from '@/hooks/admin/useConcurso'
 import { useParticipantes } from '@/hooks/admin/useParticipantes'
+import { useAdminBranding, useWhatsappHealth } from '@/hooks/admin/useAdminShell'
 import styles from './admin.module.css'
 import EsporteAdmin from './EsporteAdmin'
 import AdminHeader from '@/components/admin/AdminHeader'
@@ -22,6 +23,7 @@ import AdminSettings from '@/components/admin/AdminSettings'
 
 import type { Bolao } from '@/hooks/admin/useBoloes'
 import type { Concurso } from '@/hooks/admin/useConcurso'
+import type { BolaoDetailPanelProps } from '@/components/admin/bolao-detail/types'
 
 function formatTel(tel?: string): string {
   if (!tel) return '—'
@@ -42,19 +44,8 @@ export default function AdminPage() {
   const [logado, setLogado]     = useState(false)
   const [senha, setSenha]       = useState('')
   const [errLogin, setErrLogin] = useState('')
-  const [grupoNome, setGrupoNome] = useState('BOLÃO 💯')
-  const [appNome, setAppNome]     = useState('Bolões')
-
-  useEffect(() => {
-    fetch('/api/config-publica').then(r => r.json()).then(d => {
-      if (d?.app?.grupo_nome) setGrupoNome(d.app.grupo_nome)
-      if (d?.app?.nome)       setAppNome(d.app.nome)
-    }).catch(() => {})
-  }, [])
-
-  // WhatsApp health (inline — pequeno e sem domínio próprio)
-  const [waStatus, setWaStatus] = useState<'ok' | 'erro' | ''>('')
-  const [waMsg, setWaMsg]       = useState('')
+  const { grupoNome, appNome }  = useAdminBranding()
+  const { waStatus, waMsg }     = useWhatsappHealth(logado)
 
   // ── Hooks de domínio ─────────────────────────────────────────
   const boloes   = useBoloes()
@@ -170,16 +161,6 @@ export default function AdminPage() {
 
   useEffect(() => { if (logado) carregarInicio() }, [logado, carregarInicio])
 
-  useEffect(() => {
-    if (!logado) return
-    const checarWA = () => fetch('/api/whatsapp/health').then(r => r.json())
-      .then(d => { setWaStatus(d.connected ? 'ok' : 'erro'); setWaMsg(d.msg || '') })
-      .catch(() => { setWaStatus('erro'); setWaMsg('Sem resposta do Whapi') })
-    checarWA()
-    const id = setInterval(checarWA, 30000)
-    return () => clearInterval(id)
-  }, [logado])
-
   // ── ORQUESTRAÇÃO: bolão + participantes + conferência ─────────
   function selecionarBolao(b: Bolao) {
     boloes.setBolaoAtual(b)
@@ -233,6 +214,82 @@ export default function AdminPage() {
     await concurso.selecionarConcurso(c)
     if (bolaoAtual) parts.carregarPartsBolao(bolaoAtual.slug, String(c.num))
   }
+
+  // ── Props consolidadas do BolaoDetailPanel ─────────────────────
+  const bolaoDetailProps: BolaoDetailPanelProps | null = bolaoAtual ? {
+    bolao: bolaoAtual,
+    concursoAtivo,
+    partsBolao,
+    pagosLista,
+    pendentesLista,
+    cotasLivres,
+    arrecadado,
+    loadingParts,
+    confirmandoTodos,
+    selecionados,
+    enviandoComp,
+    lembreteMsg,
+    compMsg,
+    apostasMsg,
+    showApostasModal,
+    apostasTexto,
+    uploadingApostas,
+    showConferir,
+    conferirResult,
+    conferirMsg,
+    conferindoRes,
+    conferindoManual,
+    dezenasInput,
+    showEncerrar,
+    encerrando,
+    encerrarOk,
+    showConfig,
+    editDezenas,
+    editApostas,
+    editCotas,
+    editTaxa,
+    precoCaixa,
+    custoApostas,
+    totalBolao,
+    valorPorCota,
+    configSalva,
+    salvando,
+    formatTel,
+    whatsappUrl,
+    onFechar: fecharBolao,
+    onAtualizarParts: () => carregarPartsBolao(bolaoAtual.slug, concursoAtivo),
+    onConfirmarTodos: confirmarTodos,
+    onEnviarLembrete: enviarLembrete,
+    onToggleSelecionado: toggleSelecionado,
+    onSelecionarTodosPagos: selecionarTodosPagos,
+    onLimparSelecao: () => parts.setSelecionados(new Set()),
+    onImprimirSelecionados: imprimirSelecionados,
+    onEnviarComprovante: enviarComprovante,
+    onConfirmarPagamento: confirmarPagamento,
+    onConfirmarAcrescimo: confirmarAcrescimo,
+    onExcluir: excluir,
+    onOpenApostas: () => setShowApostasModal(true),
+    onCloseApostas: () => { setShowApostasModal(false); setApostasTexto('') },
+    onApostasTextoChange: setApostasTexto,
+    onSalvarApostas: salvarApostas,
+    onRemoverApostas: removerApostas,
+    onToggleConferir: () => { setShowConferir(v => !v); setConferirMsg('') },
+    onConferirSorteio: () => conferirSorteio(),
+    onConferirManual: conferirManual,
+    onResetarConferencia: resetarConferencia,
+    onDezenasInputChange: setDezenasInput,
+    onEnviarAcertos: enviarAcertos,
+    enviarAcertosMsg,
+    onToggleEncerrar: () => { setShowEncerrar(v => !v); setEncerrarOk(null) },
+    onEncerrarBolao: encerrarBolao,
+    onToggleConfig: () => setShowConfig(v => !v),
+    onEditDezenasChange: setEditDezenas,
+    onEditApostasChange: setEditApostas,
+    onEditCotasChange: setEditCotas,
+    onEditTaxaChange: setEditTaxa,
+    onSalvarConfig: salvarConfig,
+    onInserirApostasGeradas: inserirApostasGeradas,
+  } : null
 
 
 
@@ -308,83 +365,10 @@ export default function AdminPage() {
 
           {/* ── DIREITA: DETALHE DO BOLÃO ou CONCURSOS ── */}
           <div className={styles.rightPanel}>
-            {bolaoAtual ? (
+            {bolaoDetailProps ? (
 
               /* ── DETALHE DO BOLÃO ── */
-              <BolaoDetailPanel
-                bolao={bolaoAtual}
-                concursoAtivo={concursoAtivo}
-                partsBolao={partsBolao}
-                pagosLista={pagosLista}
-                pendentesLista={pendentesLista}
-                cotasLivres={cotasLivres}
-                arrecadado={arrecadado}
-                loadingParts={loadingParts}
-                confirmandoTodos={confirmandoTodos}
-                selecionados={selecionados}
-                enviandoComp={enviandoComp}
-                lembreteMsg={lembreteMsg}
-                compMsg={compMsg}
-                apostasMsg={apostasMsg}
-                showApostasModal={showApostasModal}
-                apostasTexto={apostasTexto}
-                uploadingApostas={uploadingApostas}
-                showConferir={showConferir}
-                conferirResult={conferirResult}
-                conferirMsg={conferirMsg}
-                conferindoRes={conferindoRes}
-                conferindoManual={conferindoManual}
-                dezenasInput={dezenasInput}
-                showEncerrar={showEncerrar}
-                encerrando={encerrando}
-                encerrarOk={encerrarOk}
-                showConfig={showConfig}
-                editDezenas={editDezenas}
-                editApostas={editApostas}
-                editCotas={editCotas}
-                editTaxa={editTaxa}
-                precoCaixa={precoCaixa}
-                custoApostas={custoApostas}
-                totalBolao={totalBolao}
-                valorPorCota={valorPorCota}
-                configSalva={configSalva}
-                salvando={salvando}
-                formatTel={formatTel}
-                whatsappUrl={whatsappUrl}
-                onFechar={fecharBolao}
-                onAtualizarParts={() => carregarPartsBolao(bolaoAtual.slug, concursoAtivo)}
-                onConfirmarTodos={confirmarTodos}
-                onEnviarLembrete={enviarLembrete}
-                onToggleSelecionado={toggleSelecionado}
-                onSelecionarTodosPagos={selecionarTodosPagos}
-                onLimparSelecao={() => parts.setSelecionados(new Set())}
-                onImprimirSelecionados={imprimirSelecionados}
-                onEnviarComprovante={enviarComprovante}
-                onConfirmarPagamento={confirmarPagamento}
-                onConfirmarAcrescimo={confirmarAcrescimo}
-                onExcluir={excluir}
-                onOpenApostas={() => setShowApostasModal(true)}
-                onCloseApostas={() => { setShowApostasModal(false); setApostasTexto('') }}
-                onApostasTextoChange={setApostasTexto}
-                onSalvarApostas={salvarApostas}
-                onRemoverApostas={removerApostas}
-                onToggleConferir={() => { setShowConferir(v => !v); setConferirMsg('') }}
-                onConferirSorteio={() => conferirSorteio()}
-                onConferirManual={conferirManual}
-                onResetarConferencia={resetarConferencia}
-                onDezenasInputChange={setDezenasInput}
-                onEnviarAcertos={enviarAcertos}
-                enviarAcertosMsg={enviarAcertosMsg}
-                onToggleEncerrar={() => { setShowEncerrar(v => !v); setEncerrarOk(null) }}
-                onEncerrarBolao={encerrarBolao}
-                onToggleConfig={() => setShowConfig(v => !v)}
-                onEditDezenasChange={setEditDezenas}
-                onEditApostasChange={setEditApostas}
-                onEditCotasChange={setEditCotas}
-                onEditTaxaChange={setEditTaxa}
-                onSalvarConfig={salvarConfig}
-                onInserirApostasGeradas={inserirApostasGeradas}
-              />
+              <BolaoDetailPanel {...bolaoDetailProps} />
 
             ) : (
               <ConcursoPanel
