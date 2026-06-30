@@ -277,6 +277,32 @@ export async function enviarAcertosIndividual(
   return send(email, `${maxAcertos >= 4 ? '🏆' : '🎲'} Seu resultado — Concurso #${concurso}`, layout('Acertos do Bolão', corpo, loteriaLabel))
 }
 
+// ── Premiação do bolão esportivo (encerramento) ────────────────────────────────
+export async function enviarPremioEsporte(
+  email: string, nome: string, bolaoNome: string,
+  posicao: number, emoji: string, label: string, categoria: string,
+  pontos: number, premio: number, pixCode: string
+) {
+  const valorStr = `R$ ${premio.toFixed(2).replace('.', ',')}`
+  const corpo = `
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:40px;margin-bottom:8px;">${emoji}</div>
+      <h2 style="color:#00AB67;margin:0 0 8px;font-size:22px;">Parabéns, ${nome}!</h2>
+      <p style="color:#64748B;margin:0;">Você ficou em ${posicao}º lugar — ${label} — ${bolaoNome}</p>
+    </div>
+    <div style="background:#F0FDF4;border:1.5px solid #00AB67;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px;">
+      <div style="color:#64748B;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Seu prêmio</div>
+      <div style="color:#00AB67;font-size:32px;font-weight:800;margin:8px 0;">${valorStr}</div>
+      <div style="color:#94A3B8;font-size:12px;">${categoria} · ${pontos} pontos</div>
+    </div>
+    <div style="background:#F8FAFB;border:1px solid #E2E8F0;border-radius:10px;padding:16px;">
+      <div style="color:#94A3B8;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Código PIX para pagamento</div>
+      <div style="color:#0D1B2A;font-size:11px;word-break:break-all;font-family:monospace;line-height:1.6;">${pixCode}</div>
+    </div>
+  `
+  return send(email, `${emoji} Você ganhou! ${label} — ${bolaoNome}`, layout('Premiação do Bolão', corpo, 'Esporte'))
+}
+
 // ── Notifica admin sobre nova inscrição ───────────────────────────────────────
 export async function notificarAdminInscricao(
   nome: string, cotas: string[], total: number, concurso: number, telefone: string
