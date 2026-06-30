@@ -110,7 +110,7 @@ export const DEFAULTS: AllSettings = {
   whatsapp: {
     token:         process.env.WHAPI_TOKEN    || '',
     group_id:      process.env.WHAPI_GROUP_ID || '',
-    ativo:         true,
+    ativo:         false,
     prazo_horario: '12:00',
   },
   email: {

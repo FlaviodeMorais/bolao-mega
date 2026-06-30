@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { getEsporteSettings } from '@/lib/settings'
 
 export async function GET(req: NextRequest) {
   const slug = req.nextUrl.searchParams.get('bolao')
@@ -26,20 +27,23 @@ export async function GET(req: NextRequest) {
   const taxa = arrecadado * (Number(bolao?.taxa_admin || 20) / 100)
   const liquido = arrecadado - taxa
 
-  // 1º (cat A): 40% | 2º (cat B): 20% | 3º (cat C): 20%
+  const { premiacao } = await getEsporteSettings()
+
+  const premios = premiacao.map(item => ({
+    lugar:     item.lugar,
+    emoji:     item.emoji,
+    label:     item.label,
+    categoria: item.categoria,
+    valor:     liquido * (item.pct / 100),
+    descricao: `${item.label} — ${item.categoria} (${item.pct}% do total)`,
+  }))
+
   return NextResponse.json({
     ranking,
     stats: {
       arrecadado,
       premioLiquido: liquido,
-      premio1: liquido * 0.5,  // 40% do total bruto ≈ 50% do líquido (taxa 20%)
-      premio2: liquido * 0.25,
-      premio3: liquido * 0.25,
-      descricao: {
-        premio1: '1º Lugar — Acertou vencedor + placar exato (40% do total)',
-        premio2: '2º Lugar — Acertou o vencedor (20% do total)',
-        premio3: '3º Lugar — Acertou o placar exato (20% do total)',
-      }
+      premios,
     }
   })
 }
