@@ -19,12 +19,19 @@ interface SettingsData {
     premiacao?: unknown[]
   }
   'paginas.bolao'?: Record<string, { regras: string[] }>
+  'paginas.home'?: {
+    titulo?: string
+    link_stats?: string
+    rodape?: string
+    msg_sem_bolao?: string
+  }
 }
 
-type Aba = 'app' | 'pagamento' | 'whatsapp' | 'email' | 'esporte' | 'loteria'
+type Aba = 'app' | 'home' | 'pagamento' | 'whatsapp' | 'email' | 'esporte' | 'loteria'
 
 const ABAS: { id: Aba; label: string; icon: string }[] = [
   { id: 'app',      label: 'App',       icon: '🏠' },
+  { id: 'home',     label: 'Página Home', icon: '🎰' },
   { id: 'pagamento', label: 'Pagamento', icon: '💳' },
   { id: 'whatsapp', label: 'WhatsApp',  icon: '💬' },
   { id: 'email',    label: 'E-mail',    icon: '📧' },
@@ -53,6 +60,19 @@ function Field({ label, name, value, onChange, type = 'text', placeholder = '' }
         placeholder={placeholder}
         className={styles.settingsInput}
       />
+    </div>
+  )
+}
+
+function Toggle({ label, checked, onChange }: {
+  label: string; checked: boolean; onChange: (v: boolean) => void
+}) {
+  return (
+    <div className={styles.settingsField}>
+      <label className={styles.settingsLabel}>
+        <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} style={{ marginRight: 8 }} />
+        {label}
+      </label>
     </div>
   )
 }
@@ -100,6 +120,7 @@ export default function AdminSettings() {
   const wa      = (settings.whatsapp  ?? {}) as Record<string, unknown>
   const em      = (settings.email     ?? {}) as Record<string, unknown>
   const esporte = settings['paginas.esporte'] ?? {}
+  const home    = settings['paginas.home'] ?? {}
   const bolao   = (settings['paginas.bolao'] ?? {}) as Record<string, { regras: string[] }>
   const [loteriaAba, setLoteriaAba] = useState<'mega'|'quina'|'lotofacil'>('mega')
 
@@ -184,6 +205,19 @@ export default function AdminSettings() {
               </div>
             )}
 
+            {/* ── HOME ── */}
+            {aba === 'home' && (
+              <div className={styles.settingsGrid}>
+                <Field label="Título da página"     name="titulo"        value={home.titulo        ?? ''} onChange={v => updateNs('paginas.home','titulo',v)}        placeholder="🎰 Escolha seu Bolão" />
+                <Field label="Link de estatísticas"  name="link_stats"    value={home.link_stats    ?? ''} onChange={v => updateNs('paginas.home','link_stats',v)}    placeholder="📊 Análises & Estatísticas" />
+                <Field label="Rodapé"                name="rodape"        value={home.rodape        ?? ''} onChange={v => updateNs('paginas.home','rodape',v)}        placeholder="Boa sorte a todos! 🍀" />
+                <Field label="Mensagem sem bolão ativo" name="msg_sem_bolao" value={home.msg_sem_bolao ?? ''} onChange={v => updateNs('paginas.home','msg_sem_bolao',v)} placeholder="Nenhum bolão disponível no momento" />
+                <button type="button" className={styles.settingsSave} onClick={() => salvar('paginas.home')} disabled={saving}>
+                  {saving ? 'Salvando...' : '💾 Salvar Home'}
+                </button>
+              </div>
+            )}
+
             {/* ── PAGAMENTO ── */}
             {aba === 'pagamento' && (
               <div className={styles.settingsGrid}>
@@ -192,6 +226,8 @@ export default function AdminSettings() {
                 <Field label="Chave PIX (fallback)"  name="pix_chave"  value={String(pag.pix_chave  ?? '')} onChange={v => updateNs('pagamento','pix_chave',v)}  placeholder="CPF, e-mail, telefone ou aleatória" />
                 <Field label="Nome PIX"              name="pix_nome"   value={String(pag.pix_nome   ?? '')} onChange={v => updateNs('pagamento','pix_nome',v)}   placeholder="NOME DO RECEBEDOR" />
                 <Field label="Cidade PIX"            name="pix_cidade" value={String(pag.pix_cidade ?? '')} onChange={v => updateNs('pagamento','pix_cidade',v)} placeholder="SAO PAULO" />
+                <Toggle label="Mercado Pago ativo" checked={Boolean(pag.mp_ativo ?? true)} onChange={v => updateNs('pagamento','mp_ativo',v)} />
+                <Toggle label="PIX (fallback local) ativo" checked={Boolean(pag.pix_ativo ?? true)} onChange={v => updateNs('pagamento','pix_ativo',v)} />
                 <button type="button" className={styles.settingsSave} onClick={() => salvar('pagamento')} disabled={saving}>
                   {saving ? 'Salvando...' : '💾 Salvar Pagamento'}
                 </button>
@@ -204,6 +240,7 @@ export default function AdminSettings() {
                 <Field label="Token Whapi"     name="token"         value={String(wa.token    ?? '')} onChange={v => updateNs('whatsapp','token',v)}         placeholder="seu-token-whapi" />
                 <Field label="ID do Grupo WA"  name="group_id"      value={String(wa.group_id ?? '')} onChange={v => updateNs('whatsapp','group_id',v)}      placeholder="12055519XXXXXXXX-XXXXXXXXXX@g.us" />
                 <Field label="Horário Prazo"   name="prazo_horario" value={String(wa.prazo_horario ?? '12:00')} onChange={v => updateNs('whatsapp','prazo_horario',v)} placeholder="12:00" />
+                <Toggle label="WhatsApp ativo (requer assinatura Whapi)" checked={Boolean(wa.ativo ?? false)} onChange={v => updateNs('whatsapp','ativo',v)} />
                 <button type="button" className={styles.settingsSave} onClick={() => salvar('whatsapp')} disabled={saving}>
                   {saving ? 'Salvando...' : '💾 Salvar WhatsApp'}
                 </button>
@@ -218,6 +255,7 @@ export default function AdminSettings() {
                 <Field label="Resend API Key (alternativa)" name="resend_key" value={String(em.resend_key ?? '')} onChange={v => updateNs('email','resend_key',v)} placeholder="re_..." />
                 <Field label="Nome do Remetente" name="from_name" value={String(em.from_name ?? '')} onChange={v => updateNs('email','from_name',v)} placeholder="Bolão Mega" />
                 <Field label="E-mail Admin (notificações)" name="admin_email" value={String(em.admin_email ?? '')} onChange={v => updateNs('email','admin_email',v)} placeholder="admin@meusite.com" />
+                <Toggle label="E-mail ativo" checked={Boolean(em.ativo ?? true)} onChange={v => updateNs('email','ativo',v)} />
                 <button type="button" className={styles.settingsSave} onClick={() => salvar('email')} disabled={saving}>
                   {saving ? 'Salvando...' : '💾 Salvar E-mail'}
                 </button>
