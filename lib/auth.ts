@@ -2,6 +2,9 @@ import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
 import { supabase } from './supabase'
 
+if (!process.env.JWT_SECRET) {
+  console.error('[auth] JWT_SECRET não configurado — usando segredo de fallback inseguro. Configure a env var em produção.')
+}
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'bolao-mega-secret-2026')
 
 async function getSenhaConfig(): Promise<string> {

@@ -54,7 +54,8 @@ export async function verificarNumeroWhatsApp(telefone: string): Promise<boolean
     const data = await res.json()
     const contato = Array.isArray(data) ? data[0] : data?.contacts?.[0]
     return contato?.exists !== false
-  } catch {
+  } catch (err) {
+    console.error('[WhatsApp] erro ao verificar número:', err)
     return true
   }
 }

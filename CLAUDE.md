@@ -11,7 +11,7 @@
 | Pagamentos | Mercado Pago PIX + fallback PIX local (`lib/pix-local.ts`) |
 | WhatsApp | Whapi.cloud (`lib/whatsapp.ts`) |
 | Email | Gmail SMTP via Nodemailer + Resend (`lib/email.ts`) |
-| IA | Google Generative AI / Gemini (notícias esportivas) |
+| Notícias | Feed RSS do canal YouTube CazéTV (`api/esporte/noticias`) |
 | Deploy | Vercel (cron jobs nativos) |
 | PWA | Manifest + ícones + viewport standalone |
 
@@ -70,7 +70,7 @@
     │   ├── importar-jogos/route.ts     # POST: CSV de jogos FIFA 2026
     │   ├── jogos/route.ts              # GET
     │   ├── limpar-jogos/route.ts       # POST
-    │   ├── noticias/route.ts           # GET: notícias via Gemini AI
+    │   ├── noticias/route.ts           # GET: notícias via feed RSS do YouTube (CazéTV)
     │   ├── participantes/route.ts      # GET
     │   ├── participantes/[id]/route.ts # PATCH: palpites do participante
     │   ├── ranking/route.ts            # GET: placar / leaderboard

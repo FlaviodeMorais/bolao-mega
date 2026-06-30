@@ -37,11 +37,6 @@ interface BolaoListProps {
   actions: BolaoListActions
 }
 
-const LOTERIA_BADGE: Record<string, string> = {
-  mega:      '🍀',
-  lotofacil: '🌸',
-  quina:     '🔵',
-}
 const LOTERIA_COR: Record<string, string> = {
   mega:      '#009B63',
   lotofacil: '#702A82',
