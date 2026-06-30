@@ -40,10 +40,19 @@ function whatsappUrl(tel?: string): string {
   return `https://wa.me/${num}`
 }
 
+type AbaPrincipal = 'operacao' | 'ferramentas' | 'config'
+
+const ABAS_PRINCIPAIS: { id: AbaPrincipal; label: string; icon: string }[] = [
+  { id: 'operacao',    label: 'Operação',     icon: '📋' },
+  { id: 'ferramentas', label: 'Ferramentas',  icon: '🛠️' },
+  { id: 'config',      label: 'Configurações', icon: '⚙️' },
+]
+
 export default function AdminPage() {
   const [logado, setLogado]     = useState(false)
   const [senha, setSenha]       = useState('')
   const [errLogin, setErrLogin] = useState('')
+  const [abaPrincipal, setAbaPrincipal] = useState<AbaPrincipal>('operacao')
   const { grupoNome, appNome }  = useAdminBranding()
   const { waStatus, waMsg }     = useWhatsappHealth(logado)
 
@@ -333,115 +342,138 @@ export default function AdminPage() {
           boloesAtivosCount={boloes.boloes.filter(b => b.ativo).length}
         />
 
-        {/* ── GRID PRINCIPAL ── */}
-        <div className={styles.adminGrid}>
-
-          {/* ── ESQUERDA: BOLÕES ── */}
-          <div className={styles.leftPanel}>
-            <BolaoList
-              boloes={boloes.boloes}
-              bolaoAtualId={bolaoAtual?.id ?? null}
-              linkCopiado={linkCopiado}
-              renamingId={renamingId}
-              renameVal={renameVal}
-              onRenameValChange={setRenameVal}
-              showCreate={showCreate}
-              novoNome={novoNome}
-              novoSlug={novoSlug}
-              novaLoteria={novaLoteria}
-              criando={criando}
-              criarErro={criarErro}
-              onNovoNomeChange={setNovoNome}
-              onNovoSlugChange={setNovoSlug}
-              onNovaLoteriaChange={v => { setNovaLoteria(v); setProximos([]) }}
-              onShowCreateToggle={v => { setShowCreate(v); if (!v) { setNovoNome(''); setNovoSlug(''); setNovaLoteria('mega') } }}
-              actions={{
-                onSelecionar: selecionarBolao,
-                onCopiarLink: copiarLink,
-                onCancelar: cancelarBolao,
-                onExcluir: excluirBolao,
-                onRenomear: id => { setRenamingId(id); setRenameVal(boloes.boloes.find(b => b.id === id)?.nome ?? '') },
-                onRenomearConfirm: renomearBolao,
-                onRenomearCancel: () => setRenamingId(null),
-                onCriar: criarBolao,
-              }}
-            />
-          </div>
-
-          {/* ── DIREITA: DETALHE DO BOLÃO ou CONCURSOS ── */}
-          <div className={styles.rightPanel}>
-            {bolaoDetailProps ? (
-
-              /* ── DETALHE DO BOLÃO ── */
-              <BolaoDetailPanel {...bolaoDetailProps} />
-
-            ) : (
-              <ConcursoPanel
-                proximos={proximos}
-                concursoAtivo={concursoAtivo}
-                loadingCaixa={loadingCaixa}
-                editDatas={editDatas}
-                loteriaAtual={loteriaPanel}
-                resultadoInfo={resultadoInfo}
-                onMudarLoteria={mudarLoteria}
-                onEditData={(num, val) => setEditDatas(prev => ({ ...prev, [num]: val }))}
-                onBuscarCaixa={buscarCaixa}
-                onSelecionar={selecionarConcurso}
-              />
-            )}
-          </div>
+        {/* ── ABAS PRINCIPAIS ── */}
+        <div className={styles.mainTabBar}>
+          {ABAS_PRINCIPAIS.map(a => (
+            <button key={a.id} type="button"
+              className={`${styles.mainTab} ${abaPrincipal === a.id ? styles.mainTabActive : ''}`}
+              onClick={() => setAbaPrincipal(a.id)}>
+              {a.icon} {a.label}
+            </button>
+          ))}
         </div>
 
-        {/* ── KPI DASHBOARD ── */}
-        <KpiDashboard
-          showKpi={showKpi}
-          loadingKpi={loadingKpi}
-          kpiGeral={kpiGeral}
-          kpiConcursos={kpiConcursos}
-          kpiFreq={kpiFreq}
-          kpiGasto={kpiGasto}
-          kpiCotas={kpiCotas}
-          kpiAba={kpiAba}
-          onCarregar={carregarKpis}
-          onAbaChange={setKpiAba}
-          whatsappUrl={whatsappUrl}
-        />
+        {/* ── OPERAÇÃO ── */}
+        {abaPrincipal === 'operacao' && (
+          <>
+            {/* ── GRID PRINCIPAL ── */}
+            <div className={styles.adminGrid}>
 
-        {/* ── HISTÓRICO ── */}
-        <HistoricoPanel
-          modo={modoHistorico}
-          loadingHist={loadingHist}
-          showHistorico={showHistorico}
-          historico={historico}
-          histParticipantes={histParticipantes}
-          histBusca={histBusca}
-          histFiltroSlug={histFiltroSlug}
-          histFiltroConc={histFiltroConc}
-          msgConvite={msgConvite}
-          boloes={boloes.boloes}
-          onModoChange={setModoHistorico}
-          onCarregarResumo={carregarHistorico}
-          onCarregarParticipantes={carregarHistParticipantes}
-          onBuscaChange={setHistBusca}
-          onFiltroSlugChange={setHistFiltroSlug}
-          onFiltroConcChange={setHistFiltroConc}
-          onMsgConviteChange={setMsgConvite}
-          onEnviarConvite={enviarConviteNovoBolao}
-          formatTel={formatTel}
-          whatsappUrl={whatsappUrl}
-        />
+              {/* ── ESQUERDA: BOLÕES ── */}
+              <div className={styles.leftPanel}>
+                <BolaoList
+                  boloes={boloes.boloes}
+                  bolaoAtualId={bolaoAtual?.id ?? null}
+                  linkCopiado={linkCopiado}
+                  renamingId={renamingId}
+                  renameVal={renameVal}
+                  onRenameValChange={setRenameVal}
+                  showCreate={showCreate}
+                  novoNome={novoNome}
+                  novoSlug={novoSlug}
+                  novaLoteria={novaLoteria}
+                  criando={criando}
+                  criarErro={criarErro}
+                  onNovoNomeChange={setNovoNome}
+                  onNovoSlugChange={setNovoSlug}
+                  onNovaLoteriaChange={v => { setNovaLoteria(v); setProximos([]) }}
+                  onShowCreateToggle={v => { setShowCreate(v); if (!v) { setNovoNome(''); setNovoSlug(''); setNovaLoteria('mega') } }}
+                  actions={{
+                    onSelecionar: selecionarBolao,
+                    onCopiarLink: copiarLink,
+                    onCancelar: cancelarBolao,
+                    onExcluir: excluirBolao,
+                    onRenomear: id => { setRenamingId(id); setRenameVal(boloes.boloes.find(b => b.id === id)?.nome ?? '') },
+                    onRenomearConfirm: renomearBolao,
+                    onRenomearCancel: () => setRenamingId(null),
+                    onCriar: criarBolao,
+                  }}
+                />
+              </div>
 
-        {/* ── BOLÕES ESPORTIVOS ── */}
-        <EsporteAdmin />
+              {/* ── DIREITA: DETALHE DO BOLÃO ou CONCURSOS ── */}
+              <div className={styles.rightPanel}>
+                {bolaoDetailProps ? (
+
+                  /* ── DETALHE DO BOLÃO ── */
+                  <BolaoDetailPanel {...bolaoDetailProps} />
+
+                ) : (
+                  <ConcursoPanel
+                    proximos={proximos}
+                    concursoAtivo={concursoAtivo}
+                    loadingCaixa={loadingCaixa}
+                    editDatas={editDatas}
+                    loteriaAtual={loteriaPanel}
+                    resultadoInfo={resultadoInfo}
+                    onMudarLoteria={mudarLoteria}
+                    onEditData={(num, val) => setEditDatas(prev => ({ ...prev, [num]: val }))}
+                    onBuscarCaixa={buscarCaixa}
+                    onSelecionar={selecionarConcurso}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* ── KPI DASHBOARD ── */}
+            <KpiDashboard
+              showKpi={showKpi}
+              loadingKpi={loadingKpi}
+              kpiGeral={kpiGeral}
+              kpiConcursos={kpiConcursos}
+              kpiFreq={kpiFreq}
+              kpiGasto={kpiGasto}
+              kpiCotas={kpiCotas}
+              kpiAba={kpiAba}
+              onCarregar={carregarKpis}
+              onAbaChange={setKpiAba}
+              whatsappUrl={whatsappUrl}
+            />
+
+            {/* ── HISTÓRICO ── */}
+            <HistoricoPanel
+              modo={modoHistorico}
+              loadingHist={loadingHist}
+              showHistorico={showHistorico}
+              historico={historico}
+              histParticipantes={histParticipantes}
+              histBusca={histBusca}
+              histFiltroSlug={histFiltroSlug}
+              histFiltroConc={histFiltroConc}
+              msgConvite={msgConvite}
+              boloes={boloes.boloes}
+              onModoChange={setModoHistorico}
+              onCarregarResumo={carregarHistorico}
+              onCarregarParticipantes={carregarHistParticipantes}
+              onBuscaChange={setHistBusca}
+              onFiltroSlugChange={setHistFiltroSlug}
+              onFiltroConcChange={setHistFiltroConc}
+              onMsgConviteChange={setMsgConvite}
+              onEnviarConvite={enviarConviteNovoBolao}
+              formatTel={formatTel}
+              whatsappUrl={whatsappUrl}
+            />
+
+            {/* ── BOLÕES ESPORTIVOS ── */}
+            <EsporteAdmin />
+          </>
+        )}
 
         {/* ── FERRAMENTAS ── */}
-        <IngerirHistorico />
+        {abaPrincipal === 'ferramentas' && (
+          <IngerirHistorico />
+        )}
 
-        {/* ── CONFIGURAÇÕES WHITE-LABEL ── */}
-        <AdminSettings />
+        {/* ── CONFIGURAÇÕES ── */}
+        {abaPrincipal === 'config' && (
+          <>
+            {/* ── CONFIGURAÇÕES WHITE-LABEL ── */}
+            <AdminSettings />
 
-        {/* ── SEGURANÇA ── */}
-        <AdminSenha />
+            {/* ── SEGURANÇA ── */}
+            <AdminSenha />
+          </>
+        )}
 
       </div>
     </div>
