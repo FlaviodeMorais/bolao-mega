@@ -70,7 +70,7 @@ export default function AdminPage() {
   const criarBolao     = boloes.criarBolao
 
   // ConcursoPanel
-  const { loteriaPanel, mudarLoteria, proximos, setProximos, loadingCaixa, editDatas, setEditDatas, buscarCaixa } = concurso
+  const { loteriaPanel, mudarLoteria, proximos, setProximos, loadingCaixa, editDatas, setEditDatas, buscarCaixa, resultadoInfo } = concurso
 
   // BolaoDetailPanel — participantes
   const { loadingParts, confirmandoTodos, selecionados, enviandoComp,
@@ -160,6 +160,11 @@ export default function AdminPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { if (logado) carregarInicio() }, [logado, carregarInicio])
+
+  // Restaura sessão existente (cookie admin_token ainda válido) sem pedir senha de novo
+  useEffect(() => {
+    fetch('/api/auth').then(r => r.json()).then(d => { if (d.ok) setLogado(true) }).catch(() => {})
+  }, [])
 
   // ── ORQUESTRAÇÃO: bolão + participantes + conferência ─────────
   function selecionarBolao(b: Bolao) {
@@ -377,6 +382,7 @@ export default function AdminPage() {
                 loadingCaixa={loadingCaixa}
                 editDatas={editDatas}
                 loteriaAtual={loteriaPanel}
+                resultadoInfo={resultadoInfo}
                 onMudarLoteria={mudarLoteria}
                 onEditData={(num, val) => setEditDatas(prev => ({ ...prev, [num]: val }))}
                 onBuscarCaixa={buscarCaixa}
