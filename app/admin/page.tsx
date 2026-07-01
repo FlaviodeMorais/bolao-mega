@@ -162,7 +162,7 @@ export default function AdminPage() {
   const carregarInicio = useCallback(async () => {
     const [b, ca] = await Promise.all([
       fetch('/api/boloes').then(r => r.json()),
-      fetch('/api/concurso-ativo').then(r => r.json()),
+      fetch('/api/concurso-ativo?loteria=mega').then(r => r.json()),
     ])
     boloes.setBoloes(b.boloes || []) // setBoloes do useBoloes
     concurso.setFromApi(ca.concurso || '', ca.data || '', ca.premio || '') // setFromApi do useConcurso
@@ -181,7 +181,16 @@ export default function AdminPage() {
     boloes.aplicarConfigDoBolao(b)
     conf.limparAutoRef()
     conf.restaurarResultadoSalvo(b.resultado_conferencia)
-    if (concursoAtivo) parts.carregarPartsBolao(b.slug, concursoAtivo)
+    const loteria = (b.loteria as import('@/lib/loterias').LoteriaId) || 'mega'
+    fetch(`/api/concurso-ativo?loteria=${loteria}`)
+      .then(r => r.json())
+      .then(ca => {
+        concurso.setFromApi(ca.concurso || '', ca.data || '', ca.premio || '')
+        parts.carregarPartsBolao(b.slug, ca.concurso || '')
+      })
+      .catch(() => {
+        if (concursoAtivo) parts.carregarPartsBolao(b.slug, concursoAtivo)
+      })
   }
 
   function fecharBolao() {
