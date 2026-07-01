@@ -4,40 +4,23 @@ export const runtime     = 'edge'
 export const size        = { width: 512, height: 512 }
 export const contentType = 'image/png'
 
-export default function Icon() {
+export default async function Icon() {
+  const base = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000'
+  const imgSrc = `${base}/icons/ChatGPT Image 30 de jun. de 2026, 20_29_26.png`
+
   return new ImageResponse(
     (
       <div style={{
         width: 512, height: 512,
-        background: 'linear-gradient(150deg, #06090f 0%, #081508 60%, #06090f 100%)',
+        background: '#000000',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        borderRadius: 108,
-        position: 'relative', overflow: 'hidden',
+        borderRadius: 108, overflow: 'hidden',
+        position: 'relative',
       }}>
-        <div style={{
-          position: 'absolute', right: 60, top: '50%',
-          width: 260, height: 260, marginTop: -130,
-          background: 'radial-gradient(circle, rgba(0,210,100,0.22) 0%, transparent 70%)',
-          borderRadius: '50%', display: 'flex',
-        }} />
-        <div style={{
-          position: 'absolute', inset: 14,
-          border: '1.5px solid rgba(0,200,100,0.14)',
-          borderRadius: 96, display: 'flex',
-        }} />
-        <div style={{
-          display: 'flex', alignItems: 'baseline',
-          gap: 4, position: 'relative', zIndex: 2,
-        }}>
-          <div style={{
-            fontFamily: 'sans-serif', fontSize: 164, fontWeight: 900, letterSpacing: -6,
-            color: '#ffffff', lineHeight: 1, display: 'flex',
-          }}>Bet</div>
-          <div style={{
-            fontFamily: 'sans-serif', fontSize: 196, fontWeight: 900, letterSpacing: -4,
-            color: '#00d464', lineHeight: 1, display: 'flex', marginBottom: -10,
-          }}>+</div>
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={imgSrc} width={512} height={512} style={{ objectFit: 'contain', display: 'flex' }} alt="" />
       </div>
     ),
     { ...size }
