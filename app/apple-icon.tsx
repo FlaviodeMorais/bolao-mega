@@ -8,7 +8,7 @@ export default async function AppleIcon() {
   const base = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
     : 'http://localhost:3000'
-  const imgSrc = `${base}/icons/ChatGPT Image 30 de jun. de 2026, 20_29_26.png`
+  const imgSrc = `${base}/bm-circle.png`
 
   return new ImageResponse(
     (
