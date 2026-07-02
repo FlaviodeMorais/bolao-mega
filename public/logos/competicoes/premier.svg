@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <path d="M32 4 L56 14 L56 38 Q56 54 32 62 Q8 54 8 38 L8 14 Z" fill="#3D195B"/>
+  <path d="M32 10 L52 18 L52 38 Q52 50 32 57 Q12 50 12 38 L12 18 Z" fill="#4B1A74"/>
+  <!-- Lion simplified -->
+  <circle cx="32" cy="26" r="9" fill="#E8C56B"/>
+  <!-- Mane -->
+  <circle cx="32" cy="26" r="12" fill="#C8A030" opacity=".5"/>
+  <!-- Face -->
+  <circle cx="32" cy="26" r="8" fill="#E8C56B"/>
+  <ellipse cx="29" cy="25" rx="1.5" ry="2" fill="#3D195B"/>
+  <ellipse cx="35" cy="25" rx="1.5" ry="2" fill="#3D195B"/>
+  <ellipse cx="32" cy="28" rx="2" ry="1.5" fill="#C8A030"/>
+  <!-- Crown -->
+  <path d="M24 18 L26 22 L32 19 L38 22 L40 18 L38 24 L26 24 Z" fill="#E8C56B"/>
+  <!-- Ball at feet -->
+  <circle cx="32" cy="46" r="7" fill="#fff"/>
+  <path d="M28 43 Q32 40 36 43 L36 49 Q32 52 28 49 Z" fill="#3D195B"/>
+</svg>

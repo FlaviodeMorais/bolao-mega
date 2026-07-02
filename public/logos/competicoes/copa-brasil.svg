@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Shield shape -->
+  <path d="M32 4 L56 14 L56 38 Q56 54 32 62 Q8 54 8 38 L8 14 Z" fill="#006400"/>
+  <path d="M32 8 L52 16 L52 38 Q52 52 32 58 Q12 52 12 38 L12 16 Z" fill="#009B3A"/>
+  <!-- Yellow diamond -->
+  <polygon points="32,16 48,32 32,48 16,32" fill="#FEDF00"/>
+  <!-- Green circle -->
+  <circle cx="32" cy="32" r="10" fill="#009B3A"/>
+  <!-- CB text -->
+  <text x="32" y="36" font-family="Arial Black,sans-serif" font-size="9" font-weight="900" fill="#FEDF00" text-anchor="middle">CB</text>
+</svg>
