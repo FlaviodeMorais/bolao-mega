@@ -10,9 +10,8 @@ export default async function OgImage() {
   const nome = app.nome || 'BetMais'
   const desc = app.descricao || 'Loterias, Brasileirão, Copa, e muito mais!'
 
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : 'http://localhost:3000'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
 
   const nunitoData = await fetch(`${baseUrl}/fonts/Nunito-Black.ttf`)
     .then(r => r.arrayBuffer())
