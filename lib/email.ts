@@ -47,7 +47,7 @@ function layout(titulo: string, corpo: string, loteriaLabel = 'Mega-Sena') {
 
   <!-- Header -->
   <tr><td style="background:linear-gradient(135deg,#00AB67,#005DA9);padding:28px 32px;text-align:center;">
-    <div style="font-size:32px;margin-bottom:8px;">🍀</div>
+    <img src="${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')}/bm-circle.png" width="56" height="56" alt="BetMais" style="border-radius:50%;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;" />
     <div style="color:#fff;font-size:22px;font-weight:800;letter-spacing:-0.5px;">BOLÃO ${loteriaLabel.toUpperCase()}</div>
     <div style="color:rgba(255,255,255,0.85);font-size:13px;margin-top:4px;">${titulo}</div>
   </td></tr>
@@ -147,7 +147,7 @@ export async function enviarResultado(
 ) {
   const corpo = ganhou && premioIndividual ? `
     <div style="text-align:center;margin-bottom:28px;">
-      <div style="font-size:40px;margin-bottom:8px;">🏆</div>
+      <img src="${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')}/bm-circle.png" width="60" height="60" alt="BetMais" style="border-radius:50%;margin-bottom:8px;" />
       <h2 style="color:#00AB67;margin:0 0 8px;font-size:24px;">GANHAMOS!</h2>
       <p style="color:#64748B;margin:0;">Concurso #${concurso} — ${bolaoNome}</p>
     </div>
@@ -162,7 +162,7 @@ export async function enviarResultado(
     </div>
   ` : `
     <div style="text-align:center;margin-bottom:28px;">
-      <div style="font-size:40px;margin-bottom:8px;">🎲</div>
+      <img src="${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')}/bm-circle.png" width="60" height="60" alt="BetMais" style="border-radius:50%;margin-bottom:8px;" />
       <h2 style="color:#0D1B2A;margin:0 0 8px;font-size:20px;">Resultado do Concurso #${concurso}</h2>
       <p style="color:#64748B;margin:0;">${bolaoNome}</p>
     </div>
@@ -174,7 +174,7 @@ export async function enviarResultado(
       <div style="color:#64748B;font-size:14px;">😔 Não foi desta vez, ${nome}.<br>Mas a sorte está chegando! Participe do próximo bolão.</div>
     </div>
   `
-  const assunto = ganhou ? `🏆 GANHAMOS! Concurso #${concurso}` : `🎲 Resultado — Concurso #${concurso}`
+  const assunto = ganhou ? `GANHAMOS! Concurso #${concurso}` : `Resultado — Concurso #${concurso}`
   return send(email, assunto, layout('Resultado do Sorteio', corpo, loteriaLabel))
 }
 

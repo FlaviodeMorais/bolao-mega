@@ -545,6 +545,21 @@
 .btnResultadoConfirm:hover:not(:disabled) { background: #B45309; }
 .btnResultadoConfirm:disabled { opacity: .5; cursor: not-allowed; }
 
+.premiosCaixaBox {
+  background: #F0FDF4; border: 1px solid #BBF7D0;
+  border-radius: 10px; padding: 14px; margin-top: 14px;
+}
+.premiosCaixaGrid { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.premioFaixaRow {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; padding: 4px 0;
+  border-bottom: 1px solid #D1FAE5;
+}
+.premioFaixaRow:last-child { border-bottom: none; }
+.premioFaixaNome { flex: 1; color: #374151; font-weight: 600; }
+.premioFaixaVal  { color: #007A45; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+.premioFaixaGanh { color: #64748B; font-size: 11px; white-space: nowrap; }
+
 /* ── CONFIGURADOR TOGGLE ── */
 .configToggle {
   display: flex; justify-content: space-between; align-items: center;

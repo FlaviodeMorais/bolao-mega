@@ -17,10 +17,12 @@ interface Bolao {
   apostas_data?: { bets: number[][]; total_apostas: number } | null
   resultado_conferencia?: Record<string, unknown> | null
 }
+interface PremioFaixa { faixa: string; ganhadores: number; valor: number }
 interface ConferirResult {
   status: string; dezenas_sorteadas: number[]
   resumo: { senas: number; quinas: number; quadras: number }
   maior_premio: string | null; total_premiadas: number
+  premios_caixa?: PremioFaixa[]
   apostas_premiadas: { idx: number; dezenas: number[]; acertos: number; premio: string }[]
 }
 /* ── Props agrupadas por responsabilidade ── */
@@ -106,6 +108,8 @@ export interface BolaoDetailPanelProps {
   onDezenasInputChange: (v: string) => void
   onEnviarAcertos: () => void
   enviarAcertosMsg: string
+  onEnviarAcertosEmail: () => void
+  enviarAcertosEmailMsg: string
 
   // Callbacks — encerramento
   onToggleEncerrar: () => void
@@ -261,6 +265,24 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
               </div>
             </div>
           )}
+          {p.conferirResult?.premios_caixa && p.conferirResult.premios_caixa.some(f => f.valor > 0) && (
+            <div className={styles.premiosCaixaBox}>
+              <div className={styles.conferirResumoTitle}>🏅 Prêmios da Caixa (concurso):</div>
+              <div className={styles.premiosCaixaGrid}>
+                {p.conferirResult.premios_caixa.filter(f => f.valor > 0).map(f => (
+                  <div key={f.faixa} className={styles.premioFaixaRow}>
+                    <span className={styles.premioFaixaNome}>{f.faixa}</span>
+                    <span className={styles.premioFaixaVal}>
+                      R$ {f.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                    {f.ganhadores > 0 && (
+                      <span className={styles.premioFaixaGanh}>{f.ganhadores} ganhador{f.ganhadores !== 1 ? 'es' : ''}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {p.conferirMsg && (
             <div className={p.conferirResult?.status === 'ganhamos' ? styles.resultadoMsgBox : styles.resultadoInfo}>
               {p.conferirMsg}
@@ -317,12 +339,18 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
       {bolao.resultado_conferencia &&
         (bolao.resultado_conferencia as Record<string, string>).status !== 'nao_apurado' &&
         bolao.apostas_data && p.pagosLista.length > 0 && (
-        <button type="button" className={styles.btnLembrete}
-          onClick={p.onEnviarAcertos}>
-          📊 Enviar Acertos por WhatsApp
-        </button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button type="button" className={styles.btnLembrete} onClick={p.onEnviarAcertos}>
+            📲 Enviar Acertos por WhatsApp
+          </button>
+          <button type="button" className={styles.btnLembrete} onClick={p.onEnviarAcertosEmail}
+            style={{ background: '#1a56db' }}>
+            ✉️ Enviar Acertos por Email
+          </button>
+        </div>
       )}
       {p.enviarAcertosMsg && <div className={styles.lembreteMsg}>{p.enviarAcertosMsg}</div>}
+      {p.enviarAcertosEmailMsg && <div className={styles.lembreteMsg}>{p.enviarAcertosEmailMsg}</div>}
 
       {/* ── Encerrar bolão ── */}
       {!bolao.encerrado && p.cotasLivres > 0 && p.pagosLista.length > 0 && (

@@ -121,22 +121,28 @@ export default function AdminPage() {
           conferirSorteio, resetarConferencia, conferirManual } = conf
 
   const [enviarAcertosMsg, setEnviarAcertosMsg] = useState('')
-  const enviarAcertos = async () => {
+  const [enviarAcertosEmailMsg, setEnviarAcertosEmailMsg] = useState('')
+
+  const enviarAcertosPorCanal = async (canal: 'wa' | 'email', setMsg: (m: string) => void) => {
     if (!bolaoAtual || !concursoAtivo) return
-    setEnviarAcertosMsg('Enviando...')
+    setMsg('Enviando...')
     try {
       const r = await fetch('/api/admin/acertos-pos-sorteio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bolao_slug: bolaoAtual.slug, concurso: concursoAtivo }),
+        body: JSON.stringify({ bolao_slug: bolaoAtual.slug, concurso: concursoAtivo, canal }),
       })
       const d = await r.json()
-      if (r.ok) setEnviarAcertosMsg(`✅ Enviado para ${d.enviados} participante(s)${d.erros > 0 ? ` (${d.erros} sem telefone)` : ''}`)
-      else setEnviarAcertosMsg(`❌ ${d.error}`)
+      const semContato = canal === 'wa' ? 'sem telefone' : 'sem email'
+      if (r.ok) setMsg(`✅ Enviado para ${d.enviados} participante(s)${d.erros > 0 ? ` (${d.erros} ${semContato})` : ''}`)
+      else setMsg(`❌ ${d.error}`)
     } catch {
-      setEnviarAcertosMsg('❌ Erro ao enviar')
+      setMsg('❌ Erro ao enviar')
     }
   }
+
+  const enviarAcertos = () => enviarAcertosPorCanal('wa', setEnviarAcertosMsg)
+  const enviarAcertosEmail = () => enviarAcertosPorCanal('email', setEnviarAcertosEmailMsg)
 
   // BolaoDetailPanel — config
   const { showConfig, setShowConfig, editDezenas, setEditDezenas,
@@ -419,6 +425,8 @@ export default function AdminPage() {
                 onDezenasInputChange={setDezenasInput}
                 onEnviarAcertos={enviarAcertos}
                 enviarAcertosMsg={enviarAcertosMsg}
+                onEnviarAcertosEmail={enviarAcertosEmail}
+                enviarAcertosEmailMsg={enviarAcertosEmailMsg}
                 onToggleEncerrar={() => { setShowEncerrar(v => !v); setEncerrarOk(null) }}
                 onEncerrarBolao={encerrarBolao}
                 onToggleConfig={() => setShowConfig(v => !v)}

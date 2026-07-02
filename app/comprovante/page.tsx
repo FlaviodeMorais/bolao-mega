@@ -3,7 +3,6 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import styles from './comprovante.module.css'
-import TrevoIcon from '@/components/TrevoIcon'
 
 interface ApostasData {
   bets: number[][]
@@ -197,7 +196,8 @@ function ComprovanteContent() {
 
                   <div className={styles.cartaoHeader}>
                     <div className={styles.cartaoHeaderLeft}>
-                      <TrevoIcon size={32} loteria={bolao?.loteria ?? 'mega'} className={styles.cartaoLogo} />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/bm-circle.png" alt="BetMais" width={32} height={32} style={{ borderRadius: '50%' }} />
                       <div>
                         <div className={styles.cartaoGrupo}>{grupoNome}</div>
                         <div className={styles.cartaoBolao}>{bolao?.nome}</div>

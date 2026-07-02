@@ -2,7 +2,6 @@ import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { ShareButton } from './ShareButton'
-import TrevoIcon from '@/components/TrevoIcon'
 import { getAppSettings } from '@/lib/settings'
 
 interface Props { params: { id: string } }
@@ -68,7 +67,8 @@ export default async function ComprovantePage({ params }: Props) {
 
         {/* Cabeçalho */}
         <div className="comprov-share-header">
-          <div className="comprov-share-clover"><TrevoIcon size={40} loteria={p.bolao?.loteria ?? 'mega'} /></div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/bm-circle.png" alt="BetMais" width={52} height={52} style={{ borderRadius: '50%', marginBottom: 8 }} />
           <div className="comprov-share-nome">{p.nome}</div>
           <div className="comprov-share-sub">Concurso #{p.concurso} · {p.bolao?.nome}</div>
         </div>
@@ -106,7 +106,7 @@ export default async function ComprovantePage({ params }: Props) {
         <ShareButton nome={p.nome} concurso={String(p.concurso)} cotas={cotas.length} id={params.id} bolaoNome={p.bolao?.nome || 'Bolão'} />
 
         <div className="comprov-share-footer">
-          Boa sorte! 🍀 — <a href={`/${p.bolao_slug}`} style={{ color: 'var(--green)' }}>Ver bolão</a>
+          Boa sorte! — <a href={`/${p.bolao_slug}`} style={{ color: 'var(--green)' }}>Ver bolão</a>
         </div>
       </div>
     </div>

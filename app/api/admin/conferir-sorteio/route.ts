@@ -95,6 +95,7 @@ export async function GET(req: NextRequest) {
   const chk     = CHECK[loteria]
 
   let dezenas: number[] = []
+  let premiosCaixa: { faixa: string; ganhadores: number; valor: number }[] = []
   try {
     const r = await fetch(
       `https://servicebus2.caixa.gov.br/portaldeloterias/api/${cfg.apiSlug}/${concurso}`,
@@ -105,15 +106,22 @@ export async function GET(req: NextRequest) {
       dezenas = (d.listaDezenas || d.dezenasSorteadasOrdemSorteio || d.dezenas || [])
         .map((n: string | number) => Number(n))
         .filter((n: number) => n >= 1 && n <= chk.maxNum)
+      if (Array.isArray(d.listaRateioPremio)) {
+        premiosCaixa = d.listaRateioPremio.map((r: { descricaoFaixa: string; numerodeGanhadores: number; valorPremio: number }) => ({
+          faixa: r.descricaoFaixa,
+          ganhadores: r.numerodeGanhadores,
+          valor: r.valorPremio,
+        }))
+      }
     }
   } catch { /* ignora */ }
 
   if (dezenas.length === chk.dezenasDrawn) {
     const dezenasPorAposta = bolao.apostas_data.dezenas_por_aposta ?? bolao.dezenas ?? cfg.minDezenas
     const resultado = classificar(bolao.apostas_data.bets, dezenas, dezenasPorAposta, loteria)
-    const payload   = { dezenas_sorteadas: dezenas, dezenas_por_aposta: dezenasPorAposta, loteria, ...resultado }
+    const payload   = { dezenas_sorteadas: dezenas, dezenas_por_aposta: dezenasPorAposta, loteria, premios_caixa: premiosCaixa, ...resultado }
     await salvarStatus(bolaoId, payload)
-    return NextResponse.json({ ok: true, dezenas_sorteadas: dezenas, dezenas_por_aposta: dezenasPorAposta, total_apostas: bolao.apostas_data.bets.length, ...resultado })
+    return NextResponse.json({ ok: true, dezenas_sorteadas: dezenas, dezenas_por_aposta: dezenasPorAposta, total_apostas: bolao.apostas_data.bets.length, premios_caixa: premiosCaixa, ...resultado })
   }
 
   // Não apurado ainda
