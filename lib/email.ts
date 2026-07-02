@@ -34,7 +34,7 @@ async function send(to: string, subject: string, html: string) {
   }
 }
 
-const APP_URL = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
 
 // ── Layout padrão ─────────────────────────────────────────────────────────────
 function layout(titulo: string, corpo: string, loteriaLabel = 'Mega-Sena') {
