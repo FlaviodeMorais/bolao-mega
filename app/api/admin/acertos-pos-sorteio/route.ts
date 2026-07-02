@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
   const { data: bolao } = await supabase
     .from('boloes')
-    .select('nome, loteria, apostas_data, resultado_conferencia')
+    .select('nome, loteria, total_cotas, apostas_data, resultado_conferencia')
     .eq('slug', bolao_slug)
     .single()
 
@@ -58,13 +58,14 @@ export async function POST(req: NextRequest) {
   const loteriaLabel = bolao.loteria === 'lotofacil' ? 'Lotofácil' : bolao.loteria === 'quina' ? 'Quina' : 'Mega-Sena'
   const minAcertos = bolao.loteria === 'lotofacil' ? 11 : bolao.loteria === 'quina' ? 2 : 4
 
-  // Total de apostas premiadas no bolão (para rateio proporcional)
+  // Prêmio total que o bolão ganhou = soma de (valor da faixa × apostas premiadas nessa faixa)
+  // Simplificação: usa o maior valor × total de apostas premiadas (todas na mesma faixa)
   const totalApostasPremiadas = rc.apostas_premiadas?.length ?? 0
-
-  // Prêmio total da faixa principal (maior valor) da Caixa
   const premioCaixaPrincipal = rc.premios_caixa
     ?.filter(f => f.valor > 0)
     .sort((a, b) => b.valor - a.valor)[0]?.valor ?? 0
+  const premioBolaoTotal = premioCaixaPrincipal * totalApostasPremiadas
+  const totalCotas = Number(bolao.total_cotas) || 1
 
   let enviados = 0
   let erros = 0
@@ -78,9 +79,9 @@ export async function POST(req: NextRequest) {
       )
       const ganhou = apostasGanhadoras.length > 0
 
-      // Prêmio proporcional: (apostas ganhadoras do participante / total premiadas) * prêmio da Caixa
-      const premioIndividual = ganhou && premioCaixaPrincipal > 0 && totalApostasPremiadas > 0
-        ? (apostasGanhadoras.length / totalApostasPremiadas) * premioCaixaPrincipal
+      // Prêmio proporcional: (cotas do participante / total de cotas do bolão) * prêmio total
+      const premioIndividual = ganhou && premioBolaoTotal > 0
+        ? (cotasP.length / totalCotas) * premioBolaoTotal
         : undefined
 
       if (canal === 'wa' || canal === 'ambos') {
