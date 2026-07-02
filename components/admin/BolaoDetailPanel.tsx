@@ -265,7 +265,7 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
               </div>
             </div>
           )}
-          {p.conferirResult?.premios_caixa && p.conferirResult.premios_caixa.some(f => f.valor > 0) && (() => {
+          {p.conferirResult?.premios_caixa && p.conferirResult.premios_caixa.length > 0 && (() => {
             // Normaliza nomes de faixas para comparação entre nossos labels e os da Caixa
             const normFaixa = (f: string) => {
               const s = f.toLowerCase().trim()
@@ -281,7 +281,7 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
               return legado[s] ?? s
             }
             const valorPorFaixa = new Map(
-              p.conferirResult!.premios_caixa!.filter(f => f.valor > 0).map(f => [normFaixa(f.faixa), f.valor])
+              p.conferirResult!.premios_caixa!.map(f => [normFaixa(f.faixa), f.valor])
             )
             // valorPremio da Caixa = prêmio por aposta ganhadora (nacional)
             // O bolão recebe esse valor por cada aposta premiada e divide entre todas as cotas
@@ -292,20 +292,28 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
             return (
             <div className={styles.premiosCaixaBox}>
               <div className={styles.conferirResumoTitle}>🏅 Prêmios da Caixa (concurso):</div>
-              {premioPerCota > 0 && (
+              {premioTotal > 0 && (
                 <div className={styles.premioEstimadoRow}>
-                  <span>Estimado por cota</span>
-                  <span className={styles.premioEstimadoVal}>R$ {premioPerCota.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span>Total bolão · por cota</span>
+                  <span className={styles.premioEstimadoVal}>
+                    R$ {premioTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {' · '}
+                    R$ {premioPerCota.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
                 </div>
               )}
               <div className={styles.premiosCaixaGrid}>
-                {p.conferirResult!.premios_caixa!.filter(f => f.valor > 0).map(f => (
+                {p.conferirResult!.premios_caixa!.map(f => (
                   <div key={f.faixa} className={styles.premioFaixaRow}>
                     <span className={styles.premioFaixaNome}>{f.faixa}</span>
-                    <span className={styles.premioFaixaVal}>
-                      R$ {f.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </span>
-                    {f.ganhadores > 0 && (
+                    {f.valor > 0 ? (
+                      <span className={styles.premioFaixaVal}>
+                        R$ {f.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    ) : (
+                      <span className={styles.premioFaixaGanh}>Não houve ganhadores</span>
+                    )}
+                    {f.valor > 0 && f.ganhadores > 0 && (
                       <span className={styles.premioFaixaGanh}>{f.ganhadores} ganhador{f.ganhadores !== 1 ? 'es' : ''}</span>
                     )}
                   </div>
