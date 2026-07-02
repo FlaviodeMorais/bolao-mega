@@ -2,10 +2,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import styles from './admin.module.css'
 import BolaoEsporteEditor from '@/components/admin/BolaoEsporteEditor'
+import { getCompeticao } from '@/lib/competicoes'
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 interface BolaoEsporte {
-  id: string; slug: string; nome: string; competicao: string
+  id: string; slug: string; nome: string; competicao: string; fonte?: string
   valor_cota: number; taxa_admin: number; total_cotas: number
   ativo: boolean; encerrado: boolean
 }
@@ -415,7 +416,10 @@ export default function EsporteAdmin() {
                 className={`${styles.esporteBolaoBtn} ${bolaoSel?.slug === b.slug ? styles.esporteBolaoBtnAtivo : ''}`}
                 onClick={() => selBolao(b)}>
                 <div className={styles.esporteBolaoBtnNome}>{b.nome}</div>
-                <div className={styles.esporteBolaoBtnMeta}>{b.competicao} · R$ {Number(b.valor_cota).toFixed(2).replace('.', ',')}</div>
+                <div className={styles.esporteBolaoBtnMeta}>
+                  {(() => { const c = getCompeticao(b.competicao); return c ? c.label : b.competicao })()}
+                  {' · '}R$ {Number(b.valor_cota).toFixed(2).replace('.', ',')}
+                </div>
               </button>
             ))}
             <button type="button" className={styles.btnAcao} onClick={() => { setAba('novo'); setBolaoSel(null) }}>
@@ -514,18 +518,25 @@ export default function EsporteAdmin() {
           {bolaoSel && aba === 'jogos' && (
             <div className={styles.esporteJogosWrap}>
 
-              {/* Importar da FIFA */}
-              <div className={styles.esporteImportWrap}>
-                <button type="button" className={styles.btnAcao}
-                  onClick={abrirSeletor}
-                  disabled={buscandoFifa || importando}>
-                  {buscandoFifa ? 'Buscando jogos…' : '🌐 Selecionar jogos FIFA 2026'}
-                </button>
-                {importMsg && <div className={styles.esporteImportMsg}>{importMsg}</div>}
-              </div>
+              {/* Importar da FIFA — só para bolões com fonte FIFA */}
+              {(() => {
+                const comp = getCompeticao(bolaoSel.competicao)
+                const isFifa = (bolaoSel.fonte ?? comp?.fonte) === 'fifa'
+                if (!isFifa) return null
+                return (
+                  <div className={styles.esporteImportWrap}>
+                    <button type="button" className={styles.btnAcao}
+                      onClick={abrirSeletor}
+                      disabled={buscandoFifa || importando}>
+                      {buscandoFifa ? 'Buscando jogos…' : `🌐 Importar jogos — ${comp?.label ?? 'FIFA'}`}
+                    </button>
+                    {importMsg && <div className={styles.esporteImportMsg}>{importMsg}</div>}
+                  </div>
+                )
+              })()}
 
               {/* Lista de jogos */}
-              {jogos.length === 0 && <div className={styles.empty}>Nenhum jogo cadastrado. Use "Selecionar jogos FIFA 2026" para importar.</div>}
+              {jogos.length === 0 && <div className={styles.empty}>Nenhum jogo cadastrado. Adicione manualmente ou importe da API.</div>}
               {jogos.map(j => (
                 <div key={j.id} className={`${styles.esporteJogoRow} ${j.encerrado ? styles.esporteJogoEncerrado : ''} ${resId === j.id ? styles.esporteJogoSelecionado : ''}`}>
                   <div className={styles.esporteJogoInfo}>

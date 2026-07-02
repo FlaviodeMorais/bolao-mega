@@ -9,9 +9,9 @@ export async function GET(req: NextRequest) {
   let ultimoDezenas: number[] = []
   try { ultimoDezenas = JSON.parse(map['ultimo_resultado_dezenas'] || '[]') } catch { ultimoDezenas = [] }
   return NextResponse.json({
-    concurso:       map[`concurso_ativo_${loteria}`] || map['concurso_ativo'] || '',
-    data:           map[`data_ativo_${loteria}`]     || map['data_ativo']     || '',
-    premio:         map[`premio_ativo_${loteria}`]   || map['premio_ativo']   || '',
+    concurso:       map[`concurso_ativo_${loteria}`] || (loteria === 'mega' ? map['concurso_ativo'] : '') || '',
+    data:           map[`data_ativo_${loteria}`]     || (loteria === 'mega' ? map['data_ativo']     : '') || '',
+    premio:         map[`premio_ativo_${loteria}`]   || (loteria === 'mega' ? map['premio_ativo']   : '') || '',
     loteria,
     ultimoConcurso: map['ultimo_resultado_concurso'] || '',
     ultimoDezenas,

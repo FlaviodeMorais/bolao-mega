@@ -84,7 +84,7 @@ function ComprovanteContent() {
   const [concurso, setConcurso]           = useState(paramConc || '')
   const [dataSorteio, setDataSorteio]     = useState('')
   const [loading, setLoading]             = useState(true)
-  const [grupoNome, setGrupoNome]         = useState('BOLÃO 💯')
+  const [grupoNome, setGrupoNome]         = useState('Bolões BetMais')
 
   useEffect(() => {
     fetch('/api/config-publica').then(r => r.json()).then(d => {

@@ -19,6 +19,7 @@ import HistoricoPanel from '@/components/admin/HistoricoPanel'
 import BolaoDetailPanel from '@/components/admin/BolaoDetailPanel'
 import IngerirHistorico from '@/components/admin/IngerirHistorico'
 import AdminSettings from '@/components/admin/AdminSettings'
+import IconLibrary from '@/components/admin/IconLibrary'
 
 import type { Bolao } from '@/hooks/admin/useBoloes'
 import type { Concurso } from '@/hooks/admin/useConcurso'
@@ -39,13 +40,20 @@ function whatsappUrl(tel?: string): string {
 }
 
 export default function AdminPage() {
-  const [logado, setLogado]     = useState(false)
-  const [senha, setSenha]       = useState('')
-  const [errLogin, setErrLogin] = useState('')
-  const [grupoNome, setGrupoNome] = useState('BOLÃO 💯')
+  const [logado, setLogado]       = useState(false)
+  const [verificando, setVerif]   = useState(true)
+  const [senha, setSenha]         = useState('')
+  const [errLogin, setErrLogin]   = useState('')
+  const [grupoNome, setGrupoNome] = useState('Bolões BetMais')
   const [appNome, setAppNome]     = useState('Bolões')
+  const [abaAdmin, setAbaAdmin]   = useState<'loteria'|'esporte'|'config'>('loteria')
 
   useEffect(() => {
+    // Verifica cookie existente ao carregar — evita pedir senha duas vezes
+    fetch('/api/auth').then(r => {
+      if (r.ok) setLogado(true)
+    }).catch(() => {}).finally(() => setVerif(false))
+
     fetch('/api/config-publica').then(r => r.json()).then(d => {
       if (d?.app?.grupo_nome) setGrupoNome(d.app.grupo_nome)
       if (d?.app?.nome)       setAppNome(d.app.nome)
@@ -181,12 +189,18 @@ export default function AdminPage() {
   }, [logado])
 
   // ── ORQUESTRAÇÃO: bolão + participantes + conferência ─────────
-  function selecionarBolao(b: Bolao) {
+  async function selecionarBolao(b: Bolao) {
     boloes.setBolaoAtual(b)
     boloes.aplicarConfigDoBolao(b)
     conf.limparAutoRef()
     conf.restaurarResultadoSalvo(b.resultado_conferencia)
-    if (concursoAtivo) parts.carregarPartsBolao(b.slug, concursoAtivo)
+    // Troca o painel de loteria para a loteria do bolão selecionado
+    const lot = (b.loteria ?? 'mega') as import('@/lib/loterias').LoteriaId
+    concurso.mudarLoteria(lot)
+    // Busca o concurso ativo correto para esta loteria (não usa o estado antigo)
+    const ca = await fetch(`/api/concurso-ativo?loteria=${lot}`).then(r => r.json()).catch(() => null)
+    const num = ca?.concurso || ''
+    parts.carregarPartsBolao(b.slug, num)
   }
 
   function fecharBolao() {
@@ -237,6 +251,7 @@ export default function AdminPage() {
 
 
   // ── LOGIN ─────────────────────────────────────────────────────
+  if (verificando) return null   // aguarda verificação do cookie antes de exibir login
   if (!logado) return (
     <AdminLogin
       senha={senha}
@@ -251,13 +266,46 @@ export default function AdminPage() {
   return (
     <div className={styles.wrap}>
       <AdminHeader
-        concursoAtivo={concursoAtivo}
+        concursoAtivo={bolaoAtual !== null || boloes.boloes.some(b => b.ativo) ? concursoAtivo : ''}
         waStatus={waStatus}
         waMsg={waMsg}
         appNome={appNome}
       />
 
+      {/* ── NAVEGAÇÃO PRINCIPAL ── */}
+      <nav className={styles.adminNav}>
+        <button
+          type="button"
+          className={`${styles.adminNavBtn} ${abaAdmin === 'loteria' ? styles.adminNavBtnAtivo : ''}`}
+          onClick={() => setAbaAdmin('loteria')}
+        >
+          <img src="/icon" alt="Bet+" className={styles.adminNavLogo} />
+          Bolões Loteria
+        </button>
+        <button
+          type="button"
+          className={`${styles.adminNavBtn} ${abaAdmin === 'esporte' ? styles.adminNavBtnAtivo : ''}`}
+          onClick={() => setAbaAdmin('esporte')}
+        >
+          <img src="/icon" alt="Bet+" className={styles.adminNavLogo} />
+          Bolões Esportivos
+        </button>
+        <button
+          type="button"
+          className={`${styles.adminNavBtn} ${abaAdmin === 'config' ? styles.adminNavBtnAtivo : ''}`}
+          onClick={() => setAbaAdmin('config')}
+        >
+          <img src="/icon" alt="Bet+" className={styles.adminNavLogo} />
+          Configurações
+        </button>
+      </nav>
+
       <div className={styles.content}>
+
+      {/* ══════════════════════════════════════════════════════ */}
+      {/* ABA: BOLÕES LOTERIA                                    */}
+      {/* ══════════════════════════════════════════════════════ */}
+      {abaAdmin === 'loteria' && (<>
 
         {/* ── STATS ── */}
         <AdminStats
@@ -271,42 +319,38 @@ export default function AdminPage() {
           boloesAtivosCount={boloes.boloes.filter(b => b.ativo).length}
         />
 
-        {/* ── GRID PRINCIPAL ── */}
+        {/* ── BOLÕES: 3 colunas por loteria ── */}
+        <BolaoList
+          boloes={boloes.boloes}
+          bolaoAtualId={bolaoAtual?.id ?? null}
+          linkCopiado={linkCopiado}
+          renamingId={renamingId}
+          renameVal={renameVal}
+          onRenameValChange={setRenameVal}
+          showCreate={showCreate}
+          novoNome={novoNome}
+          novoSlug={novoSlug}
+          novaLoteria={novaLoteria}
+          criando={criando}
+          criarErro={criarErro}
+          onNovoNomeChange={setNovoNome}
+          onNovoSlugChange={setNovoSlug}
+          onNovaLoteriaChange={v => { setNovaLoteria(v); setProximos([]) }}
+          onShowCreateToggle={v => { setShowCreate(v); if (!v) { setNovoNome(''); setNovoSlug(''); setNovaLoteria('mega') } }}
+          actions={{
+            onSelecionar: selecionarBolao,
+            onCopiarLink: copiarLink,
+            onCancelar: cancelarBolao,
+            onExcluir: excluirBolao,
+            onRenomear: id => { setRenamingId(id); setRenameVal(boloes.boloes.find(b => b.id === id)?.nome ?? '') },
+            onRenomearConfirm: renomearBolao,
+            onRenomearCancel: () => setRenamingId(null),
+            onCriar: criarBolao,
+          }}
+        />
+
+        {/* ── DETALHE DO BOLÃO ou CONCURSOS ── */}
         <div className={styles.adminGrid}>
-
-          {/* ── ESQUERDA: BOLÕES ── */}
-          <div className={styles.leftPanel}>
-            <BolaoList
-              boloes={boloes.boloes}
-              bolaoAtualId={bolaoAtual?.id ?? null}
-              linkCopiado={linkCopiado}
-              renamingId={renamingId}
-              renameVal={renameVal}
-              onRenameValChange={setRenameVal}
-              showCreate={showCreate}
-              novoNome={novoNome}
-              novoSlug={novoSlug}
-              novaLoteria={novaLoteria}
-              criando={criando}
-              criarErro={criarErro}
-              onNovoNomeChange={setNovoNome}
-              onNovoSlugChange={setNovoSlug}
-              onNovaLoteriaChange={v => { setNovaLoteria(v); setProximos([]) }}
-              onShowCreateToggle={v => { setShowCreate(v); if (!v) { setNovoNome(''); setNovoSlug(''); setNovaLoteria('mega') } }}
-              actions={{
-                onSelecionar: selecionarBolao,
-                onCopiarLink: copiarLink,
-                onCancelar: cancelarBolao,
-                onExcluir: excluirBolao,
-                onRenomear: id => { setRenamingId(id); setRenameVal(boloes.boloes.find(b => b.id === id)?.nome ?? '') },
-                onRenomearConfirm: renomearBolao,
-                onRenomearCancel: () => setRenamingId(null),
-                onCriar: criarBolao,
-              }}
-            />
-          </div>
-
-          {/* ── DIREITA: DETALHE DO BOLÃO ou CONCURSOS ── */}
           <div className={styles.rightPanel}>
             {bolaoAtual ? (
 
@@ -441,17 +485,25 @@ export default function AdminPage() {
           whatsappUrl={whatsappUrl}
         />
 
-        {/* ── BOLÕES ESPORTIVOS ── */}
-        <EsporteAdmin />
-
-        {/* ── FERRAMENTAS ── */}
         <IngerirHistorico />
 
-        {/* ── CONFIGURAÇÕES WHITE-LABEL ── */}
-        <AdminSettings />
+      </>)}
 
-        {/* ── SEGURANÇA ── */}
+      {/* ══════════════════════════════════════════════════════ */}
+      {/* ABA: BOLÕES ESPORTIVOS                                 */}
+      {/* ══════════════════════════════════════════════════════ */}
+      {abaAdmin === 'esporte' && (<>
+        <EsporteAdmin />
+        <IconLibrary />
+      </>)}
+
+      {/* ══════════════════════════════════════════════════════ */}
+      {/* ABA: CONFIGURAÇÕES                                     */}
+      {/* ══════════════════════════════════════════════════════ */}
+      {abaAdmin === 'config' && (<>
+        <AdminSettings />
         <AdminSenha />
+      </>)}
 
       </div>
     </div>

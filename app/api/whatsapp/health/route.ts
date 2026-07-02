@@ -1,15 +1,16 @@
 import { NextResponse } from 'next/server'
+import { getWhatsappSettings } from '@/lib/settings'
 
-const WHAPI_URL   = 'https://gate.whapi.cloud'
-const WHAPI_TOKEN = process.env.WHAPI_TOKEN || ''
+const WHAPI_URL = 'https://gate.whapi.cloud'
 
 export async function GET() {
-  if (!WHAPI_TOKEN) {
-    return NextResponse.json({ connected: false, msg: 'WHAPI_TOKEN não configurado no Vercel' })
+  const { token } = await getWhatsappSettings()
+  if (!token) {
+    return NextResponse.json({ connected: false, msg: 'Token do WhatsApp não configurado' })
   }
   try {
     const res  = await fetch(`${WHAPI_URL}/health`, {
-      headers: { 'Authorization': `Bearer ${WHAPI_TOKEN}` },
+      headers: { 'Authorization': `Bearer ${token}` },
       cache: 'no-store',
     })
     const data = await res.json().catch(() => ({}))

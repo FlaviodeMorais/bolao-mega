@@ -11,7 +11,7 @@ interface AdminLoginProps {
   grupoNome?: string
 }
 
-export default function AdminLogin({ senha, errLogin, onSenhaChange, onLogin, grupoNome = 'BOLÃO 💯' }: AdminLoginProps) {
+export default function AdminLogin({ senha, errLogin, onSenhaChange, onLogin, grupoNome = 'Bolões BetMais' }: AdminLoginProps) {
   return (
     <div className={styles.loginWrap}>
       <div className={styles.loginBox}>

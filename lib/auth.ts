@@ -2,11 +2,18 @@ import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
 import { supabase } from './supabase'
 
-const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'bolao-mega-secret-2026')
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET não configurado — obrigatório definir nas variáveis de ambiente.')
+}
+const SECRET = new TextEncoder().encode(process.env.JWT_SECRET)
 
 async function getSenhaConfig(): Promise<string> {
   const { data } = await supabase.from('config').select('value').eq('key', 'admin_password').single()
-  return data?.value || process.env.ADMIN_PASSWORD_HASH || 'MEGA2026'
+  const senha = data?.value || process.env.ADMIN_PASSWORD_HASH
+  if (!senha) {
+    throw new Error('Nenhuma senha admin configurada — defina ADMIN_PASSWORD_HASH ou cadastre via troca de senha.')
+  }
+  return senha
 }
 
 export async function verificarSenha(senha: string): Promise<boolean> {

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import 'flag-icons/css/flag-icons.min.css'
 import { getAppSettings } from '@/lib/settings'
+import SwRegistrar from '@/components/SwRegistrar'
 
 export async function generateMetadata(): Promise<Metadata> {
   const app = await getAppSettings()
@@ -26,7 +27,8 @@ export async function generateViewport(): Promise<Viewport> {
   }
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const app = await getAppSettings()
   return (
     <html lang="pt-BR">
       <head>
@@ -39,8 +41,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <style dangerouslySetInnerHTML={{ __html: `:root{--green:${app.cor_primaria};--green-hover:${app.cor_primaria};--navy:${app.cor_fundo};}` }} />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <SwRegistrar />
+      </body>
     </html>
   )
 }

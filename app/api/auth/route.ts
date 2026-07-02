@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verificarSenha, gerarToken } from '@/lib/auth'
+import { verificarSenha, gerarToken, verificarToken } from '@/lib/auth'
+
+export async function GET(req: NextRequest) {
+  const token = req.cookies.get('admin_token')?.value
+  if (token && await verificarToken(token)) {
+    return NextResponse.json({ ok: true })
+  }
+  return NextResponse.json({ ok: false }, { status: 401 })
+}
 
 export async function POST(req: NextRequest) {
   const { senha } = await req.json()

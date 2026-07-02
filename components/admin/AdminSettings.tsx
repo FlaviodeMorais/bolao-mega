@@ -42,6 +42,36 @@ function Field({ label, name, value, onChange, type = 'text', placeholder = '' }
   label: string; name: string; value: string
   onChange: (v: string) => void; type?: string; placeholder?: string
 }) {
+  if (type === 'color') {
+    return (
+      <div className={styles.settingsField}>
+        <label className={styles.settingsLabel}>{label}</label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input
+            type="color"
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            style={{ width: 36, height: 36, padding: 2, border: '1.5px solid #CBD5E1', borderRadius: 8, cursor: 'pointer', background: 'none' }}
+            title={label}
+          />
+          <input
+            type="text"
+            name={name}
+            value={value}
+            maxLength={7}
+            onChange={e => {
+              const v = e.target.value
+              if (/^#[0-9A-Fa-f]{0,6}$/.test(v)) onChange(v)
+            }}
+            className={styles.settingsInput}
+            style={{ fontFamily: 'monospace', width: 100, flex: 'none' }}
+            placeholder="#000000"
+          />
+          <span style={{ width: 24, height: 24, borderRadius: 6, background: value, border: '1px solid #CBD5E1', flexShrink: 0 }} />
+        </div>
+      </div>
+    )
+  }
   return (
     <div className={styles.settingsField}>
       <label className={styles.settingsLabel}>{label}</label>
@@ -170,8 +200,8 @@ export default function AdminSettings() {
             {/* ── APP ── */}
             {aba === 'app' && (
               <div className={styles.settingsGrid}>
-                <Field label="Nome do App"      name="nome"        value={app.nome        ?? ''} onChange={v => updateNs('app','nome',v)}        placeholder="Bolão Mega" />
-                <Field label="Nome do Grupo"    name="grupo_nome"  value={app.grupo_nome  ?? ''} onChange={v => updateNs('app','grupo_nome',v)}  placeholder="BOLÃO 💯" />
+                <Field label="Nome do App"      name="nome"        value={app.nome        ?? ''} onChange={v => updateNs('app','nome',v)}        placeholder="Bet Mais" />
+                <Field label="Nome do Grupo"    name="grupo_nome"  value={app.grupo_nome  ?? ''} onChange={v => updateNs('app','grupo_nome',v)}  placeholder="Bolões BetMais" />
                 <Field label="Descrição"        name="descricao"   value={app.descricao   ?? ''} onChange={v => updateNs('app','descricao',v)}   placeholder="Bolão da Mega-Sena" />
                 <Field label="Tagline"          name="tagline"     value={app.tagline     ?? ''} onChange={v => updateNs('app','tagline',v)}     placeholder="Boa sorte a todos! 🍀" />
                 <Field label="URL do Site"      name="url"         value={app.url         ?? ''} onChange={v => updateNs('app','url',v)}         placeholder="https://meusite.com.br" />
@@ -216,7 +246,7 @@ export default function AdminSettings() {
                 <Field label="Gmail (usuário)" name="gmail_user" value={String(em.gmail_user ?? '')} onChange={v => updateNs('email','gmail_user',v)} placeholder="seuemail@gmail.com" />
                 <Field label="Gmail (senha app)" name="gmail_pass" value={String(em.gmail_pass ?? '')} onChange={v => updateNs('email','gmail_pass',v)} placeholder="xxxx xxxx xxxx xxxx" type="password" />
                 <Field label="Resend API Key (alternativa)" name="resend_key" value={String(em.resend_key ?? '')} onChange={v => updateNs('email','resend_key',v)} placeholder="re_..." />
-                <Field label="Nome do Remetente" name="from_name" value={String(em.from_name ?? '')} onChange={v => updateNs('email','from_name',v)} placeholder="Bolão Mega" />
+                <Field label="Nome do Remetente" name="from_name" value={String(em.from_name ?? '')} onChange={v => updateNs('email','from_name',v)} placeholder="Bet Mais" />
                 <Field label="E-mail Admin (notificações)" name="admin_email" value={String(em.admin_email ?? '')} onChange={v => updateNs('email','admin_email',v)} placeholder="admin@meusite.com" />
                 <button type="button" className={styles.settingsSave} onClick={() => salvar('email')} disabled={saving}>
                   {saving ? 'Salvando...' : '💾 Salvar E-mail'}

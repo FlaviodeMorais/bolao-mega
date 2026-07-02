@@ -15,7 +15,10 @@ function nextDrawDate(d: Date, drawDays: number[]): Date {
 }
 function formatData(d: Date | null): string {
   if (!d) return '—'
-  return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
+  const DIAS = ['dom.','seg.','ter.','qua.','qui.','sex.','sáb.']
+  const day = String(d.getDate()).padStart(2, '0')
+  const mon = String(d.getMonth() + 1).padStart(2, '0')
+  return `${DIAS[d.getDay()]}, ${day}/${mon}/${d.getFullYear()}`
 }
 function formatPremio(v: number): string {
   return `R$ ${(v / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} mi`
@@ -57,7 +60,7 @@ export function useConcurso() {
     setLoadingCaixa(true)
     try {
       const cfg = getLoteria(loteria)
-      const res = await fetch(`/api/resultados/${cfg.apiSlug}`)
+      const res = await fetch(`/api/resultados/${cfg.apiSlug}?bust=1`)
       if (!res.ok) throw new Error('Falha')
       const data: Record<string, unknown> = await res.json()
 
@@ -67,11 +70,16 @@ export function useConcurso() {
       const d1 = parseBRDate(proxData)
       const d2 = d1 ? nextDrawDate(d1, cfg.drawDays) : null
       const d3 = d2 ? nextDrawDate(d2, cfg.drawDays) : null
-      setProximos([
-        { num: ultimo + 1, data: formatData(d1), premio: premioVal ? formatPremio(premioVal) : '—' },
-        { num: ultimo + 2, data: formatData(d2), premio: 'Acumulando' },
-        { num: ultimo + 3, data: formatData(d3), premio: 'Acumulando' },
-      ])
+      const d4 = d3 ? nextDrawDate(d3, cfg.drawDays) : null
+
+      const today = new Date(); today.setHours(0, 0, 0, 0)
+      const candidates = [
+        { num: ultimo + 1, date: d1, data: formatData(d1), premio: premioVal ? formatPremio(premioVal) : '—' },
+        { num: ultimo + 2, date: d2, data: formatData(d2), premio: 'Acumulando' },
+        { num: ultimo + 3, date: d3, data: formatData(d3), premio: 'Acumulando' },
+        { num: ultimo + 4, date: d4, data: formatData(d4), premio: 'Acumulando' },
+      ].filter(c => c.date && c.date >= today)
+      setProximos(candidates.slice(0, 2))
     } catch { /* mantém lista vazia */ }
     finally { setLoadingCaixa(false) }
   }

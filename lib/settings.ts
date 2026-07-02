@@ -18,7 +18,7 @@ export interface AppSettings {
   cor_primaria: string  // "#00A651"
   cor_fundo:   string   // "#0D1B2A"
   rodape:      string   // "Dúvidas? Fale com o administrador."
-  grupo_nome:  string   // "BOLÃO 💯"
+  grupo_nome:  string   // "Bolões BetMais"
   descricao:   string   // "Bolão da Mega-Sena — Grupo Fechado"
 }
 
@@ -88,14 +88,14 @@ export interface AllSettings {
 
 export const DEFAULTS: AllSettings = {
   app: {
-    nome:         'Bolão Mega',
+    nome:         'Bet Mais',
     tagline:      'Boa sorte a todos! 🍀',
     url:          process.env.NEXT_PUBLIC_APP_URL || 'https://bolao-mega-zeta.vercel.app',
     logo_url:     '/logo.png',
     cor_primaria: '#00A651',
     cor_fundo:    '#0D1B2A',
     rodape:       'Dúvidas? Fale com o administrador do grupo.',
-    grupo_nome:   'BOLÃO 💯',
+    grupo_nome:   'Bolões BetMais',
     descricao:    'Bolão da Mega-Sena — Grupo Fechado',
   },
   pagamento: {
@@ -118,7 +118,7 @@ export const DEFAULTS: AllSettings = {
     gmail_user:  process.env.EMAIL_GMAIL_USER || '',
     gmail_pass:  process.env.EMAIL_GMAIL_PASS || '',
     resend_key:  process.env.RESEND_API_KEY   || '',
-    from_name:   process.env.EMAIL_FROM_NAME  || 'Bolão Mega',
+    from_name:   process.env.EMAIL_FROM_NAME  || 'Bet Mais',
     admin_email: process.env.EMAIL_ADMIN      || '',
     ativo:       true,
   },

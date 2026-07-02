@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import styles from '@/app/admin/admin.module.css'
+import { COMPETICOES, type Competicao } from '@/lib/competicoes'
 
 interface PremiacaoItem {
   lugar: number; emoji: string; label: string
@@ -9,7 +10,7 @@ interface PremiacaoItem {
 
 interface BolaoEsporte {
   id?: string
-  slug: string; nome: string; descricao?: string; competicao: string
+  slug: string; nome: string; descricao?: string; competicao: string; fonte?: string
   logo_url?: string; cor_primaria?: string; header_desc?: string
   label_cta?: string; label_palpites?: string
   label_jogo_hoje?: string; label_noticias?: string
@@ -36,7 +37,7 @@ export default function BolaoEsporteEditor({ bolao, onSaved, onCancel }: Props) 
   const isNew = !bolao?.id
 
   const [form, setForm] = useState<BolaoEsporte>(bolao ?? {
-    slug: '', nome: '', descricao: '', competicao: '',
+    slug: '', nome: '', descricao: '', competicao: '', fonte: 'manual',
     logo_url: '', cor_primaria: '#FFB81C', header_desc: '',
     label_cta: '⚽ Quero Participar',
     label_palpites: '⚽ Seus palpites',
@@ -52,6 +53,17 @@ export default function BolaoEsporteEditor({ bolao, onSaved, onCancel }: Props) 
 
   function set(key: keyof BolaoEsporte, val: unknown) {
     setForm(f => ({ ...f, [key]: val }))
+  }
+
+  function selecionarCompeticao(c: Competicao) {
+    setForm(f => ({
+      ...f,
+      competicao: c.id,
+      fonte: c.fonte,
+      cor_primaria: f.cor_primaria && f.cor_primaria !== '#FFB81C' ? f.cor_primaria : c.cor,
+      // só preenche nome se ainda estiver em branco
+      nome: f.nome || c.label,
+    }))
   }
 
   function setPremiacao(i: number, key: keyof PremiacaoItem, val: string | number) {
@@ -135,11 +147,43 @@ export default function BolaoEsporteEditor({ bolao, onSaved, onCancel }: Props) 
               <input className={styles.esporteEditorInput} value={form.nome}
                 onChange={e => set('nome', e.target.value)} placeholder="ex: Eliminatórias FIFA 2026" />
             </label>
-            <label className={styles.esporteEditorLabel}>
-              Nome da competição
-              <input className={styles.esporteEditorInput} value={form.competicao}
-                onChange={e => set('competicao', e.target.value)} placeholder="ex: UEFA Champions League 2025/26" />
-            </label>
+            <div className={styles.esporteEditorLabel}>
+              Competição
+              <div className={styles.esporteCompGrid}>
+                {COMPETICOES.map(c => {
+                  const ativa = form.competicao === c.id
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      className={`${styles.esporteCompChip} ${ativa ? styles.esporteCompChipAtivo : ''}`}
+                      style={ativa ? { borderColor: c.cor, background: c.cor + '22' } : {}}
+                      onClick={() => selecionarCompeticao(c)}
+                      title={c.label}
+                    >
+                      {c.logo
+                        ? <img src={c.logo} alt={c.label} className={styles.esporteCompLogo} />
+                        : c.flag
+                          ? <span className={`fi fi-${c.flag}`} style={{ fontSize: 20, borderRadius: 3 }} />
+                          : null
+                      }
+                      <span className={styles.esporteCompLabel}>{c.label}</span>
+                      {c.fonte === 'fifa' && <span className={styles.esporteCompBadge}>FIFA API</span>}
+                    </button>
+                  )
+                })}
+              </div>
+              {/* campo livre para campeonatos não listados */}
+              {form.competicao === 'outro' && (
+                <input
+                  className={styles.esporteEditorInput}
+                  style={{ marginTop: 8 }}
+                  placeholder="Nome do campeonato"
+                  value={form.descricao || ''}
+                  onChange={e => set('descricao', e.target.value)}
+                />
+              )}
+            </div>
             <label className={styles.esporteEditorLabel}>
               Descrição (interna)
               <input className={styles.esporteEditorInput} value={form.descricao || ''}

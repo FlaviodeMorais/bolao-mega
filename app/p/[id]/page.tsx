@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { ShareButton } from './ShareButton'
 import TrevoIcon from '@/components/TrevoIcon'
+import { getAppSettings } from '@/lib/settings'
 
 interface Props { params: { id: string } }
 
@@ -24,15 +25,17 @@ async function getParticipante(id: string) {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const app = await getAppSettings()
   const p = await getParticipante(params.id)
-  if (!p) return { title: 'Comprovante — Bolão Mega' }
+  const bolaoNome = p?.bolao?.nome || 'Bolão'
+  if (!p) return { title: `Comprovante — ${app.nome}` }
   return {
-    title: `${p.nome} — Bolão Mega-Sena`,
+    title: `${p.nome} — ${bolaoNome}`,
     description: `${p.nome} participou do bolão com ${p.cotas?.length} cota${p.cotas?.length !== 1 ? 's' : ''} no concurso #${p.concurso}. 🍀`,
     openGraph: {
-      title: `🍀 ${p.nome} está no Bolão Mega-Sena!`,
+      title: `🍀 ${p.nome} está no ${bolaoNome}!`,
       description: `Concurso #${p.concurso} · ${p.cotas?.length} cota${p.cotas?.length !== 1 ? 's' : ''} · R$ ${Number(p.total).toFixed(2).replace('.', ',')}`,
-      siteName: 'Bolão Mega',
+      siteName: app.nome,
     },
   }
 }
@@ -100,7 +103,7 @@ export default async function ComprovantePage({ params }: Props) {
         )}
 
         {/* Compartilhar */}
-        <ShareButton nome={p.nome} concurso={String(p.concurso)} cotas={cotas.length} id={params.id} />
+        <ShareButton nome={p.nome} concurso={String(p.concurso)} cotas={cotas.length} id={params.id} bolaoNome={p.bolao?.nome || 'Bolão'} />
 
         <div className="comprov-share-footer">
           Boa sorte! 🍀 — <a href={`/${p.bolao_slug}`} style={{ color: 'var(--green)' }}>Ver bolão</a>

@@ -313,10 +313,23 @@ CSS: `globals.css` (utilitários globais) + módulos por página (`admin.module.
 ## Segurança
 
 - JWT verificado individualmente em cada API route protegida (sem middleware centralizado de auth — `/admin` é o próprio login)
+- `JWT_SECRET` e `ADMIN_PASSWORD_HASH` são obrigatórios — `lib/auth.ts` lança erro no boot se não configurados (sem fallback fraco)
 - `DELETE /api/boloes` busca slug no banco (não confia no body do cliente)
 - Cron routes verificam `?secret=CRON_SECRET` via query param
-- `pix-local.ts` tem CPF hardcoded — usar apenas como fallback de desenvolvimento/emergência
+- `pix-local.ts` lê a chave PIX de `settings.pagamento.pix_chave` (configurável no admin) — não há mais CPF hardcoded
 - Middleware global: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`
+
+---
+
+## White-Label / Settings
+
+Sistema de configuração em `lib/settings.ts`, tabela `settings` (`namespace` PK, `dados` jsonb), cache em memória com TTL de 5 min, fallback em cascata DB → `DEFAULTS` → env vars. Editável via `components/admin/AdminSettings.tsx` (abas: App, Pagamento, WhatsApp, E-mail, Loteria, Esporte). Namespaces: `app`, `pagamento`, `whatsapp`, `email`, `paginas.home`, `paginas.bolao` (regras por loteria), `paginas.esporte`.
+
+Importante: a app é **mono-tenant** (um deploy = um grupo/cliente) — não existe `tenant_id` no schema. "White-label" aqui significa branding/configuração customizável por instância, não multi-tenant SaaS.
+
+`cor_primaria`/`cor_fundo` são injetados como CSS vars (`--green`, `--navy`) via `<style>` inline em `app/layout.tsx`, mas a maioria dos componentes ainda usa hex hardcoded (`#00AB67` etc.) em vez de `var(--green)` — migração de CSS modules para usar a var é pendente.
+
+`paginas.home` está implementado no settings/admin mas `app/page.tsx` ainda não consome esses valores (título, rodapé, mensagens são hardcoded na página) — pendente de wiring.
 
 ---
 
@@ -324,9 +337,9 @@ CSS: `globals.css` (utilitários globais) + módulos por página (`admin.module.
 
 | Item | Prioridade | Ação |
 |------|-----------|------|
-| CPF hardcoded em `lib/pix-local.ts` | Média | Mover para env var `PIX_KEY` |
-| CPF hardcoded em `lib/pix-local.ts` | Média | Mover para env var `PIX_KEY` |
-| `/api/concurso-ativo` só suporta Mega-Sena | Info | Bolões de outras loterias já usam `/api/resultados/[slug]` |
+| Maioria das cores em CSS modules usa hex hardcoded, não `var(--green)` | Média | Migrar `admin.module.css`, `bolao.module.css` etc. para usar a var |
+| `paginas.home` configurável mas não consumido por `app/page.tsx` | Baixa | Ler `getHomeSettings()` na home e substituir textos hardcoded |
+| `lib/loterias.ts` (preços/cores/dias de sorteio) fora do sistema de settings | Info | Avaliar se deve migrar para namespace `paginas.bolao` |
 | Tabela `mega_historico` | Info | Manter como fallback — não migrar destrutivamente |
 | Estatísticas (`/estatisticas`) só para Mega-Sena | Média | Expandir para Quina e Lotofácil |
 

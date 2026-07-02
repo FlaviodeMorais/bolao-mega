@@ -226,7 +226,7 @@
 }
 .bolaoMeta { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 3px; }
 .bolaoSlug {
-  font-size: 10px; color: #00AB67; margin-top: 4px;
+  font-size: 10px; color: var(--green); margin-top: 4px;
   font-family: 'JetBrains Mono', monospace;
 }
 .bolaoArrow { color: rgba(255,255,255,0.3); font-size: 16px !important; flex-shrink: 0; }

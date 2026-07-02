@@ -30,7 +30,7 @@
 }
 .loginTitle {
   font-size: 28px; font-weight: 800;
-  color: #00AB67; letter-spacing: -.5px; margin-bottom: 4px;
+  color: var(--green); letter-spacing: -.5px; margin-bottom: 4px;
 }
 .loginSub {
   font-size: 11px; font-weight: 600;
@@ -56,7 +56,7 @@
 .loginErr { font-size: 12px; color: #EF4444; margin-bottom: 10px; font-weight: 500; }
 .loginBtn {
   width: 100%; padding: 15px;
-  background: linear-gradient(135deg, #00AB67 0%, #009B63 100%);
+  background: linear-gradient(135deg, var(--green) 0%, var(--green-hover) 100%);
   color: #fff; border: none; border-radius: 100px;
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 15px; font-weight: 700; cursor: pointer;
@@ -119,7 +119,7 @@
   transition: border-color .15s, box-shadow .15s;
   box-shadow: 0 1px 4px rgba(0,0,0,.04);
 }
-.statCard:hover { border-color: #00AB67; box-shadow: 0 4px 16px rgba(0,171,103,.10); }
+.statCard:hover { border-color: var(--green); box-shadow: 0 4px 16px rgba(0,171,103,.10); }
 .statLabel {
   font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
   text-transform: uppercase; color: #94A3B8;
@@ -127,7 +127,7 @@
 }
 .statVal {
   font-size: clamp(22px,3vw,28px); font-weight: 800;
-  color: #00AB67; font-family: 'JetBrains Mono', monospace;
+  color: var(--green); font-family: 'JetBrains Mono', monospace;
   letter-spacing: -.5px;
 }
 .statSub { font-size: 12px; color: #94A3B8; margin-top: 5px; display: block; }
@@ -136,10 +136,49 @@
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .leftCol { display: flex; flex-direction: column; gap: 20px; }
 
-/* ── ADMIN GRID (master-detail) ── */
+/* ── BOLÕES 3-COLUNAS ── */
+.bolaoColumns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 12px;
+}
+.bolaoColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.bolaoColumnHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid currentColor;
+  opacity: .85;
+}
+.btnAddColumn {
+  margin-top: 4px;
+  background: transparent;
+  border: 1.5px dashed #CBD5E1;
+  border-radius: 10px;
+  color: #94A3B8;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 0;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+  width: 100%;
+}
+.btnAddColumn:hover { border-color: var(--green); color: var(--green); }
+
+/* ── ADMIN GRID (detalhe do bolão / concursos) ── */
 .adminGrid {
   display: grid;
-  grid-template-columns: 340px 1fr;
+  grid-template-columns: 1fr;
   gap: 20px;
   align-items: start;
   margin-bottom: 0;
@@ -148,7 +187,7 @@
 .rightPanel { display: flex; flex-direction: column; gap: 20px; }
 
 /* ── STAT VARIANTS ── */
-.statValSm   { font-size: 15px; font-weight: 800; color: #00AB67; letter-spacing: -.2px; }
+.statValSm   { font-size: 15px; font-weight: 800; color: var(--green); letter-spacing: -.2px; }
 .statValHint { font-size: 13px; color: #94A3B8; font-weight: 500; }
 .statWarn    { border-color: #F59E0B !important; }
 .statWarn .statVal { color: #D97706; }
@@ -173,7 +212,7 @@
   margin-bottom: 18px; gap: 12px;
 }
 .detNome { font-size: 18px; font-weight: 800; color: #0D1B2A; }
-.detSub  { font-size: 11px; color: #00AB67; margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+.detSub  { font-size: 11px; color: var(--green); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
 .btnFechar {
   width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
@@ -193,7 +232,7 @@
   border-radius: 12px; padding: 14px 10px; text-align: center;
 }
 .detStatVal {
-  font-size: 22px; font-weight: 800; color: #00AB67;
+  font-size: 22px; font-weight: 800; color: var(--green);
   font-family: 'JetBrains Mono', monospace; letter-spacing: -.5px;
 }
 .detStatLbl {
@@ -247,7 +286,7 @@
   box-shadow: 0 1px 3px rgba(0,0,0,.04);
 }
 .partCard:hover { border-color: #CBD5E1; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
-.partCardPago   { border-left: 3px solid #00AB67; }
+.partCardPago   { border-left: 3px solid var(--green); }
 .partCardCancel { opacity: .5; }
 .partCardLeft   { flex: 1; min-width: 0; }
 .partCardNome   { font-size: 14px; font-weight: 700; color: #0D1B2A; }
@@ -260,7 +299,7 @@
   font-family: 'JetBrains Mono', monospace;
 }
 .partCardTotal  {
-  font-size: 13px; font-weight: 700; color: #00AB67;
+  font-size: 13px; font-weight: 700; color: var(--green);
   font-family: 'JetBrains Mono', monospace;
 }
 .partCardRight  { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
@@ -469,7 +508,7 @@
   font-size: 13px; font-weight: 700; transition: background .15s; text-align: center;
 }
 .btnGanhou:hover { background: #D1F0E0; }
-.btnGanhouAtivo  { background: #00AB67 !important; color: #fff !important; border-color: #00AB67 !important; }
+.btnGanhouAtivo  { background: var(--green) !important; color: #fff !important; border-color: var(--green) !important; }
 
 .btnNaoGanhou {
   flex: 1; padding: 11px 16px; border-radius: 10px; cursor: pointer;
@@ -515,7 +554,7 @@
   font-size: 12px; font-weight: 700; color: #64748B;
   letter-spacing: .3px; transition: all .15s;
 }
-.configToggle:hover { border-color: #00AB67; color: #007A45; background: #E6F7EE; }
+.configToggle:hover { border-color: var(--green); color: #007A45; background: #E6F7EE; }
 
 /* ── CREATE FORM BUTTONS ── */
 .createBtns { display: flex; gap: 8px; }
@@ -543,12 +582,12 @@
 .btnPrimario {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 10px 18px; border-radius: 10px;
-  background: #00AB67; color: #fff; border: none;
+  background: var(--green); color: #fff; border: none;
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 13px; font-weight: 700; cursor: pointer;
   transition: background .15s;
 }
-.btnPrimario:hover:not(:disabled) { background: #009B63; }
+.btnPrimario:hover:not(:disabled) { background: var(--green-hover); }
 .btnPrimario:disabled { opacity: .35; cursor: not-allowed; }
 
 /* ghost neutro */
@@ -657,11 +696,11 @@
   box-shadow: 0 1px 3px rgba(0,0,0,.04);
 }
 .bolaoCard:hover    { border-color: #CBD5E1; background: #F8FAFB; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
-.bolaoCard.selected { border-color: #00AB67; background: #E6F7EE; }
+.bolaoCard.selected { border-color: var(--green); background: #E6F7EE; }
 .bolaoInfo  { flex: 1; min-width: 0; }
 .bolaoNome  { font-size: 14px; font-weight: 700; color: #0D1B2A; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
 .bolaoUrl   {
-  font-size: 11px; color: #00AB67; margin-top: 3px;
+  font-size: 11px; color: var(--green); margin-top: 3px;
   font-family: 'JetBrains Mono', monospace;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
@@ -687,13 +726,13 @@
   border-radius: 4px; transition: color .15s;
   flex-shrink: 0; line-height: 1;
 }
-.btnRenomear:hover { color: #00AB67; }
+.btnRenomear:hover { color: var(--green); }
 .renameRow   { display: flex; align-items: center; gap: 6px; width: 100%; }
 .renameInput {
   flex: 1; min-width: 0;
   padding: 5px 10px;
   background: #FFFFFF;
-  border: 1.5px solid #00AB67;
+  border: 1.5px solid var(--green);
   border-radius: 8px;
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 14px; font-weight: 600; color: #0D1B2A; outline: none;
@@ -760,16 +799,16 @@
   transition: border-color .15s;
   box-sizing: border-box;
 }
-.createInput:focus { border-color: #00AB67; }
+.createInput:focus { border-color: var(--green); }
 .createInput::placeholder { color: #94A3B8; }
 .btnCreate {
   width: 100%; padding: 13px;
-  background: #00AB67; color: #fff; border: none; border-radius: 10px;
+  background: var(--green); color: #fff; border: none; border-radius: 10px;
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 14px; font-weight: 700; cursor: pointer;
   transition: background .15s;
 }
-.btnCreate:hover:not(:disabled) { background: #009B63; }
+.btnCreate:hover:not(:disabled) { background: var(--green-hover); }
 .btnCreate:disabled { opacity: .5; cursor: not-allowed; }
 
 /* ── CONCURSOS ── */
@@ -781,8 +820,8 @@
   box-shadow: 0 1px 3px rgba(0,0,0,.03);
 }
 .concursoCard:hover { border-color: #CBD5E1; box-shadow: 0 2px 6px rgba(0,0,0,.05); }
-.concursoCard.ativo { border-color: #00AB67; background: #E6F7EE; }
-.ccNum    { font-size: 20px; font-weight: 800; color: #00AB67; font-family: 'JetBrains Mono', monospace; }
+.concursoCard.ativo { border-color: var(--green); background: #E6F7EE; }
+.ccNum    { font-size: 20px; font-weight: 800; color: var(--green); font-family: 'JetBrains Mono', monospace; }
 .ccData   { font-size: 11px; color: #94A3B8; margin-top: 3px; }
 .ccPremio { font-size: 12px; color: #007A45; margin-top: 2px; font-weight: 700; }
 .ccBody   { flex: 1; display: flex; flex-direction: column; gap: 2px; }
@@ -794,7 +833,7 @@
   border-radius: 6px; color: #0D1B2A; font-family: inherit; outline: none;
   width: 100%;
 }
-.ccSorteioInput:focus { border-color: #00AB67; }
+.ccSorteioInput:focus { border-color: var(--green); }
 .ccAvisoData {
   font-size: 0.7rem; color: #D97706;
   background: #FFFBEB; border: 1px solid #FCD34D;
@@ -809,7 +848,7 @@
   transition: background .15s;
 }
 .btnSel:hover  { background: #D1F0E0; }
-.btnSelAtivo   { background: #00AB67; color: #fff; border-color: #00AB67; }
+.btnSelAtivo   { background: var(--green); color: #fff; border-color: var(--green); }
 
 /* ── PARTICIPANTES ── */
 .empty { font-size: 13px; color: #94A3B8; text-align: center; padding: 28px; }
@@ -841,11 +880,11 @@
 .selecaoCount { font-size: 0.875rem; font-weight: 700; color: #007A45; flex: 1; }
 
 .btnImprimirSel {
-  padding: 7px 16px; background: #00AB67; color: #fff; border: none;
+  padding: 7px 16px; background: var(--green); color: #fff; border: none;
   border-radius: 8px; font-size: 0.85rem; font-weight: 700;
   cursor: pointer; transition: background .15s;
 }
-.btnImprimirSel:hover { background: #009B63; }
+.btnImprimirSel:hover { background: var(--green-hover); }
 
 .btnLimparSel {
   padding: 7px 12px; background: #FEF2F2; color: #DC2626;
@@ -855,11 +894,11 @@
 .btnLimparSel:hover { background: #FEE2E2; }
 
 .partCardCheck {
-  width: 18px; height: 18px; accent-color: #00AB67;
+  width: 18px; height: 18px; accent-color: var(--green);
   cursor: pointer; flex-shrink: 0; margin-right: 4px; align-self: center;
 }
 
-.partCardSelecionado { border-left-color: #00AB67 !important; background: #E6F7EE !important; }
+.partCardSelecionado { border-left-color: var(--green) !important; background: #E6F7EE !important; }
 
 .inputHidden { display: none; }
 
@@ -980,7 +1019,7 @@
 .partInfo    { flex: 1; min-width: 0; }
 .partNome    { font-size: 15px; font-weight: 700; color: #0D1B2A; }
 .partCotas   { font-size: 11px; color: #94A3B8; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
-.partTotal   { font-size: 13px; font-weight: 700; color: #00AB67; margin-top: 3px; font-family: 'JetBrains Mono', monospace; }
+.partTotal   { font-size: 13px; font-weight: 700; color: var(--green); margin-top: 3px; font-family: 'JetBrains Mono', monospace; }
 .partActions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .statusPago {
   font-size: 11px; font-weight: 700; color: #007A45;
@@ -1082,7 +1121,7 @@
 .crmCard        { display: flex; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; transition: border-color .15s, box-shadow .15s; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .crmCard:hover  { border-color: #CBD5E1; box-shadow: 0 2px 6px rgba(0,0,0,.06); }
 .crmCardBar     { width: 3px; flex-shrink: 0; }
-.crmBarPago     { background: #00AB67; }
+.crmBarPago     { background: var(--green); }
 .crmBarPend     { background: #F59E0B; }
 .crmBarCancel   { background: #EF4444; opacity: .5; }
 .crmCardBody    { flex: 1; padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
@@ -1137,7 +1176,7 @@
   transition: border-color .15s; cursor: pointer;
   -webkit-appearance: none; appearance: none;
 }
-.configSelect:focus { border-color: #00AB67; }
+.configSelect:focus { border-color: var(--green); }
 .configSelect option { background: #FFFFFF; color: #0D1B2A; }
 .configInput {
   width: 100%; padding: 10px 12px; background: #FFFFFF; border: 1px solid #E2E8F0;
@@ -1145,7 +1184,7 @@
   font-size: 15px; font-weight: 700; color: #0D1B2A; outline: none;
   transition: border-color .15s;
 }
-.configInput:focus { border-color: #00AB67; }
+.configInput:focus { border-color: var(--green); }
 .configInput::placeholder { color: #94A3B8; }
 
 .configCalc {
@@ -1180,12 +1219,12 @@
    RESPONSIVE — Mobile-first Admin
 ═══════════════════════════════ */
 
-@media (max-width: 1200px) {
-  .adminGrid { grid-template-columns: 300px 1fr; }
+@media (max-width: 768px) {
+  .bolaoColumns { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 1024px) {
-  .adminGrid { grid-template-columns: 1fr; gap: 12px; }
+  .adminGrid { gap: 12px; }
 }
 
 @media (max-width: 768px) {
@@ -1405,8 +1444,8 @@
   background: #FFFFFF; color: #64748B;
   font-size: 11px; font-weight: 600; cursor: pointer; transition: all .15s;
 }
-.geradorAbaBtn:hover { border-color: #00AB67; color: #007A45; }
-.geradorAbaBtnAtivo { background: #00AB67 !important; color: #fff !important; border-color: #00AB67 !important; }
+.geradorAbaBtn:hover { border-color: var(--green); color: #007A45; }
+.geradorAbaBtnAtivo { background: var(--green) !important; color: #fff !important; border-color: var(--green) !important; }
 
 .geradorLoading { font-size: 12px; color: #94A3B8; padding: 12px 0; }
 
@@ -1452,7 +1491,7 @@
   color: rgba(255,255,255,0.35); cursor: pointer;
   transition: all .15s; margin-bottom: -1px;
 }
-.esporteEditorTabActive { color: #fff; border-bottom-color: #00AB67; }
+.esporteEditorTabActive { color: #fff; border-bottom-color: var(--green); }
 .esporteEditorBody { padding: 20px; }
 .esporteEditorGrid { display: flex; flex-direction: column; gap: 14px; }
 .esporteEditorLabel {
@@ -1518,11 +1557,11 @@
 .esporteEditorBtnSecundario:hover { background: rgba(255,255,255,0.1); color: #fff; }
 .esporteEditorBtnSalvar {
   padding: 8px 22px; border-radius: 8px;
-  background: #00AB67; border: none;
+  background: var(--green); border: none;
   font-size: 13px; font-weight: 700; color: #fff;
   cursor: pointer; transition: all .15s;
 }
-.esporteEditorBtnSalvar:hover { background: #009B63; }
+.esporteEditorBtnSalvar:hover { background: var(--green-hover); }
 .esporteEditorBtnSalvar:disabled { opacity: 0.5; cursor: not-allowed; }
 .esporteEditorErro { padding: 0 20px 12px; font-size: 12px; color: #EF4444; }
 
@@ -1555,8 +1594,8 @@
   font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 600;
   cursor: pointer; text-align: center; transition: all .15s;
 }
-.geradorEstrBtn:hover { border-color: #00AB67; color: #007A45; background: #E6F7EE; }
-.geradorEstrBtnAtivo { background: #00AB67 !important; color: #fff !important; border-color: #00AB67 !important; }
+.geradorEstrBtn:hover { border-color: var(--green); color: #007A45; background: #E6F7EE; }
+.geradorEstrBtnAtivo { background: var(--green) !important; color: #fff !important; border-color: var(--green) !important; }
 
 .geradorParamRow { display: flex; gap: 12px; }
 .geradorParam { flex: 1; display: flex; flex-direction: column; gap: 6px; }
@@ -1580,7 +1619,7 @@
   display: flex; align-items: center; gap: 8px; cursor: pointer;
   font-size: 12px; color: #475569; font-weight: 500;
 }
-.geradorCheck input[type="checkbox"] { accent-color: #00AB67; width: 14px; height: 14px; cursor: pointer; }
+.geradorCheck input[type="checkbox"] { accent-color: var(--green); width: 14px; height: 14px; cursor: pointer; }
 
 .geradorResultado {
   margin-top: 4px; background: #FFFFFF; border: 1px solid #E2E8F0;
@@ -1597,7 +1636,7 @@
 .geradorApoBall {
   display: inline-flex; align-items: center; justify-content: center;
   width: 24px; height: 24px; border-radius: 50%;
-  background: linear-gradient(135deg, #007A45 0%, #00AB67 100%);
+  background: linear-gradient(135deg, #007A45 0%, var(--green) 100%);
   color: #fff; font-size: 9px; font-weight: 800; font-family: 'JetBrains Mono', monospace;
   flex-shrink: 0;
 }
@@ -1682,7 +1721,7 @@
 .kpiBarTrack { background: #E2E8F0; border-radius: 4px; height: 8px; overflow: hidden; }
 
 .kpiBarFill {
-  background: linear-gradient(90deg, #00AB67, #005DA9);
+  background: linear-gradient(90deg, var(--green), #005DA9);
   height: 100%;
   border-radius: 4px;
   transition: width 0.6s ease;
@@ -1785,7 +1824,7 @@
   transition: border-color 0.2s, background 0.2s;
 }
 .esporteBolaoBtn:hover { border-color: #CBD5E1; background: #F1F5F9; }
-.esporteBolaoBtnAtivo { border-color: #00AB67; background: #E6F7EE; }
+.esporteBolaoBtnAtivo { border-color: var(--green); background: #E6F7EE; }
 .esporteBolaoBtnNome { color: #0D1B2A; font-size: 13px; font-weight: 700; }
 .esporteBolaoBtnMeta { color: #94A3B8; font-size: 10px; margin-top: 2px; }
 
@@ -1801,7 +1840,7 @@
   background: transparent; color: #64748B;
   transition: background 0.15s, color 0.15s;
 }
-.esporteTabAtivo { background: #00AB67; color: #fff; }
+.esporteTabAtivo { background: var(--green); color: #fff; }
 
 /* Link público */
 .esporteLinkBox {
@@ -1821,7 +1860,7 @@
   border-radius: 12px; transition: border-color 0.15s, box-shadow .15s;
   box-shadow: 0 1px 3px rgba(0,0,0,.04);
 }
-.esporteJogoEncerrado { border-left: 3px solid #00AB67; opacity: 0.75; }
+.esporteJogoEncerrado { border-left: 3px solid var(--green); opacity: 0.75; }
 .esporteJogoSelecionado { border-color: #005DA9; background: #EFF6FF; }
 
 .esporteJogoInfo { flex: 1; min-width: 0; }
@@ -2010,13 +2049,13 @@
   font-size: 20px; font-weight: 800; color: #0D1B2A;
   font-family: 'JetBrains Mono', monospace; margin: 2px 0;
 }
-.esporteCalcCardReal .esporteCalcBruto { color: #009B63; }
+.esporteCalcCardReal .esporteCalcBruto { color: var(--green-hover); }
 .esporteCalcLiq  { font-size: 11px; color: #64748B; }
 .esporteCalcBar  {
   height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden;
 }
 .esporteCalcBarFill {
-  height: 100%; background: #009B63; border-radius: 3px;
+  height: 100%; background: var(--green-hover); border-radius: 3px;
   transition: width .4s ease;
 }
 .esporteCalcBarLabel {
@@ -2192,4 +2231,94 @@
 }
 .settingsPremiacaoFields {
   display: flex; gap: 8px; flex: 1; flex-wrap: wrap;
+}
+
+
+/* ── Competition picker (BolaoEsporteEditor) ─────────────────────── */
+.esporteCompGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.esporteCompChip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 10px;
+  border: 2px solid #E2E8F0; background: #F8FAFB;
+  cursor: pointer; text-align: left; transition: border-color .15s, background .15s;
+  font-family: inherit;
+}
+.esporteCompChip:hover { border-color: #CBD5E1; background: #F1F5F9; }
+.esporteCompChipAtivo { border-color: #00A651 !important; background: #F0FDF4 !important; }
+.esporteCompIcon { font-size: 18px; flex-shrink: 0; }
+.esporteCompLabel { font-size: 12px; font-weight: 600; color: #0D1B2A; flex: 1; line-height: 1.3; }
+.esporteCompBadge {
+  font-size: 9px; font-weight: 700; color: #fff;
+  background: #FFB81C; border-radius: 4px; padding: 2px 5px; flex-shrink: 0;
+}
+.esporteCompLogo { width: 24px; height: 24px; object-fit: contain; flex-shrink: 0; }
+
+/* ── Icon Library ─────────────────────────────────────────────────── */
+.iconLibWrap { display: flex; flex-direction: column; gap: 24px; padding: 16px 0; }
+.iconSection { display: flex; flex-direction: column; gap: 12px; }
+.iconSectionTitle {
+  font-size: 14px; font-weight: 700; color: #0D1B2A;
+  border-bottom: 2px solid #E2E8F0; padding-bottom: 6px;
+}
+.iconNote {
+  font-size: 12px; color: #64748B; background: #F8FAFB;
+  border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px 12px;
+}
+.iconNote code { font-family: 'JetBrains Mono', monospace; background: #E2E8F0; border-radius: 4px; padding: 1px 5px; }
+.iconGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+}
+.iconCard {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 10px 6px; border-radius: 10px; border: 1.5px solid #E2E8F0;
+  background: #F8FAFB; cursor: pointer; transition: border-color .15s, background .15s;
+  text-align: center;
+}
+.iconCard:hover { border-color: #00A651; background: #F0FDF4; }
+.iconCardImg {
+  width: 54px; height: 54px; border-radius: 8px; border: 2px solid;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff; overflow: hidden;
+}
+.iconCardLabel {
+  font-size: 10px; font-weight: 700; color: #0D1B2A;
+  line-height: 1.2; max-width: 80px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.iconCardSub {
+  font-size: 9px; color: #64748B; max-width: 80px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ── Admin Navigation Tabs ─────────────────────────────────────────── */
+.adminNav {
+  display: flex;
+  gap: 4px;
+  padding: 12px 24px 0;
+  background: #fff;
+  border-bottom: 2px solid #E2E8F0;
+}
+.adminNavBtn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: 10px 10px 0 0;
+  border: none; background: transparent;
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  color: #64748B; cursor: pointer; transition: background .15s, color .15s;
+  border-bottom: 3px solid transparent; margin-bottom: -2px;
+}
+.adminNavBtn:hover { background: #F1F5F9; color: #0D1B2A; }
+.adminNavBtnAtivo {
+  color: #00A651; border-bottom-color: #00A651;
+  background: #F0FDF4;
+}
+.adminNavLogo {
+  width: 20px; height: 20px;
+  border-radius: 5px; object-fit: cover;
 }

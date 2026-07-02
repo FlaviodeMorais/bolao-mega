@@ -51,12 +51,16 @@ export default function AdminStats({
         <>
           <div className={styles.statCard}>
             <span className={styles.statLabel}>Concurso Ativo</span>
-            <div className={styles.statVal}>{concursoAtivo ? `#${concursoAtivo}` : '—'}</div>
-            {dataAtiva && <span className={styles.statSub}>{dataAtiva}</span>}
+            <div className={styles.statVal}>
+              {boloesAtivosCount > 0 && concursoAtivo ? `#${concursoAtivo}` : '—'}
+            </div>
+            {boloesAtivosCount > 0 && dataAtiva && <span className={styles.statSub}>{dataAtiva}</span>}
           </div>
           <div className={styles.statCard}>
             <span className={styles.statLabel}>Prêmio Estimado</span>
-            <div className={styles.statVal}>{premioAtivo || '—'}</div>
+            <div className={styles.statVal}>
+              {boloesAtivosCount > 0 ? (premioAtivo || '—') : '—'}
+            </div>
           </div>
           <div className={styles.statCard}>
             <span className={styles.statLabel}>Bolões Ativos</span>

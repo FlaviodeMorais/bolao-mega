@@ -13,6 +13,16 @@ const LOTERIA_COR: Record<string, string> = {
   lotomania: '#F58220',
 }
 
+const DIAS_ABR = ['dom.','seg.','ter.','qua.','qui.','sex.','sáb.']
+
+function formatSorteioData(dataStr: string): string {
+  const m = dataStr.match(/^(\d{1,2})\/(\d{2})\/(\d{4})/)
+  if (!m) return dataStr
+  const dt = new Date(+m[3], +m[2] - 1, +m[1])
+  const dataFmt = `${m[1].padStart(2, '0')}/${m[2]}/${m[3]}`
+  return `${DIAS_ABR[dt.getDay()]}, ${dataFmt}`
+}
+
 function mascaraNome(nome: string): string {
   const words = nome.trim().split(/\s+/)
   const maskWord = (w: string, pos: 'first' | 'last' | 'single') => {
@@ -135,13 +145,23 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
 
   useEffect(() => {
     setConfigOk(false)
-    const concursoFetch = loteriaCfg.id !== 'mega'
-      ? fetch(`/api/resultados/${loteriaCfg.apiSlug}`).then(r => r.json()).then(d => {
-          if (!d?.numero) return null
-          const val = d.valorEstimadoProximoConcurso
-          return { concurso: String((d.numero || 0) + 1), data: d.dataProximoConcurso || '', premio: val ? `R$ ${(val / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} mi` : 'Acumulando' }
-        }).catch(() => null)
-      : fetch('/api/concurso-ativo').then(r => r.json())
+    // Busca concurso admin + prêmio fresco da Caixa em paralelo
+    const concursoFetch = Promise.all([
+      fetch(`/api/concurso-ativo?loteria=${loteriaCfg.id}`).then(r => r.json()).catch(() => null),
+      fetch(`/api/resultados/${loteriaCfg.apiSlug}`).then(r => r.json()).catch(() => null),
+    ]).then(([ca, fresh]) => {
+      const val = fresh?.valorEstimadoProximoConcurso
+      const premioFresh = val ? `R$ ${(val / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} mi` : null
+      if (ca?.concurso) {
+        // Prêmio fresco tem prioridade; data do admin se tiver ano, senão usa Caixa
+        const dataAdmin: string = ca.data || ''
+        const dataCaixa: string = fresh?.dataProximoConcurso || ''
+        const data = /\d{4}/.test(dataAdmin) ? dataAdmin : (dataCaixa || dataAdmin)
+        return { concurso: ca.concurso, data, premio: premioFresh || ca.premio || 'Acumulando' }
+      }
+      if (!fresh?.numero) return null
+      return { concurso: String((fresh.numero || 0) + 1), data: fresh.dataProximoConcurso || '', premio: premioFresh || 'Acumulando' }
+    }).catch(() => null)
 
     Promise.all([concursoFetch, fetch('/api/boloes').then(r => r.json())]).then(([ca, d]) => {
       if (ca) setConcursoAtivo(ca)
@@ -170,13 +190,21 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
 
   useEffect(() => {
     const atualizar = () => {
-      const caFetch = loteriaCfg.id !== 'mega'
-        ? fetch(`/api/resultados/${loteriaCfg.apiSlug}`).then(r => r.json()).then(d => {
-            if (!d?.numero) return null
-            const val = d.valorEstimadoProximoConcurso
-            return { concurso: String((d.numero || 0) + 1), data: d.dataProximoConcurso || '', premio: val ? `R$ ${(val / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} mi` : 'Acumulando' }
-          }).catch(() => null)
-        : fetch('/api/concurso-ativo').then(r => r.json())
+      const caFetch = Promise.all([
+        fetch(`/api/concurso-ativo?loteria=${loteriaCfg.id}`).then(r => r.json()).catch(() => null),
+        fetch(`/api/resultados/${loteriaCfg.apiSlug}`).then(r => r.json()).catch(() => null),
+      ]).then(([ca, fresh]) => {
+        const val = fresh?.valorEstimadoProximoConcurso
+        const premioFresh = val ? `R$ ${(val / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} mi` : null
+        if (ca?.concurso) {
+          const dataAdmin: string = ca.data || ''
+          const dataCaixa: string = fresh?.dataProximoConcurso || ''
+          const data = /\d{4}/.test(dataAdmin) ? dataAdmin : (dataCaixa || dataAdmin)
+          return { concurso: ca.concurso, data, premio: premioFresh || ca.premio || 'Acumulando' }
+        }
+        if (!fresh?.numero) return null
+        return { concurso: String((fresh.numero || 0) + 1), data: fresh.dataProximoConcurso || '', premio: premioFresh || 'Acumulando' }
+      }).catch(() => null)
       Promise.all([fetch('/api/boloes').then(r => r.json()), caFetch]).then(([d, ca]) => {
         if (ca) setConcursoAtivo(ca)
         const b = (d.boloes || []).find((x: { slug: string }) => x.slug === bolaoSlug)
@@ -313,7 +341,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
                   <div className={styles.heroRow}>
                     <div className={styles.heroInfo}>
                       <div className={styles.heroInfoLabel}>Sorteio</div>
-                      <div className={styles.heroInfoVal}>{concursoAtivo.data}</div>
+                      <div className={styles.heroInfoVal}>{formatSorteioData(concursoAtivo.data)}</div>
                     </div>
                     {countdown && (
                       <div className={styles.heroCountdown}>

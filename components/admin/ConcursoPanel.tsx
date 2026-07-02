@@ -57,7 +57,7 @@ export default function ConcursoPanel({
 
       {proximos.length > 0 && (
         <p className={styles.ccAvisoData}>
-          ⚠️ Data calculada = encerramento das apostas. Edite para a data/hora real do sorteio antes de selecionar.
+          ℹ️ As datas são estimadas. Edite o campo antes de selecionar para ajustar ao horário real do sorteio.
         </p>
       )}
 

@@ -15,13 +15,17 @@ export async function POST(req: NextRequest) {
   if (!token || !(await verificarToken(token))) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const body = await req.json()
-  const { slug, nome, descricao, competicao, valor_cota, taxa_admin, total_cotas } = body
+  const { slug, nome, descricao, competicao, fonte, valor_cota, taxa_admin, total_cotas,
+          logo_url, cor_primaria, header_desc, label_cta, label_palpites,
+          label_jogo_hoje, label_noticias, premiacao } = body
 
   if (!slug || !nome || !competicao) return NextResponse.json({ error: 'Campos obrigatórios: slug, nome, competicao' }, { status: 400 })
 
   const { data, error } = await supabase
     .from('boloes_esporte')
-    .insert({ slug, nome, descricao, competicao, valor_cota, taxa_admin, total_cotas })
+    .insert({ slug, nome, descricao, competicao, fonte: fonte || 'manual', valor_cota, taxa_admin, total_cotas,
+              logo_url, cor_primaria, header_desc, label_cta, label_palpites,
+              label_jogo_hoje, label_noticias, premiacao })
     .select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
