@@ -6,14 +6,18 @@ import { enviarPixEmail, notificarAdminInscricao } from '@/lib/email'
 export async function GET(req: NextRequest) {
   const concurso = req.nextUrl.searchParams.get('concurso')
   const bolao    = req.nextUrl.searchParams.get('bolao') || req.nextUrl.searchParams.get('bolao_slug') || null
-  if (!concurso) return NextResponse.json({ participantes: [] })
+
+  // Se não tem bolao_slug nem concurso, não retorna nada
+  if (!bolao && !concurso) return NextResponse.json({ participantes: [] })
 
   let query = supabase
     .from('participantes')
     .select('id, nome, cotas, total, status, telefone, email, acrescimo, acrescimo_pago, created_at')
-    .eq('concurso', parseInt(concurso))
     .neq('status', 'cancelado')
     .order('created_at', { ascending: true })
+
+  // Filtra por concurso apenas se fornecido
+  if (concurso) query = query.eq('concurso', parseInt(concurso))
 
   if (bolao) query = query.eq('bolao_slug', bolao)
   else       query = query.is('bolao_slug', null)

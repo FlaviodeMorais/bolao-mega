@@ -85,9 +85,30 @@ export async function GET(req: NextRequest) {
     }, { status: 422 })
   }
 
-  const rc = bolao.resultado_conferencia as { status?: string } | null
+  const rc = bolao.resultado_conferencia as { status?: string; premios_caixa?: unknown[] } | null
   if (rc?.status === 'ganhamos' || rc?.status === 'nao_premiada') {
-    return NextResponse.json({ ok: true, total_apostas: bolao.apostas_data.bets.length, ...rc })
+    // Se já tem premios_caixa, retorna direto
+    if (rc.premios_caixa) {
+      return NextResponse.json({ ok: true, total_apostas: bolao.apostas_data.bets.length, ...rc })
+    }
+    // Se não tem premios_caixa, busca na Caixa e atualiza o salvo
+    const lotRc = (bolao.loteria || 'mega') as LoteriaId
+    const cfgRc = getLoteria(lotRc)
+    let premiosRc: { faixa: string; ganhadores: number; valor: number }[] = []
+    try {
+      const r = await fetch(`https://servicebus2.caixa.gov.br/portaldeloterias/api/${cfgRc.apiSlug}/${concurso}`, { cache: 'no-store' })
+      if (r.ok) {
+        const d = await r.json()
+        if (Array.isArray(d.listaRateioPremio)) {
+          premiosRc = d.listaRateioPremio.map((r: { descricaoFaixa: string; numerodeGanhadores: number; valorPremio: number }) => ({
+            faixa: r.descricaoFaixa, ganhadores: r.numerodeGanhadores, valor: r.valorPremio,
+          }))
+        }
+      }
+    } catch { /* ignora */ }
+    const updated = { ...rc, premios_caixa: premiosRc }
+    await salvarStatus(bolaoId, updated)
+    return NextResponse.json({ ok: true, total_apostas: bolao.apostas_data.bets.length, ...updated })
   }
 
   const loteria = (bolao.loteria || 'mega') as LoteriaId
