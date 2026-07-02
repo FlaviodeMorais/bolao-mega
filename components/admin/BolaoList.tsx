@@ -37,11 +37,11 @@ interface BolaoListProps {
   actions: BolaoListActions
 }
 
-const LOTERIA_COR: Record<string, string> = {
-  mega:      '#009B63',
-  lotofacil: '#702A82',
-  quina:     '#00508F',
-}
+const LOTERIAS_COL = [
+  { id: 'mega'      as LoteriaId, label: 'Mega-Sena', cor: '#009B63' },
+  { id: 'lotofacil' as LoteriaId, label: 'Lotofácil', cor: '#702A82' },
+  { id: 'quina'     as LoteriaId, label: 'Quina',     cor: '#00508F' },
+]
 
 export default function BolaoList({
   boloes, bolaoAtualId, linkCopiado,
@@ -50,84 +50,98 @@ export default function BolaoList({
   onNovoNomeChange, onNovoSlugChange, onNovaLoteriaChange, onShowCreateToggle,
   actions,
 }: BolaoListProps) {
+  function abrirCreate(loteria: LoteriaId) {
+    onNovaLoteriaChange(loteria)
+    onShowCreateToggle(true)
+  }
+
   return (
     <div className={styles.panel}>
       <div className={styles.panelTitle}>🎰 Bolões</div>
 
-      {boloes.length === 0 && !showCreate && (
-        <div className={styles.empty}>Nenhum bolão. Clique em &quot;+ Novo Bolão&quot;.</div>
-      )}
-
-      {boloes.map(b => {
-        const cor = LOTERIA_COR[b.loteria ?? 'mega']
-        return (
-          <div key={b.id}
-            className={`${styles.bolaoCard} ${bolaoAtualId === b.id ? styles.selected : ''} ${!b.ativo ? styles.bolaoInativo : ''}`}
-            onClick={() => b.ativo && actions.onSelecionar(b)}>
-            <div className={styles.bolaoInfo}>
-              {renamingId === b.id ? (
-                <div className={styles.renameRow} onClick={e => e.stopPropagation()}>
-                  <input className={styles.renameInput} value={renameVal}
-                    title="Novo nome" placeholder="Nome do bolão"
-                    onChange={e => onRenameValChange(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') actions.onRenomearConfirm(b.id)
-                      if (e.key === 'Escape') actions.onRenomearCancel()
-                    }} autoFocus />
-                  <button type="button" className={styles.btnRenomearOk} onClick={() => actions.onRenomearConfirm(b.id)}>✓</button>
-                  <button type="button" className={styles.btnRenomearCancel} onClick={actions.onRenomearCancel}>✕</button>
-                </div>
-              ) : (
-                <div className={styles.bolaoNomeRow}>
-                  <div className={styles.bolaoNome}>{b.nome}</div>
-                  <button type="button" className={styles.btnRenomear}
-                    onClick={e => { e.stopPropagation(); actions.onRenomear(b.id) }} title="Renomear">✎</button>
-                </div>
-              )}
-              <div className={styles.bolaoUrl}>/{b.slug}</div>
-              <div className={styles.bolaoMeta}>
-                <span style={{ color: cor, fontWeight: 700 }}>
-                  <TrevoIcon loteria={b.loteria ?? 'mega'} size={12} /> {b.loteria === 'lotofacil' ? 'Lotofácil' : b.loteria === 'quina' ? 'Quina' : 'Mega-Sena'}
-                </span>
-                {' · '}{b.num_apostas || 1} apostas · {b.dezenas || 6} dez · R$ {Number(b.valor_cota).toFixed(2).replace('.', ',')}/cota
+      <div className={styles.bolaoColumns}>
+        {LOTERIAS_COL.map(lot => {
+          const grupo = boloes.filter(b => (b.loteria ?? 'mega') === lot.id)
+          return (
+            <div key={lot.id} className={styles.bolaoColumn}>
+              <div className={styles.bolaoColumnHeader} style={{ color: lot.cor }}>
+                <TrevoIcon loteria={lot.id} size={13} /> {lot.label}
               </div>
-            </div>
-            <div className={styles.bolaoActions}>
-              {b.resultado_conferencia?.status === 'ganhamos'     && <span className={styles.badgeGanhou}>🏆</span>}
-              {b.resultado_conferencia?.status === 'nao_premiada' && <span className={styles.badgeNaoPremiada}>😔</span>}
-              {b.resultado_conferencia?.status === 'nao_apurado'  && <span className={styles.badgeNaoApurado}>⏳</span>}
-              {b.ativo
-                ? <span className={styles.bolaoAtivo}>ATIVO</span>
-                : <span className={styles.bolaoCancelado}>CANCELADO</span>
-              }
-              {b.ativo && (
-                <button type="button" className={styles.btnSel}
-                  onClick={e => { e.stopPropagation(); actions.onCopiarLink(b.slug) }}
-                  title="Copiar link">
-                  {linkCopiado ? '✓' : '🔗'}
-                </button>
-              )}
-              <button type="button"
-                className={b.ativo ? styles.btnCancelarBolao : styles.btnReativarBolao}
-                onClick={e => { e.stopPropagation(); actions.onCancelar(b) }}
-                title={b.ativo ? 'Cancelar bolão' : 'Reativar bolão'}>
-                {b.ativo ? '⊘' : '↺'}
-              </button>
-              {!b.ativo && (
-                <button type="button" className={styles.btnExcluirBolao}
-                  onClick={e => { e.stopPropagation(); actions.onExcluir(b) }}
-                  title="Excluir permanentemente">🗑</button>
-              )}
-            </div>
-          </div>
-        )
-      })}
 
-      {!showCreate ? (
-        <button type="button" className={styles.btnLoad} onClick={() => onShowCreateToggle(true)}>+ Novo Bolão</button>
-      ) : (
+              {grupo.length === 0 && (
+                <div className={styles.empty} style={{ fontSize: 12 }}>Nenhum bolão.</div>
+              )}
+
+              {grupo.map(b => (
+                <div key={b.id}
+                  className={`${styles.bolaoCard} ${bolaoAtualId === b.id ? styles.selected : ''} ${!b.ativo ? styles.bolaoInativo : ''}`}
+                  onClick={() => b.ativo && actions.onSelecionar(b)}>
+                  <div className={styles.bolaoInfo}>
+                    {renamingId === b.id ? (
+                      <div className={styles.renameRow} onClick={e => e.stopPropagation()}>
+                        <input className={styles.renameInput} value={renameVal}
+                          title="Novo nome" placeholder="Nome do bolão"
+                          onChange={e => onRenameValChange(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') actions.onRenomearConfirm(b.id)
+                            if (e.key === 'Escape') actions.onRenomearCancel()
+                          }} autoFocus />
+                        <button type="button" className={styles.btnRenomearOk} onClick={() => actions.onRenomearConfirm(b.id)}>✓</button>
+                        <button type="button" className={styles.btnRenomearCancel} onClick={actions.onRenomearCancel}>✕</button>
+                      </div>
+                    ) : (
+                      <div className={styles.bolaoNomeRow}>
+                        <div className={styles.bolaoNome}>{b.nome}</div>
+                        <button type="button" className={styles.btnRenomear}
+                          onClick={e => { e.stopPropagation(); actions.onRenomear(b.id) }} title="Renomear">✎</button>
+                      </div>
+                    )}
+                    <div className={styles.bolaoUrl}>/{b.slug}</div>
+                    <div className={styles.bolaoMeta}>
+                      {b.num_apostas || 1} apostas · {b.dezenas || 6} dez · R${Number(b.valor_cota).toFixed(2).replace('.', ',')}/cota
+                    </div>
+                  </div>
+                  <div className={styles.bolaoActions}>
+                    {b.resultado_conferencia?.status === 'ganhamos'     && <span className={styles.badgeGanhou}>🏆</span>}
+                    {b.resultado_conferencia?.status === 'nao_premiada' && <span className={styles.badgeNaoPremiada}>😔</span>}
+                    {b.resultado_conferencia?.status === 'nao_apurado'  && <span className={styles.badgeNaoApurado}>⏳</span>}
+                    {b.ativo
+                      ? <span className={styles.bolaoAtivo}>ATIVO</span>
+                      : <span className={styles.bolaoCancelado}>CANCELADO</span>
+                    }
+                    {b.ativo && (
+                      <button type="button" className={styles.btnSel}
+                        onClick={e => { e.stopPropagation(); actions.onCopiarLink(b.slug) }}
+                        title="Copiar link">
+                        {linkCopiado ? '✓' : '🔗'}
+                      </button>
+                    )}
+                    <button type="button"
+                      className={b.ativo ? styles.btnCancelarBolao : styles.btnReativarBolao}
+                      onClick={e => { e.stopPropagation(); actions.onCancelar(b) }}
+                      title={b.ativo ? 'Cancelar bolão' : 'Reativar bolão'}>
+                      {b.ativo ? '⊘' : '↺'}
+                    </button>
+                    {!b.ativo && (
+                      <button type="button" className={styles.btnExcluirBolao}
+                        onClick={e => { e.stopPropagation(); actions.onExcluir(b) }}
+                        title="Excluir permanentemente">🗑</button>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              <button type="button" className={styles.btnAddColumn}
+                onClick={() => abrirCreate(lot.id)}>
+                + Novo
+              </button>
+            </div>
+          )
+        })}
+      </div>
+
+      {showCreate && (
         <div className={styles.createForm}>
-          {/* Seletor de loteria */}
           <div className={styles.loteriaSelector}>
             {LOTERIA_LIST.map(l => (
               <button key={l.id} type="button"
