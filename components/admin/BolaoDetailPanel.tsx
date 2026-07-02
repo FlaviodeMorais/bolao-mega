@@ -269,14 +269,16 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
             // Normaliza nomes de faixas para comparação entre nossos labels e os da Caixa
             const normFaixa = (f: string) => {
               const s = f.toLowerCase().trim()
-              const m = s.match(/^(\d+)\s*acertos?$/) || s.match(/^(\d+)\s*pontos?$/)
-              if (m) return m[1]
-              const map: Record<string, string> = {
-                dupla:'2', terno:'3', quadra:'4', quina:'5', sena:'6',
-                onze:'11', doze:'12', treze:'13', quatorze:'14', quinze:'15',
-                duque:'2',
+              const m = s.match(/^(\d+)\s*acertos?$/)
+              if (m) return `${m[1]} acertos`
+              const m2 = s.match(/^(\d+)\s*pontos?$/)
+              if (m2) return `${m2[1]} acertos`
+              const legado: Record<string, string> = {
+                dupla:'2 acertos', terno:'3 acertos', quadra:'4 acertos', quina:'5 acertos', sena:'6 acertos',
+                duque:'2 acertos',
+                onze:'11 acertos', doze:'12 acertos', treze:'13 acertos', quatorze:'14 acertos', quinze:'15 acertos',
               }
-              return map[s] ?? s
+              return legado[s] ?? s
             }
             const valorPorFaixa = new Map(
               p.conferirResult!.premios_caixa!.filter(f => f.valor > 0).map(f => [normFaixa(f.faixa), f.valor])

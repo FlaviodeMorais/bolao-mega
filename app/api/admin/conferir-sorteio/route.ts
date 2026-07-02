@@ -11,15 +11,8 @@ const CHECK: Record<LoteriaId, LoteriaCheck> = {
   quina:     { dezenasDrawn: 5,  minAcertos: 2,  maxNum: 80 },
 }
 
-function premioLabel(loteria: LoteriaId, acertos: number): string {
-  if (loteria === 'mega') {
-    return acertos === 6 ? 'SENA' : acertos === 5 ? 'QUINA' : 'QUADRA'
-  }
-  if (loteria === 'lotofacil') {
-    return acertos === 15 ? '15 PONTOS' : acertos === 14 ? '14 PONTOS' : acertos === 13 ? '13 PONTOS' : acertos === 12 ? '12 PONTOS' : '11 PONTOS'
-  }
-  // quina
-  return acertos === 5 ? 'QUINA' : acertos === 4 ? 'QUADRA' : acertos === 3 ? 'TERNO' : 'DUPLA'
+function premioLabel(_loteria: LoteriaId, acertos: number): string {
+  return `${acertos} acertos`
 }
 
 function classificar(bets: number[][], dezenasSorteadas: number[], dezenasPorAposta: number, loteria: LoteriaId) {
