@@ -28,6 +28,8 @@ export async function POST(req: NextRequest) {
   const rc = bolao.resultado_conferencia as {
     status: string
     dezenas_sorteadas?: number[]
+    premios_caixa?: { faixa: string; ganhadores: number; valor: number }[]
+    apostas_premiadas?: { idx: number; acertos: number }[]
   } | null
 
   if (!rc?.dezenas_sorteadas?.length) {
@@ -53,6 +55,17 @@ export async function POST(req: NextRequest) {
   }
 
   const dezenasStr = rc.dezenas_sorteadas!.map(n => String(n).padStart(2, '0'))
+  const loteriaLabel = bolao.loteria === 'lotofacil' ? 'Lotofácil' : bolao.loteria === 'quina' ? 'Quina' : 'Mega-Sena'
+  const minAcertos = bolao.loteria === 'lotofacil' ? 11 : bolao.loteria === 'quina' ? 2 : 4
+
+  // Total de apostas premiadas no bolão (para rateio proporcional)
+  const totalApostasPremiadas = rc.apostas_premiadas?.length ?? 0
+
+  // Prêmio total da faixa principal (maior valor) da Caixa
+  const premioCaixaPrincipal = rc.premios_caixa
+    ?.filter(f => f.valor > 0)
+    .sort((a, b) => b.valor - a.valor)[0]?.valor ?? 0
+
   let enviados = 0
   let erros = 0
 
@@ -60,9 +73,15 @@ export async function POST(req: NextRequest) {
     participantes.map(async (p) => {
       const cotasP = (p.cotas as number[]) || []
       const minhaApostas = cotasP.map(c => apostas[c - 1]).filter(Boolean)
-      const ganhou = minhaApostas.some(ap =>
-        ap.filter(n => rc.dezenas_sorteadas!.includes(n)).length >= 11
+      const apostasGanhadoras = minhaApostas.filter(ap =>
+        ap.filter(n => rc.dezenas_sorteadas!.includes(n)).length >= minAcertos
       )
+      const ganhou = apostasGanhadoras.length > 0
+
+      // Prêmio proporcional: (apostas ganhadoras do participante / total premiadas) * prêmio da Caixa
+      const premioIndividual = ganhou && premioCaixaPrincipal > 0 && totalApostasPremiadas > 0
+        ? (apostasGanhadoras.length / totalApostasPremiadas) * premioCaixaPrincipal
+        : undefined
 
       if (canal === 'wa' || canal === 'ambos') {
         if (p.telefone) {
@@ -76,7 +95,7 @@ export async function POST(req: NextRequest) {
       if (canal === 'email' || canal === 'ambos') {
         if (p.email) {
           try {
-            await enviarResultado(p.email, p.nome, parseInt(concurso), dezenasStr, ganhou, bolao.nome, undefined, bolao.loteria === 'lotofacil' ? 'Lotofácil' : bolao.loteria === 'quina' ? 'Quina' : 'Mega-Sena')
+            await enviarResultado(p.email, p.nome, parseInt(concurso), dezenasStr, ganhou, bolao.nome, premioIndividual, loteriaLabel)
             if (canal === 'email') enviados++
           } catch { if (canal === 'email') erros++ }
         } else { if (canal === 'email') erros++ }

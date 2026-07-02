@@ -343,8 +343,7 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
           <button type="button" className={styles.btnLembrete} onClick={p.onEnviarAcertos}>
             📲 Enviar Acertos por WhatsApp
           </button>
-          <button type="button" className={styles.btnLembrete} onClick={p.onEnviarAcertosEmail}
-            style={{ background: '#1a56db' }}>
+          <button type="button" className={styles.btnLembrete} onClick={p.onEnviarAcertosEmail}>
             ✉️ Enviar Acertos por Email
           </button>
         </div>
