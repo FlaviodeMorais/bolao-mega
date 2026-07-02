@@ -16,7 +16,7 @@ async function getParticipante(id: string) {
 
   const { data: b } = await supabase
     .from('boloes')
-    .select('nome, dezenas, num_apostas, apostas_data, loteria')
+    .select('nome, dezenas, num_apostas, apostas_data, loteria, resultado_conferencia')
     .eq('slug', p.bolao_slug)
     .single()
 
@@ -47,9 +47,17 @@ export default async function ComprovantePage({ params }: Props) {
   const cotas: string[] = p.cotas || []
   const total = Number(p.total)
 
-  // Dezenas das apostas (se existirem)
+  // Dezenas das apostas (filtradas pelas cotas do participante)
   const apostasData = p.bolao?.apostas_data as { bets?: number[][] } | null
-  const apostas: number[][] = apostasData?.bets || []
+  const todasApostas: number[][] = apostasData?.bets || []
+  const cotasIdx: number[] = (p.cotas || []).map(Number)
+  const apostas: number[][] = cotasIdx.length > 0
+    ? cotasIdx.map(c => todasApostas[c - 1]).filter(Boolean)
+    : todasApostas
+
+  // Acertos (dezenas sorteadas, se o resultado já foi conferido)
+  const rc = p.bolao?.resultado_conferencia as { dezenas_sorteadas?: number[] } | null
+  const dezenasAcerto = new Set<number>(rc?.dezenas_sorteadas ?? [])
 
   return (
     <div className="page-wrap" style={{ minHeight: '100vh' }}>
@@ -93,9 +101,17 @@ export default async function ComprovantePage({ params }: Props) {
             <div className="comprov-share-label">Dezenas das apostas</div>
             {apostas.map((aposta, i) => (
               <div key={i} className="comprov-share-aposta">
-                <span className="comprov-share-aposta-num">{i + 1}</span>
+                <span className="comprov-share-aposta-num">{cotasIdx[i] ?? i + 1}</span>
                 <div className="comprov-share-aposta-balls">
-                  {aposta.map(n => <span key={n} className="result-ball" style={{ width: 28, height: 28, fontSize: 11 }}>{String(n).padStart(2, '0')}</span>)}
+                  {aposta.map(n => (
+                    <span
+                      key={n}
+                      className={dezenasAcerto.size > 0 && dezenasAcerto.has(n) ? 'result-ball result-ball--acerto' : 'result-ball'}
+                      style={{ width: 28, height: 28, fontSize: 11 }}
+                    >
+                      {String(n).padStart(2, '0')}
+                    </span>
+                  ))}
                 </div>
               </div>
             ))}
