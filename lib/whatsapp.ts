@@ -4,6 +4,7 @@ const WHAPI_URL = 'https://gate.whapi.cloud'
 
 async function send(endpoint: string, body: object): Promise<{ ok: boolean; erro?: string }> {
   const cfg = await getWhatsappSettings()
+  if (!cfg.ativo) return { ok: false, erro: 'WhatsApp desativado nas configurações' }
   if (!cfg.token) return { ok: false, erro: 'WHAPI_TOKEN não configurado' }
   try {
     const res = await fetch(`${WHAPI_URL}/${endpoint}`, {
@@ -41,7 +42,7 @@ async function toNumber(telefone: string, text: string): Promise<{ ok: boolean; 
 
 export async function verificarNumeroWhatsApp(telefone: string): Promise<boolean> {
   const cfg = await getWhatsappSettings()
-  if (!cfg.token) return true
+  if (!cfg.ativo || !cfg.token) return true
   try {
     const number = telefone.replace(/\D/g, '')
     const full   = number.startsWith('55') ? number : `55${number}`
@@ -54,7 +55,8 @@ export async function verificarNumeroWhatsApp(telefone: string): Promise<boolean
     const data = await res.json()
     const contato = Array.isArray(data) ? data[0] : data?.contacts?.[0]
     return contato?.exists !== false
-  } catch {
+  } catch (err) {
+    console.error('[WhatsApp] erro ao verificar número:', err)
     return true
   }
 }
@@ -67,7 +69,7 @@ export async function enviarQRCodePIX(
   bolaoNome: string
 ) {
   const cfg = await getWhatsappSettings()
-  if (!cfg.token || !telefone) return
+  if (!cfg.ativo || !cfg.token || !telefone) return
   const number = telefone.replace(/\D/g, '')
   const to     = number.startsWith('55') ? `${number}@s.whatsapp.net` : `55${number}@s.whatsapp.net`
   const valorStr = valor.toFixed(2).replace('.', ',')
@@ -174,9 +176,9 @@ export async function notificarPagamento(
   }
 }
 
-export async function notificarResultado(concurso: number, numeros: string[], premio: string) {
+export async function notificarResultado(concurso: number, numeros: string[], premio: string, loteriaLabel = 'MEGA-SENA') {
   await toGroup(
-    `🍀 *RESULTADO MEGA-SENA #${concurso}*\n\n` +
+    `🍀 *RESULTADO ${loteriaLabel.toUpperCase()} #${concurso}*\n\n` +
     `🔢 *${numeros.join(' · ')}*\n\n` +
     `🏆 Prêmio estimado próximo: ${premio}\n\n` +
     `_Confira seus números! Acesse o painel para ver os resultados._`

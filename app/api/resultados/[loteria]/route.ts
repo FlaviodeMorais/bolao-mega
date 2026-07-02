@@ -6,7 +6,7 @@ const LOTERIA_IDS = ['megasena', 'lotofacil', 'quina', 'lotomania', 'duplasena',
 const ALT_BASE = 'https://loteriascaixa-api.herokuapp.com/api'
 // Fallback: API oficial da Caixa (pode bloquear Vercel, mas tenta)
 const CAIXA_BASE = 'https://servicebus2.caixa.gov.br/portaldeloterias/api'
-const CACHE_TTL = 15 * 60 * 1000 // 15 minutos em ms
+const CACHE_TTL = 60 * 60 * 1000 // 1 hora em ms
 
 // Normaliza o formato da API alternativa para o formato esperado pelo frontend
 function normalize(raw: Record<string, unknown>) {
@@ -31,32 +31,25 @@ export async function GET(req: NextRequest, { params }: { params: { loteria: str
   if (!LOTERIA_IDS.includes(loteria)) {
     return NextResponse.json({ error: 'Loteria inválida' }, { status: 400 })
   }
+  const force = req.nextUrl.searchParams.get('force') === '1'
 
-  const bust = req.nextUrl.searchParams.get('bust') === '1'
   const cacheKey = `resultado_${loteria}`
 
-  // 1. Tenta retornar do cache Supabase (≤ 15min), exceto se bust=1
-  if (!bust) {
-    const { data: cached } = await supabase
-      .from('config')
-      .select('value, updated_at')
-      .eq('key', cacheKey)
-      .single()
+  // 1. Tenta retornar do cache Supabase (≤ 1h), exceto se force=1
+  const { data: cached } = await supabase
+    .from('config')
+    .select('value, updated_at')
+    .eq('key', cacheKey)
+    .single()
 
-    if (cached?.value) {
-      const updatedAt = new Date(cached.updated_at || 0).getTime()
-      if (Date.now() - updatedAt < CACHE_TTL) {
-        return NextResponse.json(JSON.parse(cached.value), {
-          headers: { 'Cache-Control': 'public, max-age=300' }
-        })
-      }
+  if (!force && cached?.value) {
+    const updatedAt = new Date(cached.updated_at || 0).getTime()
+    if (Date.now() - updatedAt < CACHE_TTL) {
+      return NextResponse.json({ ...JSON.parse(cached.value), atualizadoEm: cached.updated_at }, {
+        headers: { 'Cache-Control': 'public, max-age=300' }
+      })
     }
   }
-
-  // Variável para cache stale (fallback se APIs falharem)
-  const { data: cachedStale } = bust ? await supabase
-    .from('config').select('value, updated_at').eq('key', cacheKey).single()
-    : { data: null }
 
   // 2. Tenta API alternativa (não bloqueia Vercel)
   try {
@@ -64,11 +57,12 @@ export async function GET(req: NextRequest, { params }: { params: { loteria: str
     if (res.ok) {
       const raw = await res.json()
       const data = normalize(raw)
+      const updated_at = new Date().toISOString()
       await supabase.from('config').upsert(
-        { key: cacheKey, value: JSON.stringify(data), updated_at: new Date().toISOString() },
+        { key: cacheKey, value: JSON.stringify(data), updated_at },
         { onConflict: 'key' }
       )
-      return NextResponse.json(data, { headers: { 'Cache-Control': 'public, max-age=300' } })
+      return NextResponse.json({ ...data, atualizadoEm: updated_at }, { headers: { 'Cache-Control': 'public, max-age=300' } })
     }
   } catch { /* tenta Caixa */ }
 
@@ -86,18 +80,18 @@ export async function GET(req: NextRequest, { params }: { params: { loteria: str
     })
     if (res.ok) {
       const data = await res.json()
+      const updated_at = new Date().toISOString()
       await supabase.from('config').upsert(
-        { key: cacheKey, value: JSON.stringify(data), updated_at: new Date().toISOString() },
+        { key: cacheKey, value: JSON.stringify(data), updated_at },
         { onConflict: 'key' }
       )
-      return NextResponse.json(data, { headers: { 'Cache-Control': 'public, max-age=300' } })
+      return NextResponse.json({ ...data, atualizadoEm: updated_at }, { headers: { 'Cache-Control': 'public, max-age=300' } })
     }
   } catch { /* usa cache stale */ }
 
   // 4. Retorna cache stale se existir
-  const stale = cachedStale ?? null
-  if (stale?.value) {
-    return NextResponse.json(JSON.parse(stale.value), {
+  if (cached?.value) {
+    return NextResponse.json({ ...JSON.parse(cached.value), atualizadoEm: cached.updated_at, stale: true }, {
       headers: { 'Cache-Control': 'public, max-age=60' }
     })
   }

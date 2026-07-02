@@ -70,8 +70,14 @@ export interface PremiacaoItem {
 }
 
 export interface PaginaEsporteSettings {
-  header_titulo: string
-  premiacao:     PremiacaoItem[]
+  header_titulo:           string
+  logo_url_default:        string
+  cor_primaria_default:    string
+  label_cta_default:       string
+  label_palpites_default:  string
+  label_jogo_hoje_default: string
+  label_noticias_default:  string
+  premiacao:               PremiacaoItem[]
 }
 
 export interface AllSettings {
@@ -110,7 +116,7 @@ export const DEFAULTS: AllSettings = {
   whatsapp: {
     token:         process.env.WHAPI_TOKEN    || '',
     group_id:      process.env.WHAPI_GROUP_ID || '',
-    ativo:         true,
+    ativo:         false,
     prazo_horario: '12:00',
   },
   email: {
@@ -163,7 +169,13 @@ export const DEFAULTS: AllSettings = {
     },
   },
   'paginas.esporte': {
-    header_titulo: 'FIFA World Cup 2026',
+    header_titulo:           'FIFA World Cup 2026',
+    logo_url_default:        '',
+    cor_primaria_default:    '#FFB81C',
+    label_cta_default:       '⚽ Quero Participar',
+    label_palpites_default:  '⚽ Seus palpites',
+    label_jogo_hoje_default: '🔥 Jogo de hoje!',
+    label_noticias_default:  '📺 Notícias',
     premiacao: [
       { lugar: 1, emoji: '🏆', label: '1º lugar', categoria: 'Acertou o Placar e o Vencedor', pts: 5, pct: 40 },
       { lugar: 2, emoji: '🥈', label: '2º lugar', categoria: 'Acertou o Vencedor',            pts: 3, pct: 30 },

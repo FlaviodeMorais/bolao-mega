@@ -3,21 +3,21 @@ import { SignJWT, jwtVerify } from 'jose'
 import { supabase } from './supabase'
 
 if (!process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET não configurado — obrigatório definir nas variáveis de ambiente.')
-}
-const SECRET = new TextEncoder().encode(process.env.JWT_SECRET)
-
-async function getSenhaConfig(): Promise<string> {
-  const { data } = await supabase.from('config').select('value').eq('key', 'admin_password').single()
-  const senha = data?.value || process.env.ADMIN_PASSWORD_HASH
-  if (!senha) {
-    throw new Error('Nenhuma senha admin configurada — defina ADMIN_PASSWORD_HASH ou cadastre via troca de senha.')
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('[auth] JWT_SECRET não configurado. Defina a env var antes de iniciar em produção.')
   }
-  return senha
+  console.error('[auth] JWT_SECRET não configurado — usando segredo de fallback inseguro (apenas para desenvolvimento).')
+}
+const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'bolao-mega-secret-2026')
+
+async function getSenhaConfig(): Promise<string | null> {
+  const { data } = await supabase.from('config').select('value').eq('key', 'admin_password').single()
+  return data?.value || process.env.ADMIN_PASSWORD_HASH || null
 }
 
 export async function verificarSenha(senha: string): Promise<boolean> {
   const stored = await getSenhaConfig()
+  if (!stored) return false
   if (stored.startsWith('$2b$') || stored.startsWith('$2a$')) {
     return bcrypt.compare(senha, stored)
   }

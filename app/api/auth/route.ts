@@ -3,10 +3,8 @@ import { verificarSenha, gerarToken, verificarToken } from '@/lib/auth'
 
 export async function GET(req: NextRequest) {
   const token = req.cookies.get('admin_token')?.value
-  if (token && await verificarToken(token)) {
-    return NextResponse.json({ ok: true })
-  }
-  return NextResponse.json({ ok: false }, { status: 401 })
+  const ok = !!token && (await verificarToken(token))
+  return NextResponse.json({ ok })
 }
 
 export async function POST(req: NextRequest) {

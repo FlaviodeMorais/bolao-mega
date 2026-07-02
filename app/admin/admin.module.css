@@ -110,6 +110,24 @@
   gap: 24px;
 }
 
+/* ── ABAS PRINCIPAIS (Operação / Ferramentas / Configurações) ── */
+.mainTabBar {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  border-bottom: 1px solid #E2E8F0;
+  padding-bottom: 0;
+}
+.mainTab {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 18px; font-size: 13px; font-weight: 700;
+  color: #64748B; background: transparent; border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer; transition: all .15s;
+}
+.mainTab:hover { color: #334155; }
+.mainTabActive {
+  color: #00AB67; border-bottom-color: #00AB67;
+}
+
 /* ── STATS ── */
 .statsGrid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 0; }
 .statCard {

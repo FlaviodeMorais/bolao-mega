@@ -1,7 +1,6 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import styles from '@/app/admin/admin.module.css'
-import { COMPETICOES, type Competicao } from '@/lib/competicoes'
 
 interface PremiacaoItem {
   lugar: number; emoji: string; label: string
@@ -10,7 +9,7 @@ interface PremiacaoItem {
 
 interface BolaoEsporte {
   id?: string
-  slug: string; nome: string; descricao?: string; competicao: string; fonte?: string
+  slug: string; nome: string; descricao?: string; competicao: string
   logo_url?: string; cor_primaria?: string; header_desc?: string
   label_cta?: string; label_palpites?: string
   label_jogo_hoje?: string; label_noticias?: string
@@ -19,13 +18,30 @@ interface BolaoEsporte {
   premiacao?: PremiacaoItem[]
 }
 
-const PREMIACAO_DEFAULT: PremiacaoItem[] = [
-  { lugar: 1, emoji: '🥇', label: '1º Lugar',  categoria: 'Craque',      pts: 10, pct: 50 },
-  { lugar: 2, emoji: '🥈', label: '2º Lugar',  categoria: 'Ás',          pts: 7,  pct: 30 },
-  { lugar: 3, emoji: '🥉', label: '3º Lugar',  categoria: 'Talento',     pts: 5,  pct: 20 },
-  { lugar: 4, emoji: '🎖️', label: '4º Lugar',  categoria: 'Destaque',    pts: 3,  pct: 0  },
-  { lugar: 5, emoji: '⭐', label: 'Top 5',     categoria: 'Participante', pts: 1,  pct: 0  },
-]
+interface EsporteDefaults {
+  logo_url_default?: string
+  cor_primaria_default?: string
+  label_cta_default?: string
+  label_palpites_default?: string
+  label_jogo_hoje_default?: string
+  label_noticias_default?: string
+  premiacao?: PremiacaoItem[]
+}
+
+function formInicial(d: EsporteDefaults): BolaoEsporte {
+  return {
+    slug: '', nome: '', descricao: '', competicao: '',
+    logo_url: d.logo_url_default || '',
+    cor_primaria: d.cor_primaria_default || '#FFB81C',
+    header_desc: '',
+    label_cta: d.label_cta_default || '⚽ Quero Participar',
+    label_palpites: d.label_palpites_default || '⚽ Seus palpites',
+    label_jogo_hoje: d.label_jogo_hoje_default || '🔥 Jogo de hoje!',
+    label_noticias: d.label_noticias_default || '📺 Notícias',
+    valor_cota: 30, taxa_admin: 10, total_cotas: 10,
+    premiacao: d.premiacao,
+  }
+}
 
 interface Props {
   bolao?: BolaoEsporte
@@ -36,16 +52,16 @@ interface Props {
 export default function BolaoEsporteEditor({ bolao, onSaved, onCancel }: Props) {
   const isNew = !bolao?.id
 
-  const [form, setForm] = useState<BolaoEsporte>(bolao ?? {
-    slug: '', nome: '', descricao: '', competicao: '', fonte: 'manual',
-    logo_url: '', cor_primaria: '#FFB81C', header_desc: '',
-    label_cta: '⚽ Quero Participar',
-    label_palpites: '⚽ Seus palpites',
-    label_jogo_hoje: '🔥 Jogo de hoje!',
-    label_noticias: '📺 Notícias',
-    valor_cota: 30, taxa_admin: 10, total_cotas: 10,
-    premiacao: PREMIACAO_DEFAULT,
-  })
+  const [form, setForm] = useState<BolaoEsporte>(bolao ?? formInicial({}))
+
+  // Para um bolão novo, carrega os padrões white-label configurados em Configurações → Esporte
+  useEffect(() => {
+    if (!isNew) return
+    fetch('/api/config-publica').then(r => r.json()).then(d => {
+      if (d.esporte) setForm(formInicial(d.esporte))
+    }).catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
@@ -55,19 +71,8 @@ export default function BolaoEsporteEditor({ bolao, onSaved, onCancel }: Props) 
     setForm(f => ({ ...f, [key]: val }))
   }
 
-  function selecionarCompeticao(c: Competicao) {
-    setForm(f => ({
-      ...f,
-      competicao: c.id,
-      fonte: c.fonte,
-      cor_primaria: f.cor_primaria && f.cor_primaria !== '#FFB81C' ? f.cor_primaria : c.cor,
-      // só preenche nome se ainda estiver em branco
-      nome: f.nome || c.label,
-    }))
-  }
-
   function setPremiacao(i: number, key: keyof PremiacaoItem, val: string | number) {
-    const p = [...(form.premiacao || PREMIACAO_DEFAULT)]
+    const p = [...(form.premiacao || [])]
     p[i] = { ...p[i], [key]: key === 'pts' || key === 'pct' || key === 'lugar' ? Number(val) : val }
     set('premiacao', p)
   }
@@ -147,43 +152,11 @@ export default function BolaoEsporteEditor({ bolao, onSaved, onCancel }: Props) 
               <input className={styles.esporteEditorInput} value={form.nome}
                 onChange={e => set('nome', e.target.value)} placeholder="ex: Eliminatórias FIFA 2026" />
             </label>
-            <div className={styles.esporteEditorLabel}>
-              Competição
-              <div className={styles.esporteCompGrid}>
-                {COMPETICOES.map(c => {
-                  const ativa = form.competicao === c.id
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      className={`${styles.esporteCompChip} ${ativa ? styles.esporteCompChipAtivo : ''}`}
-                      style={ativa ? { borderColor: c.cor, background: c.cor + '22' } : {}}
-                      onClick={() => selecionarCompeticao(c)}
-                      title={c.label}
-                    >
-                      {c.logo
-                        ? <img src={c.logo} alt={c.label} className={styles.esporteCompLogo} />
-                        : c.flag
-                          ? <span className={`fi fi-${c.flag}`} style={{ fontSize: 20, borderRadius: 3 }} />
-                          : null
-                      }
-                      <span className={styles.esporteCompLabel}>{c.label}</span>
-                      {c.fonte === 'fifa' && <span className={styles.esporteCompBadge}>FIFA API</span>}
-                    </button>
-                  )
-                })}
-              </div>
-              {/* campo livre para campeonatos não listados */}
-              {form.competicao === 'outro' && (
-                <input
-                  className={styles.esporteEditorInput}
-                  style={{ marginTop: 8 }}
-                  placeholder="Nome do campeonato"
-                  value={form.descricao || ''}
-                  onChange={e => set('descricao', e.target.value)}
-                />
-              )}
-            </div>
+            <label className={styles.esporteEditorLabel}>
+              Nome da competição
+              <input className={styles.esporteEditorInput} value={form.competicao}
+                onChange={e => set('competicao', e.target.value)} placeholder="ex: UEFA Champions League 2025/26" />
+            </label>
             <label className={styles.esporteEditorLabel}>
               Descrição (interna)
               <input className={styles.esporteEditorInput} value={form.descricao || ''}
@@ -293,7 +266,7 @@ export default function BolaoEsporteEditor({ bolao, onSaved, onCancel }: Props) 
             <p className={styles.esporteEditorHint}>
               Configure os prêmios por colocação. &quot;% do prêmio&quot; divide o valor entre os acertadores daquele lugar. Total deve somar 100%.
             </p>
-            {(form.premiacao || PREMIACAO_DEFAULT).map((item, i) => (
+            {(form.premiacao || []).map((item, i) => (
               <div key={i} className={styles.esportePremioRow}>
                 <input className={`${styles.esporteEditorInput} ${styles.esportePremioEmoji}`}
                   value={item.emoji} onChange={e => setPremiacao(i, 'emoji', e.target.value)} />

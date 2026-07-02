@@ -4,6 +4,7 @@ import { verificarToken } from '@/lib/auth'
 import { criarPixMP } from '@/lib/mercadopago'
 import { gerarPixLocal } from '@/lib/pix-local'
 import { notificarAcrescimo } from '@/lib/whatsapp'
+import { enviarAcrescimo } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
   const token = req.cookies.get('admin_token')?.value
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
   // 2. Participantes pagos
   const { data: parts } = await supabase
     .from('participantes')
-    .select('id, nome, cotas, telefone')
+    .select('id, nome, cotas, telefone, email')
     .eq('concurso', concurso)
     .eq('bolao_slug', bolao_slug)
     .eq('status', 'pago')
@@ -38,12 +39,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Nenhum participante pago encontrado' }, { status: 400 })
   }
 
-  // 3. Calcular cotas restantes e acréscimo
+  // 3. Calcular cotas restantes e acréscimo (proporcional ao nº de cotas de cada participante)
   const cotasVendidas = [...new Set(parts.flatMap(p => p.cotas as string[]))]
   const cotas_restantes = Number(bolao.total_cotas) - cotasVendidas.length
   const valor_restante  = cotas_restantes * Number(bolao.valor_cota)
-  const acrescimo       = cotas_restantes > 0
-    ? parseFloat((valor_restante / parts.length).toFixed(2))
+  const totalCotasPagas = parts.reduce((sum, p) => sum + (p.cotas as string[]).length, 0)
+  const acrescimoPorCota = cotas_restantes > 0 && totalCotasPagas > 0
+    ? valor_restante / totalCotasPagas
     : 0
 
   const erros: string[] = []
@@ -51,6 +53,7 @@ export async function POST(req: NextRequest) {
   // 4. Processar cada participante
   for (const part of parts) {
     try {
+      const acrescimo = parseFloat((acrescimoPorCota * (part.cotas as string[]).length).toFixed(2))
       let pixCode = ''
       let paymentId = `local-${part.id.slice(0, 20)}`
 
@@ -78,7 +81,13 @@ export async function POST(req: NextRequest) {
         await notificarAcrescimo(
           part.telefone, part.nome, part.cotas as string[],
           acrescimo, pixCode, bolao.nome
-        )
+        ).catch(() => {})
+      }
+      if (acrescimo > 0 && part.email) {
+        await enviarAcrescimo(
+          part.email, part.nome, part.cotas as string[],
+          acrescimo, pixCode, bolao.nome
+        ).catch(() => {})
       }
     } catch (err) {
       erros.push(`${part.nome}: ${String(err)}`)
@@ -92,7 +101,7 @@ export async function POST(req: NextRequest) {
     ok: true,
     cotas_restantes,
     valor_restante,
-    acrescimo,
+    acrescimo_por_cota: parseFloat(acrescimoPorCota.toFixed(2)),
     participantes: parts.length,
     erros,
   })

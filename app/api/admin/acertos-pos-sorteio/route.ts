@@ -4,19 +4,12 @@ import { verificarToken } from '@/lib/auth'
 import { notificarAcertosIndividual } from '@/lib/whatsapp'
 import { enviarResultado } from '@/lib/email'
 
-// Normaliza o nome da faixa para comparação (Caixa usa nomes diferentes dos nossos labels)
-// Ex: "11 acertos" → "11", "ONZE" → "11", "Duque" → "dupla", "DUPLA" → "dupla"
-// Normaliza faixa para "N acertos" — formato padrão da Caixa e dos nossos labels
-// Mantém compatibilidade com registros antigos que usavam nomes ("DUPLA", "11 PONTOS" etc.)
 function normFaixa(f: string): string {
   const s = f.toLowerCase().trim()
-  // Já no formato correto: "N acertos"
   const mAcertos = s.match(/^(\d+)\s*acertos?$/)
   if (mAcertos) return `${mAcertos[1]} acertos`
-  // Legado: "N pontos" (Lotofácil antigo)
   const mPontos = s.match(/^(\d+)\s*pontos?$/)
   if (mPontos) return `${mPontos[1]} acertos`
-  // Legado: nomes por extenso
   const legado: Record<string, string> = {
     dupla: '2 acertos', terno: '3 acertos', quadra: '4 acertos', quina: '5 acertos', sena: '6 acertos',
     duque: '2 acertos',
@@ -25,7 +18,6 @@ function normFaixa(f: string): string {
   return legado[s] ?? s
 }
 
-// Calcula o prêmio total do bolão com base nas apostas premiadas e nos prêmios da Caixa
 function calcPremioTotal(
   apostasPremiadas: { acertos: number; premio: string }[],
   premiosCaixa: { faixa: string; valor: number }[]
@@ -36,15 +28,13 @@ function calcPremioTotal(
   }
   let total = 0
   for (const a of apostasPremiadas) {
-    const key = normFaixa(a.premio)
-    const val = valorPorFaixa.get(key) ?? 0
-    total += val
+    total += valorPorFaixa.get(normFaixa(a.premio)) ?? 0
   }
   return total
 }
 
-// POST — envia WhatsApp e/ou email com acertos individuais para cada participante pago
-// canal: 'wa' | 'email' | 'ambos' (default: 'wa')
+// POST — envia WhatsApp e/ou email com acertos individuais
+// canal: 'wa' | 'email' (default: 'wa')
 export async function POST(req: NextRequest) {
   const token = req.cookies.get('admin_token')?.value
   if (!token || !(await verificarToken(token))) {
@@ -75,9 +65,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Resultado da conferência não disponível. Confira o sorteio primeiro.' }, { status: 409 })
   }
 
-  const apostasData = bolao.apostas_data as { bets?: number[][] } | null
-  const apostas: number[][] = apostasData?.bets || []
-
+  const apostas: number[][] = (bolao.apostas_data as { bets?: number[][] } | null)?.bets || []
   if (!apostas.length) {
     return NextResponse.json({ error: 'Apostas não carregadas no bolão.' }, { status: 409 })
   }
@@ -94,7 +82,6 @@ export async function POST(req: NextRequest) {
   }
 
   const { data: participantes } = await partQuery
-
   if (!participantes?.length) {
     return NextResponse.json({ error: 'Nenhum participante pago encontrado.' }, { status: 404 })
   }
@@ -103,9 +90,7 @@ export async function POST(req: NextRequest) {
   const loteriaLabel = bolao.loteria === 'lotofacil' ? 'Lotofácil' : bolao.loteria === 'quina' ? 'Quina' : 'Mega-Sena'
   const minAcertos = bolao.loteria === 'lotofacil' ? 11 : bolao.loteria === 'quina' ? 2 : 4
 
-  // premioPerCota = soma dos prêmios das apostas premiadas ÷ total de cotas
-  const apostasPremiadas = rc.apostas_premiadas ?? []
-  const premioTotal = rc.premios_caixa ? calcPremioTotal(apostasPremiadas, rc.premios_caixa) : 0
+  const premioTotal = rc.premios_caixa ? calcPremioTotal(rc.apostas_premiadas ?? [], rc.premios_caixa) : 0
   const premioPerCota = premioTotal / (Number(bolao.total_cotas) || 1)
 
   let enviados = 0
@@ -115,32 +100,28 @@ export async function POST(req: NextRequest) {
     participantes.map(async (p) => {
       const cotasP = (p.cotas as number[]) || []
       const minhaApostas = cotasP.map(c => apostas[c - 1]).filter(Boolean)
-      const apostasGanhadoras = minhaApostas.filter(ap =>
+      const ganhou = minhaApostas.some(ap =>
         ap.filter(n => rc.dezenas_sorteadas!.includes(n)).length >= minAcertos
       )
-      const ganhou = apostasGanhadoras.length > 0
+      const premioIndividual = ganhou && premioPerCota > 0 ? cotasP.length * premioPerCota : undefined
 
-      // Prêmio individual = cotas do participante × prêmio por cota
-      const premioIndividual = ganhou && premioPerCota > 0
-        ? cotasP.length * premioPerCota
-        : undefined
-
-      if (canal === 'wa' || canal === 'ambos') {
+      if (canal === 'wa') {
         if (p.telefone) {
-          try {
-            await notificarAcertosIndividual(p.telefone, p.nome, bolao.nome, parseInt(concurso), rc.dezenas_sorteadas!, apostas, p.cotas as string[])
-            enviados++
-          } catch { erros++ }
-        } else { erros++ }
-      }
-
-      if (canal === 'email' || canal === 'ambos') {
+          notificarAcertosIndividual(p.telefone, p.nome, bolao.nome, parseInt(concurso), rc.dezenas_sorteadas!, apostas, p.cotas as string[]).catch(() => {})
+        }
         if (p.email) {
           try {
             await enviarResultado(p.email, p.nome, parseInt(concurso), dezenasStr, ganhou, bolao.nome, premioIndividual, loteriaLabel, premioTotal, premioPerCota)
-            if (canal === 'email') enviados++
-          } catch { if (canal === 'email') erros++ }
-        } else { if (canal === 'email') erros++ }
+            enviados++
+          } catch { erros++ }
+        } else { erros++ }
+      } else if (canal === 'email') {
+        if (p.email) {
+          try {
+            await enviarResultado(p.email, p.nome, parseInt(concurso), dezenasStr, ganhou, bolao.nome, premioIndividual, loteriaLabel, premioTotal, premioPerCota)
+            enviados++
+          } catch { erros++ }
+        } else { erros++ }
       }
     })
   )

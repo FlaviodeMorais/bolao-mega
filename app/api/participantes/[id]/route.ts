@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verificarToken } from '@/lib/auth'
 import { notificarPagamento } from '@/lib/whatsapp'
+import { enviarConfirmacaoPagamento } from '@/lib/email'
 
 async function isAdmin(req: NextRequest) {
   const token = req.cookies.get('admin_token')?.value
@@ -21,7 +22,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   // Busca dados do participante antes de atualizar
   const { data: part } = await supabase
     .from('participantes')
-    .select('nome, cotas, total, concurso, telefone, status, acrescimo, acrescimo_pago')
+    .select('nome, cotas, total, concurso, telefone, email, status, acrescimo, acrescimo_pago, bolao_slug')
     .eq('id', params.id)
     .single()
 
@@ -32,12 +33,25 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Notifica participante via WhatsApp ao confirmar pagamento manualmente
+  // Notifica participante ao confirmar pagamento manualmente
   if (part && fields.status === 'pago' && part.status !== 'pago') {
     await notificarPagamento(
       part.nome, part.cotas, part.concurso,
       Number(part.total), part.telefone, params.id
     )
+    if (part.email && part.bolao_slug) {
+      const { data: bolaoInfo } = await supabase
+        .from('boloes')
+        .select('nome, num_apostas, dezenas')
+        .eq('slug', part.bolao_slug)
+        .single()
+      if (bolaoInfo) {
+        await enviarConfirmacaoPagamento(
+          part.email, part.nome, part.cotas, Number(part.total),
+          part.concurso, bolaoInfo.nome, bolaoInfo.num_apostas, bolaoInfo.dezenas
+        ).catch(() => {})
+      }
+    }
   }
 
   // Notifica ao confirmar acréscimo manualmente

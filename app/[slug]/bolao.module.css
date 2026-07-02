@@ -159,7 +159,8 @@
 .apostaBolas {
   flex: 1; min-width: 0;
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
   align-items: center;
 }
 .apostaBola {

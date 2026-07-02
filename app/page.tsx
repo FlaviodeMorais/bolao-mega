@@ -15,14 +15,13 @@ interface SorteioInfo {
   premio: string
   premioLabel: string
   data: string
-  dataSomenteData: string
   diaSemana: string
   dezenas: number[]
   corA: string
   corGlow: string
 }
 
-const DIAS = ['dom.','seg.','ter.','qua.','qui.','sex.','sáb.']
+const DIAS = ['Domingo','Segunda-Feira','Terça-Feira','Quarta-Feira','Quinta-Feira','Sexta-Feira','Sábado']
 
 function premioEmPalavras(val: number): string {
   if (val >= 1e9) return `R$${(val / 1e9).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} Bilhão`
@@ -34,7 +33,7 @@ function premioEmPalavras(val: number): string {
   return `R$${(val / 1e3).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} Mil`
 }
 
-const LOTERIAS_HOME: Omit<SorteioInfo, 'concurso' | 'premio' | 'premioLabel' | 'data' | 'dataSomenteData' | 'diaSemana' | 'dezenas'>[] = [
+const LOTERIAS_HOME: Omit<SorteioInfo, 'concurso' | 'premio' | 'premioLabel' | 'data' | 'diaSemana' | 'dezenas'>[] = [
   { id: 'mega',      label: 'Mega-Sena',  apiSlug: 'megasena',  corA: '#00AB67', corGlow: 'rgba(0,171,103,0.18)' },
   { id: 'quina',     label: 'Quina',      apiSlug: 'quina',     corA: '#005DA4', corGlow: 'rgba(0,93,164,0.18)'  },
   { id: 'lotofacil', label: 'Lotofácil',  apiSlug: 'lotofacil', corA: '#803594', corGlow: 'rgba(128,53,148,0.18)'},
@@ -63,7 +62,7 @@ function useCountdown(dataStr: string) {
   return texto
 }
 
-function SorteioCard({ s, boloes, host, msgSemBolao }: { s: SorteioInfo; boloes: Bolao[]; host: string; msgSemBolao: string }) {
+function SorteioCard({ s, boloes, host }: { s: SorteioInfo; boloes: Bolao[]; host: string }) {
   const countdown = useCountdown(s.data)
   const boloesLoteria = boloes.filter(b => b.ativo && (b.loteria ?? 'mega') === s.id)
 
@@ -98,9 +97,10 @@ function SorteioCard({ s, boloes, host, msgSemBolao }: { s: SorteioInfo; boloes:
         {s.data && (
           <div className={styles.sorteioDataWrap}>
             <div className={styles.sorteioDataLabel}>Sorteio</div>
-            <div className={styles.sorteioDataVal}>
-              {s.diaSemana ? `${s.diaSemana}, ` : ''}{s.dataSomenteData || s.data}
-            </div>
+            {s.diaSemana && (
+              <div className={styles.sorteioDataDia}>{s.diaSemana}</div>
+            )}
+            <div className={styles.sorteioDataVal}>{s.data}</div>
             {countdown && (
               <div className={styles.sorteioDataEnc}>
                 Apostas se encerram em<br />
@@ -129,9 +129,6 @@ function SorteioCard({ s, boloes, host, msgSemBolao }: { s: SorteioInfo; boloes:
             ))}
           </div>
         )}
-        {boloesLoteria.length === 0 && (
-          <div className={styles.empty}>{msgSemBolao}</div>
-        )}
 
         {/* Último resultado */}
         {s.dezenas.length > 0 && (
@@ -153,27 +150,25 @@ function SorteioCard({ s, boloes, host, msgSemBolao }: { s: SorteioInfo; boloes:
 }
 
 function EsporteCardCarrossel({ boloesEsporte }: { boloesEsporte: BolaoEsporte[] }) {
-  const corEsporte = '#1D6EA6'
   return (
     <div className={`${styles.sorteioCard} ${styles.esporteCarrosselCard}`}>
-      <div className={styles.sorteioCardHead} style={{ borderBottom: `1px solid ${corEsporte}30` }}>
-        <img src="/icon" alt="Bet+" style={{ width: 24, height: 24, borderRadius: 6, objectFit: 'cover' }} />
+      <div className={styles.sorteioCardHead} style={{ borderBottom: '1px solid rgba(29,110,166,0.25)' }}>
+        <span style={{ fontSize: 20 }}>⚽</span>
         <span className={styles.sorteioCardTitle}>Bolão Esportivo</span>
-        {boloesEsporte.length > 0 && (
-          <span className={styles.sorteioBadge} style={{ background: `${corEsporte}30`, borderColor: `${corEsporte}55`, color: '#60b4f0' }}>
-            {boloesEsporte.length} ativo{boloesEsporte.length > 1 ? 's' : ''}
-          </span>
-        )}
+        <span className={styles.sorteioBadge} style={{ background: 'rgba(29,110,166,0.2)', borderColor: 'rgba(29,110,166,0.35)', color: '#60b4f0' }}>
+          FIFA 2026
+        </span>
       </div>
       <div className={styles.sorteioCardBody}>
+        <img src="/1684502982782.gif" alt="FIFA 2026" className={styles.esporteCarrosselGif} />
         {boloesEsporte.length > 0 ? (
-          <div className={styles.cardBoloes}>
+          <div className={styles.cardBoloes} style={{ marginTop: 16 }}>
             <div className={styles.cardBoloesTitulo} style={{ color: '#60b4f0' }}>
-              🏆 Bolões disponíveis
+              ⚽ Bolões disponíveis
             </div>
             {boloesEsporte.map(b => (
               <a key={b.id} href={`/esporte/${b.slug}`} className={styles.cardBolaoItem}
-                style={{ borderColor: `${corEsporte}30` }}>
+                style={{ borderColor: 'rgba(29,110,166,0.25)' }}>
                 <div className={styles.cardBolaoInfo}>
                   <span className={styles.cardBolaoNome}>{b.nome}</span>
                   {b.descricao && <span className={styles.cardBolaoMeta}>{b.descricao}</span>}
@@ -184,7 +179,7 @@ function EsporteCardCarrossel({ boloesEsporte }: { boloesEsporte: BolaoEsporte[]
             ))}
           </div>
         ) : (
-          <div className={styles.empty} style={{ paddingTop: 48, paddingBottom: 48 }}>
+          <div className={styles.empty} style={{ marginTop: 16 }}>
             Nenhum bolão esportivo ativo no momento.
           </div>
         )}
@@ -195,7 +190,7 @@ function EsporteCardCarrossel({ boloesEsporte }: { boloesEsporte: BolaoEsporte[]
 
 const AUTOPLAY_MS = 5000
 
-function CarrosselSorteios({ sorteios, boloes, boloesEsporte, host, msgSemBolao }: { sorteios: SorteioInfo[]; boloes: Bolao[]; boloesEsporte: BolaoEsporte[]; host: string; msgSemBolao: string }) {
+function CarrosselSorteios({ sorteios, boloes, boloesEsporte, host }: { sorteios: SorteioInfo[]; boloes: Bolao[]; boloesEsporte: BolaoEsporte[]; host: string }) {
   const totalSlides = sorteios.length + 1 // +1 para esporte
   const [ativo, setAtivo] = useState(0)
   const ref = useRef<HTMLDivElement>(null)
@@ -252,7 +247,7 @@ function CarrosselSorteios({ sorteios, boloes, boloesEsporte, host, msgSemBolao 
   return (
     <div className={styles.sorteioWrap}>
       <div ref={ref} className={styles.sorteioTrack}>
-        {sorteios.map(s => <SorteioCard key={s.id} s={s} boloes={boloes} host={host} msgSemBolao={msgSemBolao} />)}
+        {sorteios.map(s => <SorteioCard key={s.id} s={s} boloes={boloes} host={host} />)}
         <EsporteCardCarrossel boloesEsporte={boloesEsporte} />
       </div>
       {totalSlides > 1 && (
@@ -278,9 +273,8 @@ export default function Home() {
   const [loading, setLoading]             = useState(true)
   const [host, setHost]                   = useState('')
   const [sorteios, setSorteios]           = useState<SorteioInfo[]>([])
-  const [grupoNome, setGrupoNome]         = useState('Bolões BetMais')
+  const [grupoNome, setGrupoNome]         = useState('BOLÃO 💯')
   const [appNome, setAppNome]             = useState('Bolões')
-  const [msgSemBolao, setMsgSemBolao]     = useState('Nenhum bolão disponível no momento')
   const [loginAberto, setLoginAberto]     = useState(false)
 
   const carregar = useCallback((inicial = false) => {
@@ -298,9 +292,8 @@ export default function Home() {
     setHost(window.location.host)
     carregar(true)
     fetch('/api/config-publica').then(r => r.json()).then(d => {
-      if (d?.app?.grupo_nome)     setGrupoNome(d.app.grupo_nome)
-      if (d?.app?.nome)           setAppNome(d.app.nome)
-      if (d?.home?.msg_sem_bolao) setMsgSemBolao(d.home.msg_sem_bolao)
+      if (d?.app?.grupo_nome) setGrupoNome(d.app.grupo_nome)
+      if (d?.app?.nome)       setAppNome(d.app.nome)
     }).catch(() => {})
     const id = setInterval(() => carregar(), 60000)
     const onFocus = () => carregar()
@@ -308,49 +301,37 @@ export default function Home() {
     return () => { clearInterval(id); window.removeEventListener('focus', onFocus) }
   }, [carregar])
 
-  const carregarSorteios = useCallback(() => {
+  useEffect(() => {
     Promise.all(
-      LOTERIAS_HOME.map(l => Promise.all([
-        fetch(`/api/resultados/${l.apiSlug}`).then(r => r.json()).catch(() => null),
-        fetch(`/api/concurso-ativo?loteria=${l.id}`).then(r => r.json()).catch(() => null),
-      ]))
+      LOTERIAS_HOME.map(l =>
+        Promise.all([
+          fetch(`/api/resultados/${l.apiSlug}`).then(r => r.json()).catch(() => null),
+          fetch(`/api/concurso-ativo?loteria=${l.id}`).then(r => r.json()).catch(() => null),
+        ])
+      )
     ).then(results => {
       const lista: SorteioInfo[] = []
       LOTERIAS_HOME.forEach((l, i) => {
         const [d, ativo] = results[i]
-
-        // Concurso/data/prêmio definidos manualmente no admin têm prioridade
-        // sobre o cálculo automático (último sorteado + 1) vindo da API da Caixa.
-        const concursoAtivo = ativo?.concurso ? Number(ativo.concurso) : 0
-
-        // Prêmio: sempre usa API da Caixa (valor fresco), ativo.premio só como fallback
         const val = d?.valorEstimadoProximoConcurso
-        const premio = val ? `R$ ${val.toLocaleString('pt-BR')}` : (ativo?.premio || 'Acumulando')
+        const premio = val
+          ? `R$ ${val.toLocaleString('pt-BR')}`
+          : 'Acumulando'
         const premioLabel = val ? `(${premioEmPalavras(val)})` : ''
-
-        // Data: quando admin selecionou concurso, usa ativo.data (específica daquele concurso).
-        // Só usa dataCaixa (dataProximoConcurso = ultimo+1) quando não há seleção manual.
-        const dataCaixa: string = d?.dataProximoConcurso || ''
-        const dataStr: string = ativo?.data || dataCaixa
+        const dataStr: string = ativo?.data || d?.dataProximoConcurso || ''
         let diaSemana = ''
-        let dataSomenteData = ''
-        const mData = (concursoAtivo
-          ? dataStr.match(/(\d{1,2})\/(\d{2})\/(\d{4})/)
-          : null)
-          || dataCaixa.match(/^(\d{1,2})\/(\d{2})\/(\d{4})/)
-          || dataStr.match(/(\d{1,2})\/(\d{2})\/(\d{4})/)
+        const mData = dataStr.match(/^(\d{1,2})\/(\d{2})\/(\d{4})/)
         if (mData) {
           const dt = new Date(+mData[3], +mData[2] - 1, +mData[1])
           diaSemana = DIAS[dt.getDay()] || ''
-          dataSomenteData = `${mData[1].padStart(2, '0')}/${mData[2]}/${mData[3]}`
         }
+        const concursoAtivo = parseInt(ativo?.concurso || '', 10)
         lista.push({
           ...l,
           concurso: concursoAtivo || (d?.numero ? (d.numero + 1) : 0),
           premio,
           premioLabel,
           data: dataStr,
-          dataSomenteData,
           diaSemana,
           dezenas: (d?.listaDezenas || []).map(Number),
         })
@@ -358,14 +339,6 @@ export default function Home() {
       setSorteios(lista)
     })
   }, [])
-
-  useEffect(() => {
-    carregarSorteios()
-    const id = setInterval(carregarSorteios, 60000)
-    const onFocus = () => carregarSorteios()
-    window.addEventListener('focus', onFocus)
-    return () => { clearInterval(id); window.removeEventListener('focus', onFocus) }
-  }, [carregarSorteios])
 
   // Bolões sem loteria específica ou que não estão no carrossel
   const boloesAtivos = boloes.filter(b => b.ativo)
@@ -379,7 +352,7 @@ export default function Home() {
 
       {/* ── Header ── */}
       <div className={styles.header}>
-        <img src="/icon" alt="Bet+" style={{ width: 42, height: 42, borderRadius: 10, objectFit: 'cover' }} />
+        <TrevoIcon size={26} />
         <div className={styles.headerBrand}>
           {grupoNome}
           <span className={styles.headerSub}>Bolões de Loteria & Esportes</span>
@@ -394,7 +367,7 @@ export default function Home() {
       {/* ── Carrossel: um card por loteria com seus bolões e resultados ── */}
       {loading
         ? <div className={styles.sorteioWrap}><div className={styles.empty}>Carregando...</div></div>
-        : <CarrosselSorteios sorteios={sorteios} boloes={boloes} boloesEsporte={boloesEsporte} host={host} msgSemBolao={msgSemBolao} />
+        : <CarrosselSorteios sorteios={sorteios} boloes={boloes} boloesEsporte={boloesEsporte} host={host} />
       }
 
       {/* Bolões de loterias fora do carrossel (raro) */}

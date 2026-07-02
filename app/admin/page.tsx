@@ -6,6 +6,7 @@ import { useConferencia } from '@/hooks/admin/useConferencia'
 import { useBoloes } from '@/hooks/admin/useBoloes'
 import { useConcurso } from '@/hooks/admin/useConcurso'
 import { useParticipantes } from '@/hooks/admin/useParticipantes'
+import { useAdminBranding, useWhatsappHealth } from '@/hooks/admin/useAdminShell'
 import styles from './admin.module.css'
 import EsporteAdmin from './EsporteAdmin'
 import AdminHeader from '@/components/admin/AdminHeader'
@@ -23,6 +24,7 @@ import IconLibrary from '@/components/admin/IconLibrary'
 
 import type { Bolao } from '@/hooks/admin/useBoloes'
 import type { Concurso } from '@/hooks/admin/useConcurso'
+import type { BolaoDetailPanelProps } from '@/components/admin/bolao-detail/types'
 
 function formatTel(tel?: string): string {
   if (!tel) return '—'
@@ -39,30 +41,27 @@ function whatsappUrl(tel?: string): string {
   return `https://wa.me/${num}`
 }
 
+type AbaPrincipal = 'operacao' | 'ferramentas' | 'config'
+
+const ABAS_PRINCIPAIS: { id: AbaPrincipal; label: string; icon: string }[] = [
+  { id: 'operacao',    label: 'Operação',     icon: '📋' },
+  { id: 'ferramentas', label: 'Ferramentas',  icon: '🛠️' },
+  { id: 'config',      label: 'Configurações', icon: '⚙️' },
+]
+
 export default function AdminPage() {
-  const [logado, setLogado]       = useState(false)
-  const [verificando, setVerif]   = useState(true)
-  const [senha, setSenha]         = useState('')
-  const [errLogin, setErrLogin]   = useState('')
-  const [grupoNome, setGrupoNome] = useState('Bolões BetMais')
-  const [appNome, setAppNome]     = useState('Bolões')
-  const [abaAdmin, setAbaAdmin]   = useState<'loteria'|'esporte'|'config'>('loteria')
+  const [logado, setLogado]     = useState(false)
+  const [verificando, setVerif] = useState(true)
+  const [senha, setSenha]       = useState('')
+  const [errLogin, setErrLogin] = useState('')
+  const [abaPrincipal, setAbaPrincipal] = useState<AbaPrincipal>('operacao')
+  const [acertosDestinatario, setAcertosDestinatario] = useState<string>('todos')
+  const { grupoNome, appNome }  = useAdminBranding()
+  const { waStatus, waMsg }     = useWhatsappHealth(logado)
 
   useEffect(() => {
-    // Verifica cookie existente ao carregar — evita pedir senha duas vezes
-    fetch('/api/auth').then(r => {
-      if (r.ok) setLogado(true)
-    }).catch(() => {}).finally(() => setVerif(false))
-
-    fetch('/api/config-publica').then(r => r.json()).then(d => {
-      if (d?.app?.grupo_nome) setGrupoNome(d.app.grupo_nome)
-      if (d?.app?.nome)       setAppNome(d.app.nome)
-    }).catch(() => {})
+    fetch('/api/auth').then(r => { if (r.ok) setLogado(true) }).catch(() => {}).finally(() => setVerif(false))
   }, [])
-
-  // WhatsApp health (inline — pequeno e sem domínio próprio)
-  const [waStatus, setWaStatus] = useState<'ok' | 'erro' | ''>('')
-  const [waMsg, setWaMsg]       = useState('')
 
   // ── Hooks de domínio ─────────────────────────────────────────
   const boloes   = useBoloes()
@@ -87,7 +86,7 @@ export default function AdminPage() {
   const criarBolao     = boloes.criarBolao
 
   // ConcursoPanel
-  const { loteriaPanel, mudarLoteria, proximos, setProximos, loadingCaixa, editDatas, setEditDatas, buscarCaixa } = concurso
+  const { loteriaPanel, mudarLoteria, proximos, setProximos, loadingCaixa, editDatas, setEditDatas, buscarCaixa, resultadoInfo } = concurso
 
   // BolaoDetailPanel — participantes
   const { loadingParts, confirmandoTodos, selecionados, enviandoComp,
@@ -122,7 +121,6 @@ export default function AdminPage() {
 
   const [enviarAcertosMsg, setEnviarAcertosMsg] = useState('')
   const [enviarAcertosEmailMsg, setEnviarAcertosEmailMsg] = useState('')
-  const [acertosDestinatario, setAcertosDestinatario] = useState<string>('todos')
 
   const enviarAcertosPorCanal = async (canal: 'wa' | 'email', setMsg: (m: string) => void) => {
     if (!bolaoAtual || !concursoAtivo) return
@@ -179,7 +177,7 @@ export default function AdminPage() {
   const carregarInicio = useCallback(async () => {
     const [b, ca] = await Promise.all([
       fetch('/api/boloes').then(r => r.json()),
-      fetch('/api/concurso-ativo').then(r => r.json()),
+      fetch('/api/concurso-ativo?loteria=mega').then(r => r.json()),
     ])
     boloes.setBoloes(b.boloes || []) // setBoloes do useBoloes
     concurso.setFromApi(ca.concurso || '', ca.data || '', ca.premio || '') // setFromApi do useConcurso
@@ -187,15 +185,6 @@ export default function AdminPage() {
 
   useEffect(() => { if (logado) carregarInicio() }, [logado, carregarInicio])
 
-  useEffect(() => {
-    if (!logado) return
-    const checarWA = () => fetch('/api/whatsapp/health').then(r => r.json())
-      .then(d => { setWaStatus(d.connected ? 'ok' : 'erro'); setWaMsg(d.msg || '') })
-      .catch(() => { setWaStatus('erro'); setWaMsg('Sem resposta do Whapi') })
-    checarWA()
-    const id = setInterval(checarWA, 30000)
-    return () => clearInterval(id)
-  }, [logado])
 
   // ── ORQUESTRAÇÃO: bolão + participantes + conferência ─────────
   async function selecionarBolao(b: Bolao) {
@@ -203,13 +192,17 @@ export default function AdminPage() {
     boloes.aplicarConfigDoBolao(b)
     conf.limparAutoRef()
     conf.restaurarResultadoSalvo(b.resultado_conferencia)
-    // Troca o painel de loteria para a loteria do bolão selecionado
-    const lot = (b.loteria ?? 'mega') as import('@/lib/loterias').LoteriaId
-    concurso.mudarLoteria(lot)
-    // Busca o concurso ativo correto para esta loteria (não usa o estado antigo)
-    const ca = await fetch(`/api/concurso-ativo?loteria=${lot}`).then(r => r.json()).catch(() => null)
-    const num = ca?.concurso || ''
-    parts.carregarPartsBolao(b.slug, num)
+    const loteria = (b.loteria as import('@/lib/loterias').LoteriaId) || 'mega'
+    concurso.mudarLoteria(loteria)
+    fetch(`/api/concurso-ativo?loteria=${loteria}`)
+      .then(r => r.json())
+      .then(ca => {
+        concurso.setFromApi(ca.concurso || '', ca.data || '', ca.premio || '')
+        parts.carregarPartsBolao(b.slug, ca.concurso || '')
+      })
+      .catch(() => {
+        if (concursoAtivo) parts.carregarPartsBolao(b.slug, concursoAtivo)
+      })
   }
 
   function fecharBolao() {
@@ -257,6 +250,86 @@ export default function AdminPage() {
     if (bolaoAtual) parts.carregarPartsBolao(bolaoAtual.slug, String(c.num))
   }
 
+  // ── Props consolidadas do BolaoDetailPanel ─────────────────────
+  const bolaoDetailProps: BolaoDetailPanelProps | null = bolaoAtual ? {
+    bolao: bolaoAtual,
+    concursoAtivo,
+    partsBolao,
+    pagosLista,
+    pendentesLista,
+    cotasLivres,
+    arrecadado,
+    loadingParts,
+    confirmandoTodos,
+    selecionados,
+    enviandoComp,
+    lembreteMsg,
+    compMsg,
+    apostasMsg,
+    showApostasModal,
+    apostasTexto,
+    uploadingApostas,
+    showConferir,
+    conferirResult,
+    conferirMsg,
+    conferindoRes,
+    conferindoManual,
+    dezenasInput,
+    showEncerrar,
+    encerrando,
+    encerrarOk,
+    showConfig,
+    editDezenas,
+    editApostas,
+    editCotas,
+    editTaxa,
+    precoCaixa,
+    custoApostas,
+    totalBolao,
+    valorPorCota,
+    configSalva,
+    salvando,
+    formatTel,
+    whatsappUrl,
+    onFechar: fecharBolao,
+    onAtualizarParts: () => carregarPartsBolao(bolaoAtual.slug, concursoAtivo),
+    onConfirmarTodos: confirmarTodos,
+    onEnviarLembrete: enviarLembrete,
+    onToggleSelecionado: toggleSelecionado,
+    onSelecionarTodosPagos: selecionarTodosPagos,
+    onLimparSelecao: () => parts.setSelecionados(new Set()),
+    onImprimirSelecionados: imprimirSelecionados,
+    onEnviarComprovante: enviarComprovante,
+    onConfirmarPagamento: confirmarPagamento,
+    onConfirmarAcrescimo: confirmarAcrescimo,
+    onExcluir: excluir,
+    onOpenApostas: () => setShowApostasModal(true),
+    onCloseApostas: () => { setShowApostasModal(false); setApostasTexto('') },
+    onApostasTextoChange: setApostasTexto,
+    onSalvarApostas: salvarApostas,
+    onRemoverApostas: removerApostas,
+    onToggleConferir: () => { setShowConferir(v => !v); setConferirMsg('') },
+    onConferirSorteio: () => conferirSorteio(),
+    onConferirManual: conferirManual,
+    onResetarConferencia: resetarConferencia,
+    onDezenasInputChange: setDezenasInput,
+    onEnviarAcertos: enviarAcertos,
+    enviarAcertosMsg,
+    onEnviarAcertosEmail: enviarAcertosEmail,
+    enviarAcertosEmailMsg,
+    acertosDestinatario,
+    onAcertosDestinatarioChange: setAcertosDestinatario,
+    onToggleEncerrar: () => { setShowEncerrar(v => !v); setEncerrarOk(null) },
+    onEncerrarBolao: encerrarBolao,
+    onToggleConfig: () => setShowConfig(v => !v),
+    onEditDezenasChange: setEditDezenas,
+    onEditApostasChange: setEditApostas,
+    onEditCotasChange: setEditCotas,
+    onEditTaxaChange: setEditTaxa,
+    onSalvarConfig: salvarConfig,
+    onInserirApostasGeradas: inserirApostasGeradas,
+  } : null
+
 
 
   // ── LOGIN ─────────────────────────────────────────────────────
@@ -281,40 +354,8 @@ export default function AdminPage() {
         appNome={appNome}
       />
 
-      {/* ── NAVEGAÇÃO PRINCIPAL ── */}
-      <nav className={styles.adminNav}>
-        <button
-          type="button"
-          className={`${styles.adminNavBtn} ${abaAdmin === 'loteria' ? styles.adminNavBtnAtivo : ''}`}
-          onClick={() => setAbaAdmin('loteria')}
-        >
-          <img src="/icon" alt="Bet+" className={styles.adminNavLogo} />
-          Bolões Loteria
-        </button>
-        <button
-          type="button"
-          className={`${styles.adminNavBtn} ${abaAdmin === 'esporte' ? styles.adminNavBtnAtivo : ''}`}
-          onClick={() => setAbaAdmin('esporte')}
-        >
-          <img src="/icon" alt="Bet+" className={styles.adminNavLogo} />
-          Bolões Esportivos
-        </button>
-        <button
-          type="button"
-          className={`${styles.adminNavBtn} ${abaAdmin === 'config' ? styles.adminNavBtnAtivo : ''}`}
-          onClick={() => setAbaAdmin('config')}
-        >
-          <img src="/icon" alt="Bet+" className={styles.adminNavLogo} />
-          Configurações
-        </button>
-      </nav>
-
       <div className={styles.content}>
-
-      {/* ══════════════════════════════════════════════════════ */}
-      {/* ABA: BOLÕES LOTERIA                                    */}
-      {/* ══════════════════════════════════════════════════════ */}
-      {abaAdmin === 'loteria' && (<>
+        <>
 
         {/* ── STATS ── */}
         <AdminStats
@@ -328,196 +369,136 @@ export default function AdminPage() {
           boloesAtivosCount={boloes.boloes.filter(b => b.ativo).length}
         />
 
-        {/* ── BOLÕES: 3 colunas por loteria ── */}
-        <BolaoList
-          boloes={boloes.boloes}
-          bolaoAtualId={bolaoAtual?.id ?? null}
-          linkCopiado={linkCopiado}
-          renamingId={renamingId}
-          renameVal={renameVal}
-          onRenameValChange={setRenameVal}
-          showCreate={showCreate}
-          novoNome={novoNome}
-          novoSlug={novoSlug}
-          novaLoteria={novaLoteria}
-          criando={criando}
-          criarErro={criarErro}
-          onNovoNomeChange={setNovoNome}
-          onNovoSlugChange={setNovoSlug}
-          onNovaLoteriaChange={v => { setNovaLoteria(v); setProximos([]) }}
-          onShowCreateToggle={v => { setShowCreate(v); if (!v) { setNovoNome(''); setNovoSlug(''); setNovaLoteria('mega') } }}
-          actions={{
-            onSelecionar: selecionarBolao,
-            onCopiarLink: copiarLink,
-            onCancelar: cancelarBolao,
-            onExcluir: excluirBolao,
-            onRenomear: id => { setRenamingId(id); setRenameVal(boloes.boloes.find(b => b.id === id)?.nome ?? '') },
-            onRenomearConfirm: renomearBolao,
-            onRenomearCancel: () => setRenamingId(null),
-            onCriar: criarBolao,
-          }}
-        />
-
-        {/* ── DETALHE DO BOLÃO ou CONCURSOS ── */}
-        <div className={styles.adminGrid}>
-          <div className={styles.rightPanel}>
-            {bolaoAtual ? (
-
-              /* ── DETALHE DO BOLÃO ── */
-              <BolaoDetailPanel
-                bolao={bolaoAtual}
-                concursoAtivo={concursoAtivo}
-                partsBolao={partsBolao}
-                pagosLista={pagosLista}
-                pendentesLista={pendentesLista}
-                cotasLivres={cotasLivres}
-                arrecadado={arrecadado}
-                loadingParts={loadingParts}
-                confirmandoTodos={confirmandoTodos}
-                selecionados={selecionados}
-                enviandoComp={enviandoComp}
-                lembreteMsg={lembreteMsg}
-                compMsg={compMsg}
-                apostasMsg={apostasMsg}
-                showApostasModal={showApostasModal}
-                apostasTexto={apostasTexto}
-                uploadingApostas={uploadingApostas}
-                showConferir={showConferir}
-                conferirResult={conferirResult}
-                conferirMsg={conferirMsg}
-                conferindoRes={conferindoRes}
-                conferindoManual={conferindoManual}
-                dezenasInput={dezenasInput}
-                showEncerrar={showEncerrar}
-                encerrando={encerrando}
-                encerrarOk={encerrarOk}
-                showConfig={showConfig}
-                editDezenas={editDezenas}
-                editApostas={editApostas}
-                editCotas={editCotas}
-                editTaxa={editTaxa}
-                precoCaixa={precoCaixa}
-                custoApostas={custoApostas}
-                totalBolao={totalBolao}
-                valorPorCota={valorPorCota}
-                configSalva={configSalva}
-                salvando={salvando}
-                formatTel={formatTel}
-                whatsappUrl={whatsappUrl}
-                onFechar={fecharBolao}
-                onAtualizarParts={() => carregarPartsBolao(bolaoAtual.slug, concursoAtivo)}
-                onConfirmarTodos={confirmarTodos}
-                onEnviarLembrete={enviarLembrete}
-                onToggleSelecionado={toggleSelecionado}
-                onSelecionarTodosPagos={selecionarTodosPagos}
-                onLimparSelecao={() => parts.setSelecionados(new Set())}
-                onImprimirSelecionados={imprimirSelecionados}
-                onEnviarComprovante={enviarComprovante}
-                onConfirmarPagamento={confirmarPagamento}
-                onConfirmarAcrescimo={confirmarAcrescimo}
-                onExcluir={excluir}
-                onOpenApostas={() => setShowApostasModal(true)}
-                onCloseApostas={() => { setShowApostasModal(false); setApostasTexto('') }}
-                onApostasTextoChange={setApostasTexto}
-                onSalvarApostas={salvarApostas}
-                onRemoverApostas={removerApostas}
-                onToggleConferir={() => { setShowConferir(v => !v); setConferirMsg('') }}
-                onConferirSorteio={() => conferirSorteio()}
-                onConferirManual={conferirManual}
-                onResetarConferencia={resetarConferencia}
-                onDezenasInputChange={setDezenasInput}
-                onEnviarAcertos={enviarAcertos}
-                enviarAcertosMsg={enviarAcertosMsg}
-                onEnviarAcertosEmail={enviarAcertosEmail}
-                enviarAcertosEmailMsg={enviarAcertosEmailMsg}
-                acertosDestinatario={acertosDestinatario}
-                onAcertosDestinatarioChange={setAcertosDestinatario}
-                onToggleEncerrar={() => { setShowEncerrar(v => !v); setEncerrarOk(null) }}
-                onEncerrarBolao={encerrarBolao}
-                onToggleConfig={() => setShowConfig(v => !v)}
-                onEditDezenasChange={setEditDezenas}
-                onEditApostasChange={setEditApostas}
-                onEditCotasChange={setEditCotas}
-                onEditTaxaChange={setEditTaxa}
-                onSalvarConfig={salvarConfig}
-                onInserirApostasGeradas={inserirApostasGeradas}
-              />
-
-            ) : (
-              <ConcursoPanel
-                proximos={proximos}
-                concursoAtivo={concursoAtivo}
-                loadingCaixa={loadingCaixa}
-                editDatas={editDatas}
-                loteriaAtual={loteriaPanel}
-                onMudarLoteria={mudarLoteria}
-                onEditData={(num, val) => setEditDatas(prev => ({ ...prev, [num]: val }))}
-                onBuscarCaixa={buscarCaixa}
-                onSelecionar={selecionarConcurso}
-              />
-            )}
-          </div>
+        {/* ── ABAS PRINCIPAIS ── */}
+        <div className={styles.mainTabBar}>
+          {ABAS_PRINCIPAIS.map(a => (
+            <button key={a.id} type="button"
+              className={`${styles.mainTab} ${abaPrincipal === a.id ? styles.mainTabActive : ''}`}
+              onClick={() => setAbaPrincipal(a.id)}>
+              {a.icon} {a.label}
+            </button>
+          ))}
         </div>
 
-        {/* ── KPI DASHBOARD ── */}
-        <KpiDashboard
-          showKpi={showKpi}
-          loadingKpi={loadingKpi}
-          kpiGeral={kpiGeral}
-          kpiConcursos={kpiConcursos}
-          kpiFreq={kpiFreq}
-          kpiGasto={kpiGasto}
-          kpiCotas={kpiCotas}
-          kpiAba={kpiAba}
-          onCarregar={carregarKpis}
-          onAbaChange={setKpiAba}
-          whatsappUrl={whatsappUrl}
-        />
+        {/* ── OPERAÇÃO ── */}
+        {abaPrincipal === 'operacao' && (
+          <>
+            {/* ── GRID PRINCIPAL ── */}
+            <div className={styles.adminGrid}>
 
-        {/* ── HISTÓRICO ── */}
-        <HistoricoPanel
-          modo={modoHistorico}
-          loadingHist={loadingHist}
-          showHistorico={showHistorico}
-          historico={historico}
-          histParticipantes={histParticipantes}
-          histBusca={histBusca}
-          histFiltroSlug={histFiltroSlug}
-          histFiltroConc={histFiltroConc}
-          msgConvite={msgConvite}
-          boloes={boloes.boloes}
-          onModoChange={setModoHistorico}
-          onCarregarResumo={carregarHistorico}
-          onCarregarParticipantes={carregarHistParticipantes}
-          onBuscaChange={setHistBusca}
-          onFiltroSlugChange={setHistFiltroSlug}
-          onFiltroConcChange={setHistFiltroConc}
-          onMsgConviteChange={setMsgConvite}
-          onEnviarConvite={enviarConviteNovoBolao}
-          formatTel={formatTel}
-          whatsappUrl={whatsappUrl}
-        />
+              {/* ── ESQUERDA: BOLÕES ── */}
+              <div className={styles.leftPanel}>
+                <BolaoList
+                  boloes={boloes.boloes}
+                  bolaoAtualId={bolaoAtual?.id ?? null}
+                  linkCopiado={linkCopiado}
+                  renamingId={renamingId}
+                  renameVal={renameVal}
+                  onRenameValChange={setRenameVal}
+                  showCreate={showCreate}
+                  novoNome={novoNome}
+                  novoSlug={novoSlug}
+                  novaLoteria={novaLoteria}
+                  criando={criando}
+                  criarErro={criarErro}
+                  onNovoNomeChange={setNovoNome}
+                  onNovoSlugChange={setNovoSlug}
+                  onNovaLoteriaChange={v => { setNovaLoteria(v); setProximos([]) }}
+                  onShowCreateToggle={v => { setShowCreate(v); if (!v) { setNovoNome(''); setNovoSlug(''); setNovaLoteria('mega') } }}
+                  actions={{
+                    onSelecionar: selecionarBolao,
+                    onCopiarLink: copiarLink,
+                    onCancelar: cancelarBolao,
+                    onExcluir: excluirBolao,
+                    onRenomear: id => { setRenamingId(id); setRenameVal(boloes.boloes.find(b => b.id === id)?.nome ?? '') },
+                    onRenomearConfirm: renomearBolao,
+                    onRenomearCancel: () => setRenamingId(null),
+                    onCriar: criarBolao,
+                  }}
+                />
+              </div>
 
-        <IngerirHistorico />
+              {/* ── DIREITA: DETALHE DO BOLÃO ou CONCURSOS ── */}
+              <div className={styles.rightPanel}>
+                {bolaoDetailProps ? (
 
-      </>)}
+                  /* ── DETALHE DO BOLÃO ── */
+                  <BolaoDetailPanel {...bolaoDetailProps} />
 
-      {/* ══════════════════════════════════════════════════════ */}
-      {/* ABA: BOLÕES ESPORTIVOS                                 */}
-      {/* ══════════════════════════════════════════════════════ */}
-      {abaAdmin === 'esporte' && (<>
-        <EsporteAdmin />
-        <IconLibrary />
-      </>)}
+                ) : (
+                  <ConcursoPanel
+                    proximos={proximos}
+                    concursoAtivo={concursoAtivo}
+                    loadingCaixa={loadingCaixa}
+                    editDatas={editDatas}
+                    loteriaAtual={loteriaPanel}
+                    resultadoInfo={resultadoInfo}
+                    onMudarLoteria={mudarLoteria}
+                    onEditData={(num, val) => setEditDatas(prev => ({ ...prev, [num]: val }))}
+                    onBuscarCaixa={buscarCaixa}
+                    onSelecionar={selecionarConcurso}
+                  />
+                )}
+              </div>
+            </div>
 
-      {/* ══════════════════════════════════════════════════════ */}
-      {/* ABA: CONFIGURAÇÕES                                     */}
-      {/* ══════════════════════════════════════════════════════ */}
-      {abaAdmin === 'config' && (<>
-        <AdminSettings />
-        <AdminSenha />
-      </>)}
+            {/* ── KPI DASHBOARD ── */}
+            <KpiDashboard
+              showKpi={showKpi}
+              loadingKpi={loadingKpi}
+              kpiGeral={kpiGeral}
+              kpiConcursos={kpiConcursos}
+              kpiFreq={kpiFreq}
+              kpiGasto={kpiGasto}
+              kpiCotas={kpiCotas}
+              kpiAba={kpiAba}
+              onCarregar={carregarKpis}
+              onAbaChange={setKpiAba}
+              whatsappUrl={whatsappUrl}
+            />
 
+            {/* ── HISTÓRICO ── */}
+            <HistoricoPanel
+              modo={modoHistorico}
+              loadingHist={loadingHist}
+              showHistorico={showHistorico}
+              historico={historico}
+              histParticipantes={histParticipantes}
+              histBusca={histBusca}
+              histFiltroSlug={histFiltroSlug}
+              histFiltroConc={histFiltroConc}
+              msgConvite={msgConvite}
+              boloes={boloes.boloes}
+              onModoChange={setModoHistorico}
+              onCarregarResumo={carregarHistorico}
+              onCarregarParticipantes={carregarHistParticipantes}
+              onBuscaChange={setHistBusca}
+              onFiltroSlugChange={setHistFiltroSlug}
+              onFiltroConcChange={setHistFiltroConc}
+              onMsgConviteChange={setMsgConvite}
+              onEnviarConvite={enviarConviteNovoBolao}
+              formatTel={formatTel}
+              whatsappUrl={whatsappUrl}
+            />
+
+            {/* ── BOLÕES ESPORTIVOS ── */}
+            <EsporteAdmin />
+          </>
+        )}
+
+        {/* ── FERRAMENTAS ── */}
+        {abaPrincipal === 'ferramentas' && (
+          <IngerirHistorico />
+        )}
+
+        {/* ── CONFIGURAÇÕES ── */}
+        {abaPrincipal === 'config' && (
+          <>
+            <AdminSettings />
+            <AdminSenha />
+          </>
+        )}
+        </>
       </div>
     </div>
   )
