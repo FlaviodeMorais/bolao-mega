@@ -266,9 +266,23 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
             </div>
           )}
           {p.conferirResult?.premios_caixa && p.conferirResult.premios_caixa.some(f => f.valor > 0) && (() => {
-            const totalApostasPremiadas = p.conferirResult!.apostas_premiadas?.length ?? 0
-            const premioPrincipal = p.conferirResult!.premios_caixa!.filter(f => f.valor > 0).sort((a, b) => b.valor - a.valor)[0]?.valor ?? 0
-            const premioBolao = premioPrincipal * totalApostasPremiadas
+            // Normaliza nomes de faixas para comparação entre nossos labels e os da Caixa
+            const normFaixa = (f: string) => {
+              const s = f.toLowerCase().trim()
+              const m = s.match(/^(\d+)\s*acertos?$/) || s.match(/^(\d+)\s*pontos?$/)
+              if (m) return m[1]
+              const map: Record<string, string> = {
+                onze:'11',doze:'12',treze:'13',quatorze:'14',quinze:'15',
+                duque:'dupla',dupla:'dupla',terno:'terno',quadra:'quadra',quina:'quina',sena:'sena',
+              }
+              return map[s] ?? s
+            }
+            const valorPorFaixa = new Map(
+              p.conferirResult!.premios_caixa!.filter(f => f.valor > 0).map(f => [normFaixa(f.faixa), f.valor])
+            )
+            const premioBolao = (p.conferirResult!.apostas_premiadas ?? []).reduce((sum, a) => {
+              return sum + (valorPorFaixa.get(normFaixa(a.premio)) ?? 0)
+            }, 0)
             const totalCotas = bolao.total_cotas || 1
             const premioPerCota = premioBolao / totalCotas
             return (

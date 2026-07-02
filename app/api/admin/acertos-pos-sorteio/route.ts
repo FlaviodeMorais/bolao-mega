@@ -4,6 +4,43 @@ import { verificarToken } from '@/lib/auth'
 import { notificarAcertosIndividual } from '@/lib/whatsapp'
 import { enviarResultado } from '@/lib/email'
 
+// Normaliza o nome da faixa para comparação (Caixa usa nomes diferentes dos nossos labels)
+// Ex: "11 acertos" → "11", "ONZE" → "11", "Duque" → "dupla", "DUPLA" → "dupla"
+function normFaixa(f: string): string {
+  const s = f.toLowerCase().trim()
+  // Lotofácil: "11 acertos", "12 acertos"...
+  const m = s.match(/^(\d+)\s*acertos?$/)
+  if (m) return m[1]
+  // Nossos labels: "11 PONTOS", "12 PONTOS"...
+  const m2 = s.match(/^(\d+)\s*pontos?$/)
+  if (m2) return m2[1]
+  // Nomes por extenso em português (Caixa ou nós)
+  const num: Record<string, string> = {
+    onze: '11', doze: '12', treze: '13', quatorze: '14', quinze: '15',
+    duque: 'dupla', dupla: 'dupla', terno: 'terno',
+    quadra: 'quadra', quina: 'quina', sena: 'sena',
+  }
+  return num[s] ?? s
+}
+
+// Calcula o prêmio total do bolão com base nas apostas premiadas e nos prêmios da Caixa
+function calcPremioTotal(
+  apostasPremiadas: { acertos: number; premio: string }[],
+  premiosCaixa: { faixa: string; valor: number }[]
+): number {
+  const valorPorFaixa = new Map<string, number>()
+  for (const p of premiosCaixa) {
+    if (p.valor > 0) valorPorFaixa.set(normFaixa(p.faixa), p.valor)
+  }
+  let total = 0
+  for (const a of apostasPremiadas) {
+    const key = normFaixa(a.premio)
+    const val = valorPorFaixa.get(key) ?? 0
+    total += val
+  }
+  return total
+}
+
 // POST — envia WhatsApp e/ou email com acertos individuais para cada participante pago
 // canal: 'wa' | 'email' | 'ambos' (default: 'wa')
 export async function POST(req: NextRequest) {
@@ -29,7 +66,7 @@ export async function POST(req: NextRequest) {
     status: string
     dezenas_sorteadas?: number[]
     premios_caixa?: { faixa: string; ganhadores: number; valor: number }[]
-    apostas_premiadas?: { idx: number; acertos: number }[]
+    apostas_premiadas?: { idx: number; acertos: number; premio: string }[]
   } | null
 
   if (!rc?.dezenas_sorteadas?.length) {
@@ -58,13 +95,10 @@ export async function POST(req: NextRequest) {
   const loteriaLabel = bolao.loteria === 'lotofacil' ? 'Lotofácil' : bolao.loteria === 'quina' ? 'Quina' : 'Mega-Sena'
   const minAcertos = bolao.loteria === 'lotofacil' ? 11 : bolao.loteria === 'quina' ? 2 : 4
 
-  // Prêmio total que o bolão ganhou = soma de (valor da faixa × apostas premiadas nessa faixa)
-  // Simplificação: usa o maior valor × total de apostas premiadas (todas na mesma faixa)
-  const totalApostasPremiadas = rc.apostas_premiadas?.length ?? 0
-  const premioCaixaPrincipal = rc.premios_caixa
-    ?.filter(f => f.valor > 0)
-    .sort((a, b) => b.valor - a.valor)[0]?.valor ?? 0
-  const premioBolaoTotal = premioCaixaPrincipal * totalApostasPremiadas
+  // Prêmio total = soma dos prêmios de cada aposta premiada na faixa correta
+  const premioBolaoTotal = rc.premios_caixa && rc.apostas_premiadas
+    ? calcPremioTotal(rc.apostas_premiadas, rc.premios_caixa)
+    : 0
   const totalCotas = Number(bolao.total_cotas) || 1
 
   let enviados = 0
