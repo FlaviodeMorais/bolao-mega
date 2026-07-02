@@ -34,30 +34,34 @@ async function send(to: string, subject: string, html: string) {
   }
 }
 
+const APP_URL = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')
+
 // ── Layout padrão ─────────────────────────────────────────────────────────────
 function layout(titulo: string, corpo: string, loteriaLabel = 'Mega-Sena') {
   return `<!DOCTYPE html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${titulo}</title></head>
-<body style="margin:0;padding:0;background:#F4F6F8;font-family:'Segoe UI',Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F6F8;padding:32px 0;">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${titulo}</title></head>
+<body style="margin:0;padding:0;background:#F0F2F5;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F0F2F5;padding:40px 16px;">
 <tr><td align="center">
-<table width="560" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 24px rgba(0,0,0,.07);">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border-radius:20px;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 8px 40px rgba(0,0,0,.10);max-width:560px;">
 
   <!-- Header -->
-  <tr><td style="background:linear-gradient(135deg,#00AB67,#005DA9);padding:28px 32px;text-align:center;">
-    <img src="${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')}/bm-circle.png" width="56" height="56" alt="BetMais" style="border-radius:50%;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;" />
-    <div style="color:#fff;font-size:22px;font-weight:800;letter-spacing:-0.5px;">BOLÃO ${loteriaLabel.toUpperCase()}</div>
-    <div style="color:rgba(255,255,255,0.85);font-size:13px;margin-top:4px;">${titulo}</div>
+  <tr><td style="background:linear-gradient(135deg,#007A4D 0%,#005DA9 100%);padding:24px 40px 16px;text-align:center;">
+    <img src="${APP_URL}/bm-circle.png" width="88" height="88" alt="BetMais" style="display:block;margin:0 auto 10px;border-radius:50%;border:3px solid rgba(255,255,255,0.3);" />
+    <div style="color:#FFFFFF;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;opacity:0.8;margin-bottom:3px;">BOLÃO ${loteriaLabel.toUpperCase()}</div>
+    <div style="color:#FFFFFF;font-size:20px;font-weight:800;letter-spacing:-0.3px;">${titulo}</div>
   </td></tr>
 
   <!-- Corpo -->
-  <tr><td style="padding:32px;color:#0D1B2A;">${corpo}</td></tr>
+  <tr><td style="padding:16px 40px 28px;color:#0D1B2A;">${corpo}</td></tr>
+
+  <!-- Divisor -->
+  <tr><td style="padding:0 40px;"><div style="height:1px;background:#F1F5F9;"></div></td></tr>
 
   <!-- Footer -->
-  <tr><td style="padding:20px 32px;border-top:1px solid #E2E8F0;text-align:center;background:#F8FAFB;">
-    <div style="color:#94A3B8;font-size:11px;line-height:1.6;">
+  <tr><td style="padding:20px 40px 28px;text-align:center;">
+    <div style="color:#94A3B8;font-size:11px;line-height:1.8;">
       Você recebeu este e-mail porque participa do nosso bolão.<br>
       Dúvidas? Fale com o administrador do grupo.
     </div>
@@ -68,10 +72,22 @@ function layout(titulo: string, corpo: string, loteriaLabel = 'Mega-Sena') {
 </body></html>`
 }
 
+// Linha de tabela com separador via div (evita border em td que fica descontinuado)
+function statCard(rows: { label: string; valor: string; cor?: string }[]) {
+  return `<div style="border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;margin-bottom:20px;">
+    ${rows.map((r, i) => `
+      ${i > 0 ? '<div style="height:1px;background:#E2E8F0;margin:0 20px;"></div>' : ''}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 20px;">
+        <span style="color:#64748B;font-size:12px;text-transform:uppercase;letter-spacing:0.8px;">${r.label}</span>
+        <span style="color:${r.cor ?? '#0D1B2A'};font-size:14px;font-weight:700;">${r.valor}</span>
+      </div>`).join('')}
+  </div>`
+}
+
 function stat(label: string, valor: string, cor = '#00AB67') {
   return `<tr>
-    <td style="color:#64748B;font-size:12px;padding:7px 0 2px;text-transform:uppercase;letter-spacing:0.8px;border-bottom:1px solid #F1F5F9;">${label}</td>
-    <td style="color:${cor};font-size:14px;font-weight:700;text-align:right;padding:7px 0 2px;border-bottom:1px solid #F1F5F9;">${valor}</td>
+    <td style="color:#64748B;font-size:12px;padding:7px 0 2px;text-transform:uppercase;letter-spacing:0.8px;border-bottom:1px solid #E2E8F0;">${label}</td>
+    <td style="color:${cor};font-size:14px;font-weight:700;text-align:right;padding:7px 0 2px;border-bottom:1px solid #E2E8F0;">${valor}</td>
   </tr>`
 }
 
@@ -90,10 +106,10 @@ export async function enviarPixEmail(
       <div style="color:#64748B;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Valor a pagar</div>
       <div style="color:#00AB67;font-size:28px;font-weight:800;">${valorStr}</div>
     </div>
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
-      ${stat('Bolão', bolaoNome, '#0D1B2A')}
-      ${stat('Suas cotas', cotas.map(c => `Nº ${c}`).join(' · '), '#0D1B2A')}
-    </table>
+    ${statCard([
+      { label: 'Bolão', valor: bolaoNome },
+      { label: 'Suas cotas', valor: cotas.map(c => `Nº ${c}`).join(' · ') },
+    ])}
     <div style="background:#F8FAFB;border:1px solid #E2E8F0;border-radius:10px;padding:16px;margin-bottom:24px;">
       <div style="color:#94A3B8;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Código PIX — Copia e Cola</div>
       <div style="color:#0D1B2A;font-size:11px;word-break:break-all;font-family:monospace;line-height:1.6;">${pixCode}</div>
@@ -122,14 +138,14 @@ export async function enviarConfirmacaoPagamento(
       <h2 style="color:#0D1B2A;margin:12px 0 4px;font-size:20px;">Pagamento confirmado!</h2>
       <p style="color:#64748B;margin:0;font-size:14px;">Você está participando do bolão. Boa sorte!</p>
     </div>
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
-      ${stat('Participante', nome, '#0D1B2A')}
-      ${stat('Bolão', bolaoNome, '#0D1B2A')}
-      ${stat('Concurso', `#${concurso}`, '#0D1B2A')}
-      ${stat('Cotas adquiridas', cotas.map(c => `Nº ${c}`).join(' · '), '#0D1B2A')}
-      ${stat('Apostas', `${numApostas} apostas · ${dezenas} dezenas`, '#0D1B2A')}
-      ${stat('Valor pago', valorStr)}
-    </table>
+    ${statCard([
+      { label: 'Participante', valor: nome },
+      { label: 'Bolão', valor: bolaoNome },
+      { label: 'Concurso', valor: `#${concurso}` },
+      { label: 'Cotas adquiridas', valor: cotas.map(c => `Nº ${c}`).join(' · ') },
+      { label: 'Apostas', valor: `${numApostas} apostas · ${dezenas} dezenas` },
+      { label: 'Valor pago', valor: valorStr, cor: '#00AB67' },
+    ])}
     <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px;text-align:center;">
       <div style="color:#475569;font-size:13px;line-height:1.6;">
         🏆 Em caso de premiação, você será notificado por e-mail.<br>
@@ -143,35 +159,67 @@ export async function enviarConfirmacaoPagamento(
 // ── Resultado do sorteio ──────────────────────────────────────────────────────
 export async function enviarResultado(
   email: string, nome: string, concurso: number, numeros: string[],
-  ganhou: boolean, bolaoNome: string, premioIndividual?: number, loteriaLabel = 'Mega-Sena'
+  ganhou: boolean, bolaoNome: string, premioIndividual?: number, loteriaLabel = 'Mega-Sena',
+  premioTotal?: number, premioPerCota?: number
 ) {
+  const fmtBRL = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+  const dezenasHtml = `
+    <div style="text-align:center;margin:24px 0;">
+      <div style="color:#94A3B8;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Dezenas Sorteadas</div>
+      <div style="font-size:22px;font-weight:900;color:#005DA9;letter-spacing:6px;font-family:monospace;">${numeros.join('  ')}</div>
+    </div>`
+
+  const row = (label: string, valor: string, first = false) => `
+    ${first ? '' : '<div style="height:1px;background:#E2E8F0;margin:0 20px;"></div>'}
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 20px;">
+      <span style="color:#475569;font-size:13px;">${label}</span>
+      <span style="color:#15803D;font-size:13px;font-weight:700;">${valor}</span>
+    </div>`
+
+  const premioBreakdown = (premioTotal ?? 0) > 0 ? `
+    <div style="border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;margin:16px 0;">
+      <div style="background:#F8FAFB;padding:10px 20px;border-bottom:1px solid #E2E8F0;">
+        <span style="color:#64748B;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">🏅 Prêmios da Caixa</span>
+      </div>
+      ${row('Prêmio total do bolão', fmtBRL(premioTotal!), true)}
+      ${row('Prêmio por cota', fmtBRL(premioPerCota!))}
+    </div>` : ''
+
+  const gradienteBloco = (premioPerCota ?? 0) > 0 ? `
+    <div style="background:linear-gradient(135deg,#00AB67 0%,#005DA9 100%);border-radius:14px;padding:24px;text-align:center;margin-top:16px;">
+      ${premioIndividual ? `
+        <div style="color:rgba(255,255,255,0.8);font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:6px;">Seu prêmio</div>
+        <div style="color:#FFFFFF;font-size:38px;font-weight:900;letter-spacing:-1px;margin-bottom:4px;">${fmtBRL(premioIndividual)}</div>
+      ` : `
+        <div style="color:rgba(255,255,255,0.8);font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:6px;">Prêmio por cota</div>
+        <div style="color:#FFFFFF;font-size:38px;font-weight:900;letter-spacing:-1px;margin-bottom:4px;">${fmtBRL(premioPerCota!)}</div>
+      `}
+      <div style="color:rgba(255,255,255,0.7);font-size:12px;">O administrador entrará em contato para efetuar o pagamento.</div>
+    </div>` : ''
+
+  const badge = (texto: string, bg: string, cor: string) =>
+    `<div style="display:inline-block;background:${bg};color:${cor};font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;padding:7px 20px;border-radius:99px;margin-bottom:12px;">${texto}</div>`
+
   const corpo = ganhou && premioIndividual ? `
-    <div style="text-align:center;margin-bottom:28px;">
-      <img src="${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')}/bm-circle.png" width="60" height="60" alt="BetMais" style="border-radius:50%;margin-bottom:8px;" />
-      <h2 style="color:#00AB67;margin:0 0 8px;font-size:24px;">GANHAMOS!</h2>
-      <p style="color:#64748B;margin:0;">Concurso #${concurso} — ${bolaoNome}</p>
+    <div style="text-align:center;margin-bottom:12px;">
+      ${badge('Resultado', '#DCFCE7', '#15803D')}
+      <div style="color:#15803D;font-size:26px;font-weight:900;margin-bottom:3px;">GANHAMOS! 🎉</div>
+      <div style="color:#64748B;font-size:13px;">${bolaoNome} · Concurso #${concurso}</div>
     </div>
-    <div style="background:#F0FDF4;border:1.5px solid #00AB67;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px;">
-      <div style="color:#64748B;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Seu prêmio, ${nome}</div>
-      <div style="color:#00AB67;font-size:32px;font-weight:800;margin:8px 0;">R$ ${premioIndividual.toFixed(2).replace('.', ',')}</div>
-      <div style="color:#94A3B8;font-size:12px;">O administrador entrará em contato para efetuar o pagamento.</div>
-    </div>
-    <div style="text-align:center;">
-      <div style="color:#64748B;font-size:12px;margin-bottom:8px;">Dezenas sorteadas</div>
-      <div style="font-size:20px;font-weight:800;color:#005DA9;letter-spacing:4px;">${numeros.join('  ')}</div>
-    </div>
+    ${dezenasHtml}
+    ${premioBreakdown}
+    ${gradienteBloco}
   ` : `
-    <div style="text-align:center;margin-bottom:28px;">
-      <img src="${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')}/bm-circle.png" width="60" height="60" alt="BetMais" style="border-radius:50%;margin-bottom:8px;" />
-      <h2 style="color:#0D1B2A;margin:0 0 8px;font-size:20px;">Resultado do Concurso #${concurso}</h2>
-      <p style="color:#64748B;margin:0;">${bolaoNome}</p>
+    <div style="text-align:center;margin-bottom:12px;">
+      ${badge('Resultado', '#F1F5F9', '#64748B')}
+      <div style="color:#0D1B2A;font-size:22px;font-weight:800;margin-bottom:3px;">Concurso #${concurso}</div>
+      <div style="color:#64748B;font-size:13px;">${bolaoNome}</div>
     </div>
-    <div style="text-align:center;margin-bottom:24px;">
-      <div style="color:#64748B;font-size:12px;margin-bottom:12px;">Dezenas sorteadas</div>
-      <div style="font-size:24px;font-weight:800;color:#005DA9;letter-spacing:4px;">${numeros.join('  ')}</div>
-    </div>
-    <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:14px;text-align:center;">
-      <div style="color:#64748B;font-size:14px;">😔 Não foi desta vez, ${nome}.<br>Mas a sorte está chegando! Participe do próximo bolão.</div>
+    ${dezenasHtml}
+    ${premioBreakdown}
+    <div style="background:#F8FAFB;border:1px solid #E2E8F0;border-radius:12px;padding:16px;text-align:center;margin-top:16px;">
+      <div style="color:#64748B;font-size:14px;line-height:1.6;">Não foi desta vez, <strong style="color:#0D1B2A;">${nome}</strong>.<br>Mas a sorte está chegando! Participe do próximo bolão.</div>
     </div>
   `
   const assunto = ganhou ? `GANHAMOS! Concurso #${concurso}` : `Resultado — Concurso #${concurso}`
@@ -187,11 +235,11 @@ export async function enviarLembrete(
     <p style="color:#475569;font-size:15px;margin:0 0 20px;">
       Olá <strong style="color:#0D1B2A;">${nome}</strong>! Seu pagamento ainda está pendente.
     </p>
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
-      ${stat('Bolão', bolaoNome, '#0D1B2A')}
-      ${stat('Concurso', `#${concurso}`, '#0D1B2A')}
-      ${stat('Suas cotas', cotas.map(c => `Nº ${c}`).join(' · '), '#0D1B2A')}
-    </table>
+    ${statCard([
+      { label: 'Bolão', valor: bolaoNome },
+      { label: 'Concurso', valor: `#${concurso}` },
+      { label: 'Suas cotas', valor: cotas.map(c => `Nº ${c}`).join(' · ') },
+    ])}
     ${pixCode ? `
     <div style="background:#F8FAFB;border:1px solid #E2E8F0;border-radius:10px;padding:16px;margin-bottom:16px;">
       <div style="color:#94A3B8;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Código PIX</div>
@@ -219,10 +267,10 @@ export async function enviarAcrescimo(
       <div style="color:#64748B;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Seu complemento</div>
       <div style="color:#00AB67;font-size:28px;font-weight:800;">${valorStr}</div>
     </div>
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
-      ${stat('Bolão', bolaoNome, '#0D1B2A')}
-      ${stat('Suas cotas', cotas.map(c => `Nº ${c}`).join(' · '), '#0D1B2A')}
-    </table>
+    ${statCard([
+      { label: 'Bolão', valor: bolaoNome },
+      { label: 'Suas cotas', valor: cotas.map(c => `Nº ${c}`).join(' · ') },
+    ])}
     <div style="background:#F8FAFB;border:1px solid #E2E8F0;border-radius:10px;padding:16px;">
       <div style="color:#94A3B8;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Código PIX para pagamento</div>
       <div style="color:#0D1B2A;font-size:11px;word-break:break-all;font-family:monospace;line-height:1.6;">${pixCode}</div>
@@ -242,12 +290,12 @@ export async function notificarAdminInscricao(
       <div style="color:#64748B;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Nova inscrição</div>
       <div style="color:#0D1B2A;font-size:20px;font-weight:700;">${nome}</div>
     </div>
-    <table width="100%" cellpadding="0" cellspacing="0">
-      ${stat('Telefone', telefone, '#0D1B2A')}
-      ${stat('Cotas', cotas.map(c => `Nº ${c}`).join(' · '), '#0D1B2A')}
-      ${stat('Total', `R$ ${total.toFixed(2).replace('.', ',')}`)}
-      ${stat('Concurso', `#${concurso}`, '#0D1B2A')}
-    </table>
+    ${statCard([
+      { label: 'Telefone', valor: telefone },
+      { label: 'Cotas', valor: cotas.map(c => `Nº ${c}`).join(' · ') },
+      { label: 'Total', valor: `R$ ${total.toFixed(2).replace('.', ',')}`, cor: '#00AB67' },
+      { label: 'Concurso', valor: `#${concurso}` },
+    ])}
   `
   return send(cfg.admin_email, `✅ Nova inscrição — ${nome}`, layout('Nova Inscrição', corpo))
 }

@@ -110,6 +110,8 @@ export interface BolaoDetailPanelProps {
   enviarAcertosMsg: string
   onEnviarAcertosEmail: () => void
   enviarAcertosEmailMsg: string
+  acertosDestinatario: string
+  onAcertosDestinatarioChange: (v: string) => void
 
   // Callbacks — encerramento
   onToggleEncerrar: () => void
@@ -293,14 +295,20 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
             <div className={styles.premiosCaixaBox}>
               <div className={styles.conferirResumoTitle}>🏅 Prêmios da Caixa (concurso):</div>
               {premioTotal > 0 && (
-                <div className={styles.premioEstimadoRow}>
-                  <span>Total bolão · por cota</span>
-                  <span className={styles.premioEstimadoVal}>
-                    R$ {premioTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    {' · '}
-                    R$ {premioPerCota.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                </div>
+                <>
+                  <div className={styles.premioEstimadoRow}>
+                    <span>Prêmio total do bolão</span>
+                    <span className={styles.premioEstimadoVal}>
+                      R$ {premioTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className={styles.premioEstimadoRow}>
+                    <span>Prêmio por cota</span>
+                    <span className={styles.premioEstimadoVal}>
+                      R$ {premioPerCota.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </>
               )}
               <div className={styles.premiosCaixaGrid}>
                 {p.conferirResult!.premios_caixa!.map(f => (
@@ -378,13 +386,25 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
       {bolao.resultado_conferencia &&
         (bolao.resultado_conferencia as Record<string, string>).status !== 'nao_apurado' &&
         bolao.apostas_data && p.pagosLista.length > 0 && (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button type="button" className={styles.btnLembrete} onClick={p.onEnviarAcertos}>
-            📲 Enviar Acertos por WhatsApp
-          </button>
-          <button type="button" className={styles.btnLembrete} onClick={p.onEnviarAcertosEmail}>
-            ✉️ Enviar Acertos por Email
-          </button>
+        <div className={styles.acertosEnvioBox}>
+          <select
+            className={styles.acertosDestinatario}
+            value={p.acertosDestinatario}
+            onChange={e => p.onAcertosDestinatarioChange(e.target.value)}
+          >
+            <option value="todos">Todos os participantes pagos ({p.pagosLista.length})</option>
+            {p.pagosLista.map(pt => (
+              <option key={pt.id} value={pt.id}>{pt.nome}</option>
+            ))}
+          </select>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button type="button" className={styles.btnLembrete} onClick={p.onEnviarAcertos}>
+              📲 WhatsApp
+            </button>
+            <button type="button" className={styles.btnLembrete} onClick={p.onEnviarAcertosEmail}>
+              ✉️ Email
+            </button>
+          </div>
         </div>
       )}
       {p.enviarAcertosMsg && <div className={styles.lembreteMsg}>{p.enviarAcertosMsg}</div>}

@@ -122,15 +122,18 @@ export default function AdminPage() {
 
   const [enviarAcertosMsg, setEnviarAcertosMsg] = useState('')
   const [enviarAcertosEmailMsg, setEnviarAcertosEmailMsg] = useState('')
+  const [acertosDestinatario, setAcertosDestinatario] = useState<string>('todos')
 
   const enviarAcertosPorCanal = async (canal: 'wa' | 'email', setMsg: (m: string) => void) => {
     if (!bolaoAtual || !concursoAtivo) return
     setMsg('Enviando...')
     try {
+      const body: Record<string, unknown> = { bolao_slug: bolaoAtual.slug, concurso: concursoAtivo, canal }
+      if (acertosDestinatario !== 'todos') body.participante_id = acertosDestinatario
       const r = await fetch('/api/admin/acertos-pos-sorteio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bolao_slug: bolaoAtual.slug, concurso: concursoAtivo, canal }),
+        body: JSON.stringify(body),
       })
       const d = await r.json()
       const semContato = canal === 'wa' ? 'sem telefone' : 'sem email'
@@ -427,6 +430,8 @@ export default function AdminPage() {
                 enviarAcertosMsg={enviarAcertosMsg}
                 onEnviarAcertosEmail={enviarAcertosEmail}
                 enviarAcertosEmailMsg={enviarAcertosEmailMsg}
+                acertosDestinatario={acertosDestinatario}
+                onAcertosDestinatarioChange={setAcertosDestinatario}
                 onToggleEncerrar={() => { setShowEncerrar(v => !v); setEncerrarOk(null) }}
                 onEncerrarBolao={encerrarBolao}
                 onToggleConfig={() => setShowConfig(v => !v)}

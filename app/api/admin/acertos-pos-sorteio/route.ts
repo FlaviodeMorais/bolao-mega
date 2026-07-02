@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const { bolao_slug, concurso, canal = 'wa' } = await req.json()
+  const { bolao_slug, concurso, canal = 'wa', participante_id } = await req.json()
   if (!bolao_slug || !concurso) {
     return NextResponse.json({ error: 'bolao_slug e concurso são obrigatórios' }, { status: 400 })
   }
@@ -82,12 +82,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Apostas não carregadas no bolão.' }, { status: 409 })
   }
 
-  const { data: participantes } = await supabase
+  let partQuery = supabase
     .from('participantes')
     .select('id, nome, telefone, email, cotas')
-    .eq('bolao_slug', bolao_slug)
-    .eq('concurso', parseInt(concurso))
     .eq('status', 'pago')
+
+  if (participante_id) {
+    partQuery = partQuery.eq('id', participante_id)
+  } else {
+    partQuery = partQuery.eq('bolao_slug', bolao_slug).eq('concurso', parseInt(concurso))
+  }
+
+  const { data: participantes } = await partQuery
 
   if (!participantes?.length) {
     return NextResponse.json({ error: 'Nenhum participante pago encontrado.' }, { status: 404 })
@@ -131,7 +137,7 @@ export async function POST(req: NextRequest) {
       if (canal === 'email' || canal === 'ambos') {
         if (p.email) {
           try {
-            await enviarResultado(p.email, p.nome, parseInt(concurso), dezenasStr, ganhou, bolao.nome, premioIndividual, loteriaLabel)
+            await enviarResultado(p.email, p.nome, parseInt(concurso), dezenasStr, ganhou, bolao.nome, premioIndividual, loteriaLabel, premioTotal, premioPerCota)
             if (canal === 'email') enviados++
           } catch { if (canal === 'email') erros++ }
         } else { if (canal === 'email') erros++ }

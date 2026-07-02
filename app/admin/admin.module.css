@@ -666,6 +666,18 @@
 }
 .btnLembrete:hover { background: #DCFCE7; }
 
+/* ── ACERTOS ENVIO ── */
+.acertosEnvioBox {
+  display: flex; flex-direction: column; gap: 8px;
+  margin-bottom: 4px;
+}
+.acertosDestinatario {
+  width: 100%; padding: 8px 10px; border-radius: 8px;
+  border: 1.5px solid #E2E8F0; background: #F8FAFC;
+  font-size: 13px; color: #0D1B2A; cursor: pointer;
+}
+.acertosDestinatario:focus { outline: none; border-color: #00AB67; }
+
 /* ── LOTERIA SELECTOR (criar bolão) ── */
 .loteriaSelector {
   display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;
