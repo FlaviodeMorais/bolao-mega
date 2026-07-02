@@ -6,21 +6,27 @@ import { enviarResultado } from '@/lib/email'
 
 // Normaliza o nome da faixa para comparação (Caixa usa nomes diferentes dos nossos labels)
 // Ex: "11 acertos" → "11", "ONZE" → "11", "Duque" → "dupla", "DUPLA" → "dupla"
+// Normaliza faixa para número de acertos (string)
+// Quina Caixa: "2 acertos"…"5 acertos" | nossos labels: "DUPLA","TERNO","QUADRA","QUINA"
+// Lotofácil Caixa: "11 acertos"…"15 acertos" | nossos labels: "11 PONTOS"…"15 PONTOS"
+// Mega Caixa: "Quadra","Quina","Sena" | nossos labels: "QUADRA","QUINA","SENA"
 function normFaixa(f: string): string {
   const s = f.toLowerCase().trim()
-  // Lotofácil: "11 acertos", "12 acertos"...
-  const m = s.match(/^(\d+)\s*acertos?$/)
-  if (m) return m[1]
-  // Nossos labels: "11 PONTOS", "12 PONTOS"...
-  const m2 = s.match(/^(\d+)\s*pontos?$/)
-  if (m2) return m2[1]
-  // Nomes por extenso em português (Caixa ou nós)
-  const num: Record<string, string> = {
+  const mAcertos = s.match(/^(\d+)\s*acertos?$/)
+  if (mAcertos) return mAcertos[1]
+  const mPontos = s.match(/^(\d+)\s*pontos?$/)
+  if (mPontos) return mPontos[1]
+  const map: Record<string, string> = {
+    // Quina — nossos labels → número de acertos
+    dupla: '2', terno: '3', quadra: '4', quina: '5',
+    // Mega
+    sena: '6',
+    // Lotofácil por extenso (caso a Caixa use)
     onze: '11', doze: '12', treze: '13', quatorze: '14', quinze: '15',
-    duque: 'dupla', dupla: 'dupla', terno: 'terno',
-    quadra: 'quadra', quina: 'quina', sena: 'sena',
+    // Quina por extenso (caso a Caixa use "Duque" em vez de "2 acertos")
+    duque: '2',
   }
-  return num[s] ?? s
+  return map[s] ?? s
 }
 
 // Calcula o prêmio total do bolão com base nas apostas premiadas e nos prêmios da Caixa

@@ -272,8 +272,9 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
               const m = s.match(/^(\d+)\s*acertos?$/) || s.match(/^(\d+)\s*pontos?$/)
               if (m) return m[1]
               const map: Record<string, string> = {
-                onze:'11',doze:'12',treze:'13',quatorze:'14',quinze:'15',
-                duque:'dupla',dupla:'dupla',terno:'terno',quadra:'quadra',quina:'quina',sena:'sena',
+                dupla:'2', terno:'3', quadra:'4', quina:'5', sena:'6',
+                onze:'11', doze:'12', treze:'13', quatorze:'14', quinze:'15',
+                duque:'2',
               }
               return map[s] ?? s
             }
