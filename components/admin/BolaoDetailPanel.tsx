@@ -290,7 +290,7 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
             return (
             <div className={styles.premiosCaixaBox}>
               <div className={styles.conferirResumoTitle}>🏅 Prêmios da Caixa (concurso):</div>
-              {premioBolao > 0 && (
+              {premioPerCota > 0 && (
                 <div className={styles.premioEstimadoRow}>
                   <span>Por cota ganhadora</span>
                   <span className={styles.premioEstimadoVal}>R$ {premioPerCota.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
