@@ -280,17 +280,19 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
             const valorPorFaixa = new Map(
               p.conferirResult!.premios_caixa!.filter(f => f.valor > 0).map(f => [normFaixa(f.faixa), f.valor])
             )
-            const premioBolao = (p.conferirResult!.apostas_premiadas ?? []).reduce((sum, a) => {
-              return sum + (valorPorFaixa.get(normFaixa(a.premio)) ?? 0)
-            }, 0)
-            const totalCotas = bolao.total_cotas || 1
-            const premioPerCota = premioBolao / totalCotas
+            // valorPremio da Caixa = prêmio por aposta ganhadora = prêmio por cota ganhadora
+            // Cada cota corresponde a 1 aposta; quem tem a aposta ganhadora recebe o prêmio dela
+            const apostasPremiadas = p.conferirResult!.apostas_premiadas ?? []
+            const totalApostasPremiadas = apostasPremiadas.length
+            const premioTotal = apostasPremiadas.reduce((sum, a) => sum + (valorPorFaixa.get(normFaixa(a.premio)) ?? 0), 0)
+            // Prêmio por cota ganhadora = prêmio total / apostas premiadas
+            const premioPerCota = totalApostasPremiadas > 0 ? premioTotal / totalApostasPremiadas : 0
             return (
             <div className={styles.premiosCaixaBox}>
               <div className={styles.conferirResumoTitle}>🏅 Prêmios da Caixa (concurso):</div>
               {premioBolao > 0 && (
                 <div className={styles.premioEstimadoRow}>
-                  <span>Estimado por cota</span>
+                  <span>Por cota ganhadora</span>
                   <span className={styles.premioEstimadoVal}>R$ {premioPerCota.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               )}

@@ -95,11 +95,10 @@ export async function POST(req: NextRequest) {
   const loteriaLabel = bolao.loteria === 'lotofacil' ? 'Lotofácil' : bolao.loteria === 'quina' ? 'Quina' : 'Mega-Sena'
   const minAcertos = bolao.loteria === 'lotofacil' ? 11 : bolao.loteria === 'quina' ? 2 : 4
 
-  // Prêmio total = soma dos prêmios de cada aposta premiada na faixa correta
-  const premioBolaoTotal = rc.premios_caixa && rc.apostas_premiadas
-    ? calcPremioTotal(rc.apostas_premiadas, rc.premios_caixa)
-    : 0
-  const totalCotas = Number(bolao.total_cotas) || 1
+  // premioPerCota = prêmio por aposta ganhadora (cada cota = 1 aposta)
+  const apostasPremiadas = rc.apostas_premiadas ?? []
+  const premioTotal = rc.premios_caixa ? calcPremioTotal(apostasPremiadas, rc.premios_caixa) : 0
+  const premioPerCota = apostasPremiadas.length > 0 ? premioTotal / apostasPremiadas.length : 0
 
   let enviados = 0
   let erros = 0
@@ -113,9 +112,9 @@ export async function POST(req: NextRequest) {
       )
       const ganhou = apostasGanhadoras.length > 0
 
-      // Prêmio proporcional: (cotas do participante / total de cotas do bolão) * prêmio total
-      const premioIndividual = ganhou && premioBolaoTotal > 0
-        ? (cotasP.length / totalCotas) * premioBolaoTotal
+      // Prêmio = apostas ganhadoras do participante × prêmio por cota ganhadora
+      const premioIndividual = ganhou && premioPerCota > 0
+        ? apostasGanhadoras.length * premioPerCota
         : undefined
 
       if (canal === 'wa' || canal === 'ambos') {
