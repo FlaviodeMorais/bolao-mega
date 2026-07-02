@@ -265,11 +265,23 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
               </div>
             </div>
           )}
-          {p.conferirResult?.premios_caixa && p.conferirResult.premios_caixa.some(f => f.valor > 0) && (
+          {p.conferirResult?.premios_caixa && p.conferirResult.premios_caixa.some(f => f.valor > 0) && (() => {
+            const totalApostasPremiadas = p.conferirResult!.apostas_premiadas?.length ?? 0
+            const premioPrincipal = p.conferirResult!.premios_caixa!.filter(f => f.valor > 0).sort((a, b) => b.valor - a.valor)[0]?.valor ?? 0
+            const premioBolao = premioPrincipal * totalApostasPremiadas
+            const totalCotas = bolao.total_cotas || 1
+            const premioPerCota = premioBolao / totalCotas
+            return (
             <div className={styles.premiosCaixaBox}>
               <div className={styles.conferirResumoTitle}>🏅 Prêmios da Caixa (concurso):</div>
+              {premioBolao > 0 && (
+                <div className={styles.premioEstimadoRow}>
+                  <span>Estimado por cota</span>
+                  <span className={styles.premioEstimadoVal}>R$ {premioPerCota.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+              )}
               <div className={styles.premiosCaixaGrid}>
-                {p.conferirResult.premios_caixa.filter(f => f.valor > 0).map(f => (
+                {p.conferirResult!.premios_caixa!.filter(f => f.valor > 0).map(f => (
                   <div key={f.faixa} className={styles.premioFaixaRow}>
                     <span className={styles.premioFaixaNome}>{f.faixa}</span>
                     <span className={styles.premioFaixaVal}>
@@ -282,7 +294,8 @@ export default function BolaoDetailPanel(p: BolaoDetailPanelProps) {
                 ))}
               </div>
             </div>
-          )}
+            )
+          })()}
           {p.conferirMsg && (
             <div className={p.conferirResult?.status === 'ganhamos' ? styles.resultadoMsgBox : styles.resultadoInfo}>
               {p.conferirMsg}
