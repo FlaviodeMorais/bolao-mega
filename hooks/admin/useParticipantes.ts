@@ -132,7 +132,8 @@ export function useParticipantes(
 
   function imprimirSelecionados(bolaoSlug: string) {
     const ids = Array.from(selecionados).join(',')
-    window.open(`/comprovante?ids=${ids}&bolao=${bolaoSlug}&concurso=${concursoAtivo}`, '_blank')
+    const concursoDoSlug = bolaoSlug.match(/^\d+/)?.[0] || concursoAtivo
+    window.open(`/comprovante?ids=${ids}&bolao=${bolaoSlug}&concurso=${concursoDoSlug}`, '_blank')
   }
 
   async function salvarApostas(bolaoId: string, onRefresh: () => Promise<void>) {

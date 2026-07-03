@@ -128,6 +128,15 @@ function ComprovanteContent() {
   }, [autorizado, paramBolao, paramConc])
 
   useEffect(() => {
+    // Sem concurso fixado via link, deriva do proprio slug do bolao (ex: "3725" -> 3725,
+    // "3026g2" -> 3026) em vez de manter o concurso ativo global — senao trocar de bolao
+    // no seletor mantem o concurso errado para boloes antigos.
+    if (paramConc || !bolao) return
+    const concursoDoSlug = bolao.slug.match(/^\d+/)?.[0]
+    if (concursoDoSlug) setConcurso(concursoDoSlug)
+  }, [bolao, paramConc])
+
+  useEffect(() => {
     if (!bolao || !concurso) return
     setLoading(true)
     fetch(`/api/participantes?concurso=${concurso}&bolao=${bolao.slug}`)
