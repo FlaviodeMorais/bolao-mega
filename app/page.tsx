@@ -157,7 +157,7 @@ function EsporteCardCarrossel({ boloesEsporte }: { boloesEsporte: BolaoEsporte[]
   return (
     <div className={`${styles.sorteioCard} ${styles.esporteCarrosselCard}`}>
       <div className={styles.sorteioCardHead} style={{ borderBottom: `1px solid ${corEsporte}30` }}>
-        <img src="/icon" alt="Bet+" style={{ width: 24, height: 24, borderRadius: 6, objectFit: 'cover' }} />
+        <img src="/icon.png" alt="Bet+" style={{ width: 24, height: 24, borderRadius: 6, objectFit: 'cover' }} />
         <span className={styles.sorteioCardTitle}>Bolão Esportivo</span>
         {boloesEsporte.length > 0 && (
           <span className={styles.sorteioBadge} style={{ background: `${corEsporte}30`, borderColor: `${corEsporte}55`, color: '#60b4f0' }}>
@@ -379,7 +379,7 @@ export default function Home() {
 
       {/* ── Header ── */}
       <div className={styles.header}>
-        <img src="/icon" alt="Bet+" style={{ width: 42, height: 42, borderRadius: 10, objectFit: 'cover' }} />
+        <img src="/icon.png" alt="Bet+" style={{ width: 42, height: 42, borderRadius: 10, objectFit: 'cover' }} />
         <div className={styles.headerBrand}>
           {grupoNome}
           <span className={styles.headerSub}>Bolões de Loteria & Esportes</span>
