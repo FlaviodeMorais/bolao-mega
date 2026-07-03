@@ -194,14 +194,17 @@ export default function AdminPage() {
     conf.restaurarResultadoSalvo(b.resultado_conferencia)
     const loteria = (b.loteria as import('@/lib/loterias').LoteriaId) || 'mega'
     concurso.mudarLoteria(loteria)
+    // O concurso ao qual o bolão pertence é o prefixo numérico do slug (ex: "3725", "3026g2" → 3026),
+    // não o concurso ativo global da loteria — senão bolões antigos ficam sem participantes ao trocar.
+    const concursoDoSlug = b.slug.match(/^\d+/)?.[0] || ''
     fetch(`/api/concurso-ativo?loteria=${loteria}`)
       .then(r => r.json())
       .then(ca => {
         concurso.setFromApi(ca.concurso || '', ca.data || '', ca.premio || '')
-        parts.carregarPartsBolao(b.slug, ca.concurso || '')
+        parts.carregarPartsBolao(b.slug, concursoDoSlug || ca.concurso || '')
       })
       .catch(() => {
-        if (concursoAtivo) parts.carregarPartsBolao(b.slug, concursoAtivo)
+        parts.carregarPartsBolao(b.slug, concursoDoSlug || concursoAtivo || '')
       })
   }
 
@@ -292,7 +295,7 @@ export default function AdminPage() {
     formatTel,
     whatsappUrl,
     onFechar: fecharBolao,
-    onAtualizarParts: () => carregarPartsBolao(bolaoAtual.slug, concursoAtivo),
+    onAtualizarParts: () => carregarPartsBolao(bolaoAtual.slug, bolaoAtual.slug.match(/^\d+/)?.[0] || concursoAtivo),
     onConfirmarTodos: confirmarTodos,
     onEnviarLembrete: enviarLembrete,
     onToggleSelecionado: toggleSelecionado,
