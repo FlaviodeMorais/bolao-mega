@@ -160,34 +160,66 @@ export async function enviarConfirmacaoPagamento(
 export async function enviarResultado(
   email: string, nome: string, concurso: number, numeros: string[],
   ganhou: boolean, bolaoNome: string, premioIndividual?: number, loteriaLabel = 'Mega-Sena',
-  premioTotal?: number, premioPerCota?: number
+  premioTotal?: number, premioPerCota?: number,
+  premiosCaixa?: { faixa: string; ganhadores: number; valor: number }[]
 ) {
   const fmtBRL = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
-  const dezenasHtml = `
-    <div style="text-align:center;margin:24px 0;">
-      <div style="color:#94A3B8;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Dezenas Sorteadas</div>
-      <div style="font-size:22px;font-weight:900;color:#005DA9;letter-spacing:6px;font-family:monospace;">${numeros.join('  ')}</div>
+  const corLoteria: Record<string, string> = {
+    'Mega-Sena': '#00AB67', 'Lotofácil': '#803594', 'Quina': '#005DA4',
+  }
+  const cor = corLoteria[loteriaLabel] || '#00AB67'
+
+  const modalidadeChip = `
+    <div style="text-align:center;margin-bottom:14px;">
+      <span style="display:inline-block;background:${cor}1A;color:${cor};font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:6px 16px;border-radius:99px;">
+        🍀 ${loteriaLabel}
+      </span>
     </div>`
 
-  const row = (label: string, valor: string, first = false) => `
+  const dezenasHtml = `
+    <div style="text-align:center;margin:20px 0 24px;">
+      <div style="color:#94A3B8;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Dezenas Sorteadas</div>
+      <div style="font-size:20px;font-weight:900;color:#005DA9;letter-spacing:4px;font-family:'JetBrains Mono',monospace;">${numeros.join('  ')}</div>
+    </div>`
+
+  const row = (label: string, valor: string, first = false, corVal = '#15803D') => `
     ${first ? '' : '<div style="height:1px;background:#E2E8F0;margin:0 20px;"></div>'}
     <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 20px;">
       <span style="color:#475569;font-size:13px;">${label}</span>
-      <span style="color:#15803D;font-size:13px;font-weight:700;">${valor}</span>
+      <span style="color:${corVal};font-size:13px;font-weight:700;">${valor}</span>
     </div>`
+
+  // Tabela oficial de premiação da Caixa, por faixa de acertos
+  const tabelaCaixa = premiosCaixa && premiosCaixa.length > 0 ? `
+    <div style="border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;margin:16px 0;">
+      <div style="background:#F8FAFB;padding:10px 20px;border-bottom:1px solid #E2E8F0;">
+        <span style="color:#64748B;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">💰 Premiação oficial — Concurso #${concurso}</span>
+      </div>
+      ${premiosCaixa.map((f, i) => `
+        ${i > 0 ? '<div style="height:1px;background:#F1F5F9;margin:0 20px;"></div>' : ''}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 20px;">
+          <span style="color:#374151;font-size:12px;font-weight:600;">${f.faixa}</span>
+          ${f.valor > 0
+            ? `<span style="text-align:right;">
+                <span style="color:${cor};font-size:13px;font-weight:800;font-family:'JetBrains Mono',monospace;">${fmtBRL(f.valor)}</span>
+                <span style="display:block;color:#94A3B8;font-size:10px;">${f.ganhadores} ganhador${f.ganhadores !== 1 ? 'es' : ''}</span>
+              </span>`
+            : `<span style="color:#94A3B8;font-size:11px;">Não houve ganhadores</span>`}
+        </div>`).join('')}
+    </div>` : ''
 
   const premioBreakdown = (premioTotal ?? 0) > 0 ? `
     <div style="border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;margin:16px 0;">
       <div style="background:#F8FAFB;padding:10px 20px;border-bottom:1px solid #E2E8F0;">
-        <span style="color:#64748B;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">🏅 Prêmios da Caixa</span>
+        <span style="color:#64748B;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">🏅 Resultado do nosso bolão</span>
       </div>
       ${row('Prêmio total do bolão', fmtBRL(premioTotal!), true)}
       ${row('Prêmio por cota', fmtBRL(premioPerCota!))}
     </div>` : ''
 
   const gradienteBloco = (premioPerCota ?? 0) > 0 ? `
-    <div style="background:linear-gradient(135deg,#00AB67 0%,#005DA9 100%);border-radius:14px;padding:24px;text-align:center;margin-top:16px;">
+    <div style="background:linear-gradient(135deg,${cor} 0%,#005DA9 100%);border-radius:14px;padding:24px;text-align:center;margin-top:16px;">
       ${premioIndividual ? `
         <div style="color:rgba(255,255,255,0.8);font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:6px;">Seu prêmio</div>
         <div style="color:#FFFFFF;font-size:38px;font-weight:900;letter-spacing:-1px;margin-bottom:4px;">${fmtBRL(premioIndividual)}</div>
@@ -198,25 +230,29 @@ export async function enviarResultado(
       <div style="color:rgba(255,255,255,0.7);font-size:12px;">O administrador entrará em contato para efetuar o pagamento.</div>
     </div>` : ''
 
-  const badge = (texto: string, bg: string, cor: string) =>
-    `<div style="display:inline-block;background:${bg};color:${cor};font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;padding:7px 20px;border-radius:99px;margin-bottom:12px;">${texto}</div>`
+  const badge = (texto: string, bg: string, corTxt: string) =>
+    `<div style="display:inline-block;background:${bg};color:${corTxt};font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;padding:7px 20px;border-radius:99px;margin-bottom:12px;">${texto}</div>`
 
   const corpo = ganhou && premioIndividual ? `
+    ${modalidadeChip}
     <div style="text-align:center;margin-bottom:12px;">
       ${badge('Resultado', '#DCFCE7', '#15803D')}
       <div style="color:#15803D;font-size:26px;font-weight:900;margin-bottom:3px;">GANHAMOS! 🎉</div>
       <div style="color:#64748B;font-size:13px;">${bolaoNome} · Concurso #${concurso}</div>
     </div>
     ${dezenasHtml}
+    ${tabelaCaixa}
     ${premioBreakdown}
     ${gradienteBloco}
   ` : `
+    ${modalidadeChip}
     <div style="text-align:center;margin-bottom:12px;">
       ${badge('Resultado', '#F1F5F9', '#64748B')}
       <div style="color:#0D1B2A;font-size:22px;font-weight:800;margin-bottom:3px;">Concurso #${concurso}</div>
       <div style="color:#64748B;font-size:13px;">${bolaoNome}</div>
     </div>
     ${dezenasHtml}
+    ${tabelaCaixa}
     ${premioBreakdown}
     <div style="background:#F8FAFB;border:1px solid #E2E8F0;border-radius:12px;padding:16px;text-align:center;margin-top:16px;">
       <div style="color:#64748B;font-size:14px;line-height:1.6;">Não foi desta vez, <strong style="color:#0D1B2A;">${nome}</strong>.<br>Mas a sorte está chegando! Participe do próximo bolão.</div>

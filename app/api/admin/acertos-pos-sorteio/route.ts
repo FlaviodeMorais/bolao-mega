@@ -111,14 +111,14 @@ export async function POST(req: NextRequest) {
         }
         if (p.email) {
           try {
-            await enviarResultado(p.email, p.nome, parseInt(concurso), dezenasStr, ganhou, bolao.nome, premioIndividual, loteriaLabel, premioTotal, premioPerCota)
+            await enviarResultado(p.email, p.nome, parseInt(concurso), dezenasStr, ganhou, bolao.nome, premioIndividual, loteriaLabel, premioTotal, premioPerCota, rc.premios_caixa)
             enviados++
           } catch { erros++ }
         } else { erros++ }
       } else if (canal === 'email') {
         if (p.email) {
           try {
-            await enviarResultado(p.email, p.nome, parseInt(concurso), dezenasStr, ganhou, bolao.nome, premioIndividual, loteriaLabel, premioTotal, premioPerCota)
+            await enviarResultado(p.email, p.nome, parseInt(concurso), dezenasStr, ganhou, bolao.nome, premioIndividual, loteriaLabel, premioTotal, premioPerCota, rc.premios_caixa)
             enviados++
           } catch { erros++ }
         } else { erros++ }
