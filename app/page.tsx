@@ -28,8 +28,9 @@ function premioEmPalavras(val: number): string {
   if (val >= 1e9) return `R$${(val / 1e9).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} Bilhão`
   if (val >= 1e6) {
     const m = val / 1e6
+    const casas = Number.isInteger(m) ? 0 : 1
     return m < 2 ? `R$${m.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} Milhão`
-                 : `R$${m.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} Milhões`
+                 : `R$${m.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas })} Milhões`
   }
   return `R$${(val / 1e3).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} Mil`
 }
