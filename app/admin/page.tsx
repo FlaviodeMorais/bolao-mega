@@ -126,7 +126,8 @@ export default function AdminPage() {
     if (!bolaoAtual || !concursoAtivo) return
     setMsg('Enviando...')
     try {
-      const body: Record<string, unknown> = { bolao_slug: bolaoAtual.slug, concurso: concursoAtivo, canal }
+      const concursoDoBolao = bolaoAtual.slug.match(/^\d+/)?.[0] || concursoAtivo
+      const body: Record<string, unknown> = { bolao_slug: bolaoAtual.slug, concurso: concursoDoBolao, canal }
       if (acertosDestinatario !== 'todos') body.participante_id = acertosDestinatario
       const r = await fetch('/api/admin/acertos-pos-sorteio', {
         method: 'POST',

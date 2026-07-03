@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { getLoteria } from '@/lib/loterias'
 
-interface Bolao { id: string; loteria?: string; apostas_data?: unknown }
+interface Bolao { id: string; slug?: string; loteria?: string; apostas_data?: unknown }
 
 const MIN_ACERTOS: Record<string, number> = { mega: 4, lotofacil: 11, quina: 2 }
 
@@ -42,9 +42,12 @@ export function useConferencia(
 
   async function conferirSorteio(silencioso = false) {
     if (!bolaoAtual || !concursoAtivo) return
+    // O concurso a conferir é o do proprio bolao (derivado do slug), nao o concurso ativo
+    // global da loteria — senao boloes antigos buscam o resultado do sorteio de hoje.
+    const concursoDoBolao = bolaoAtual.slug?.match(/^\d+/)?.[0] || concursoAtivo
     if (!silencioso) { setConferindoRes(true); setConferirMsg('') }
     const res = await fetch(
-      `/api/admin/conferir-sorteio?bolao_id=${bolaoAtual.id}&concurso=${concursoAtivo}`
+      `/api/admin/conferir-sorteio?bolao_id=${bolaoAtual.id}&concurso=${concursoDoBolao}`
     ).then(r => r.json())
     if (!silencioso) setConferindoRes(false)
     if (res.error) { if (!silencioso) setConferirMsg(`❌ ${res.error}`); return }
@@ -53,7 +56,7 @@ export function useConferencia(
     const msgs: Record<string, string> = {
       ganhamos:     `🏆 GANHAMOS! ${res.maior_premio} — ${res.total_premiadas} aposta(s) premiada(s)`,
       nao_premiada: `😔 Não premiada — nenhuma aposta com ${min} ou mais acertos`,
-      nao_apurado:  res.message || `⏳ Sorteio #${concursoAtivo} ainda não apurado.`,
+      nao_apurado:  res.message || `⏳ Sorteio #${concursoDoBolao} ainda não apurado.`,
     }
     setConferirMsg(msgs[res.status] || res.message || `Status: ${res.status}`)
 
