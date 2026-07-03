@@ -15,12 +15,13 @@ type Props = Pick<BolaoDetailPanelProps,
 /** Conferência do sorteio (busca automática Caixa + entrada manual) e botão de envio de acertos. */
 export default function Conferencia(p: Props) {
   const { bolao } = p
+  const concursoDoBolao = bolao.slug.match(/^\d+/)?.[0] || p.concursoAtivo
 
   return (
     <>
       {p.showConferir && (
         <div className={styles.resultadoPanel}>
-          <div className={styles.resultadoTitle}>🔍 Conferir Resultado — Concurso #{p.concursoAtivo}</div>
+          <div className={styles.resultadoTitle}>🔍 Conferir Resultado — Concurso #{concursoDoBolao}</div>
           {bolao.apostas_data ? (
             <p className={styles.resultadoInfo}>
               ✅ {bolao.apostas_data.total_apostas} apostas carregadas · O resultado será buscado automaticamente na Caixa.
@@ -54,6 +55,69 @@ export default function Conferencia(p: Props) {
               </div>
             </div>
           )}
+          {p.conferirResult?.premios_caixa && p.conferirResult.premios_caixa.length > 0 && (() => {
+            // Normaliza nomes de faixas para comparação entre nossos labels e os da Caixa
+            const normFaixa = (f: string) => {
+              const s = f.toLowerCase().trim()
+              const m = s.match(/^(\d+)\s*acertos?$/)
+              if (m) return `${m[1]} acertos`
+              const m2 = s.match(/^(\d+)\s*pontos?$/)
+              if (m2) return `${m2[1]} acertos`
+              const legado: Record<string, string> = {
+                dupla:'2 acertos', terno:'3 acertos', quadra:'4 acertos', quina:'5 acertos', sena:'6 acertos',
+                duque:'2 acertos',
+                onze:'11 acertos', doze:'12 acertos', treze:'13 acertos', quatorze:'14 acertos', quinze:'15 acertos',
+              }
+              return legado[s] ?? s
+            }
+            const valorPorFaixa = new Map(
+              p.conferirResult!.premios_caixa!.map(f => [normFaixa(f.faixa), f.valor])
+            )
+            // valorPremio da Caixa = prêmio por aposta ganhadora (nacional)
+            // O bolão recebe esse valor por cada aposta premiada e divide entre todas as cotas
+            const apostasPremiadas = p.conferirResult!.apostas_premiadas ?? []
+            const premioTotal = apostasPremiadas.reduce((sum, a) => sum + (valorPorFaixa.get(normFaixa(a.premio)) ?? 0), 0)
+            const totalCotas = bolao.total_cotas || 1
+            const premioPerCota = premioTotal / totalCotas
+            return (
+            <div className={styles.premiosCaixaBox}>
+              <div className={styles.conferirResumoTitle}>🏅 Prêmios da Caixa (concurso):</div>
+              {premioTotal > 0 && (
+                <>
+                  <div className={styles.premioEstimadoRow}>
+                    <span>Prêmio total do bolão</span>
+                    <span className={styles.premioEstimadoVal}>
+                      R$ {premioTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className={styles.premioEstimadoRow}>
+                    <span>Prêmio por cota</span>
+                    <span className={styles.premioEstimadoVal}>
+                      R$ {premioPerCota.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </>
+              )}
+              <div className={styles.premiosCaixaGrid}>
+                {p.conferirResult!.premios_caixa!.map(f => (
+                  <div key={f.faixa} className={styles.premioFaixaRow}>
+                    <span className={styles.premioFaixaNome}>{f.faixa}</span>
+                    {f.valor > 0 ? (
+                      <span className={styles.premioFaixaVal}>
+                        R$ {f.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    ) : (
+                      <span className={styles.premioFaixaGanh}>Não houve ganhadores</span>
+                    )}
+                    {f.valor > 0 && f.ganhadores > 0 && (
+                      <span className={styles.premioFaixaGanh}>{f.ganhadores} ganhador{f.ganhadores !== 1 ? 'es' : ''}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+            )
+          })()}
           {p.conferirMsg && (
             <div className={p.conferirResult?.status === 'ganhamos' ? styles.resultadoMsgBox : styles.resultadoInfo}>
               {p.conferirMsg}

@@ -17,6 +17,7 @@ export interface ConferirResult {
   resumo: { senas: number; quinas: number; quadras: number }
   maior_premio: string | null; total_premiadas: number
   apostas_premiadas: { idx: number; dezenas: number[]; acertos: number; premio: string }[]
+  premios_caixa?: { faixa: string; ganhadores: number; valor: number }[]
 }
 
 /** Props agrupadas por responsabilidade do painel de detalhe do bolão. */
