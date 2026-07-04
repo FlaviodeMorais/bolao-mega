@@ -292,7 +292,7 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
             <button type="button" className={styles.btnPrimario}
               style={{ background: cfg.cor, width: 175 }}
               onClick={handleInserir} disabled={uploadingApostas}>
-              <span className={styles.btnPrimarioLabel}>{uploadingApostas ? '⟳ Inserindo...' : '📊 Inserir apostas neste bolão'}</span>
+              <span className={styles.btnPrimarioLabel}>{uploadingApostas ? '⟳ Inserindo...' : '📊 Inserir apostas'}</span>
             </button>
           )}
           {apostasMsg && (
