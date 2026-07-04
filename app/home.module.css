@@ -220,6 +220,23 @@
 .cardBolaoMeta { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; display: block; }
 .cardBolaoArrow { font-size: 12px !important; flex-shrink: 0; }
 
+/* ── TÍTULO DA PÁGINA (paginas.home.titulo) ── */
+.pageTituloWrap { max-width: 600px; margin: 18px auto 0; padding: 0 16px; }
+.pageTitulo {
+  font-size: 16px; font-weight: 800; color: #fff;
+  letter-spacing: -0.2px;
+}
+
+/* ── RODAPÉ (app.rodape) ── */
+.footerWrap {
+  max-width: 600px; margin: 24px auto 0; padding: 20px 16px 32px;
+  text-align: center;
+}
+.footerText {
+  font-size: 11px; color: rgba(255,255,255,0.3);
+  margin: 0;
+}
+
 /* ── SEÇÃO BOLÕES ── */
 .secWrap { max-width: 600px; margin: 16px auto 0; padding: 0 16px; }
 .secCard {

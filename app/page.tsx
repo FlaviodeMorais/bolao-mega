@@ -344,6 +344,9 @@ export default function Home() {
   const [msgSemBolao, setMsgSemBolao]     = useState('Nenhum bolão disponível no momento')
   const [loginAberto, setLoginAberto]     = useState(false)
   const [carrosselIntervaloMs, setCarrosselIntervaloMs] = useState(5000)
+  const [tagline, setTagline]             = useState('Bolões de Loteria & Esportes')
+  const [homeTitulo, setHomeTitulo]       = useState('')
+  const [appRodape, setAppRodape]         = useState('')
 
   const carregar = useCallback((inicial = false) => {
     Promise.all([
@@ -364,6 +367,9 @@ export default function Home() {
       if (d?.app?.nome)           setAppNome(d.app.nome)
       if (d?.home?.msg_sem_bolao) setMsgSemBolao(d.home.msg_sem_bolao)
       if (d?.app?.carrossel_intervalo_seg) setCarrosselIntervaloMs(Number(d.app.carrossel_intervalo_seg) * 1000)
+      if (d?.app?.tagline)        setTagline(d.app.tagline)
+      if (d?.app?.rodape)         setAppRodape(d.app.rodape)
+      if (d?.home?.titulo)        setHomeTitulo(d.home.titulo)
     }).catch(() => {})
     const id = setInterval(() => carregar(), 60000)
     const onFocus = () => carregar()
@@ -445,7 +451,7 @@ export default function Home() {
         <img src="/icon.png" alt="Bet+" style={{ width: 42, height: 42, borderRadius: 10, objectFit: 'cover' }} />
         <div className={styles.headerBrand}>
           {grupoNome}
-          <span className={styles.headerSub}>Bolões de Loteria & Esportes</span>
+          <span className={styles.headerSub}>{tagline}</span>
         </div>
         <button className={styles.headerBtn} aria-label="Admin" onClick={() => setLoginAberto(true)}>
           <span className="material-icons-round" style={{ fontSize: 18 }}>settings</span>
@@ -453,6 +459,12 @@ export default function Home() {
       </div>
 
       {loginAberto && <LoginModal onClose={() => setLoginAberto(false)} appNome={appNome} />}
+
+      {homeTitulo && (
+        <div className={styles.pageTituloWrap}>
+          <span className={styles.pageTitulo}>{homeTitulo}</span>
+        </div>
+      )}
 
       {/* ── Carrossel: um card por loteria com seus bolões e resultados ── */}
       {loading
@@ -484,6 +496,11 @@ export default function Home() {
         </div>
       )}
 
+      {appRodape && (
+        <div className={styles.footerWrap}>
+          <p className={styles.footerText}>{appRodape}</p>
+        </div>
+      )}
 
     </div>
   )
