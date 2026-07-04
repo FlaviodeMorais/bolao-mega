@@ -201,17 +201,21 @@ function JogosHojeAlternando({ jogos, intervaloMs }: { jogos: JogoHoje[]; interv
 
 function EsporteCardCarrossel({ boloesEsporte, intervaloMs }: { boloesEsporte: BolaoEsporte[]; intervaloMs: number }) {
   const corEsporte = '#1D6EA6'
-  const featured = boloesEsporte[0]
-  const [jogosHoje, setJogosHoje] = useState<JogoHoje[]>([])
+  // Jogos de hoje por bolão — verifica TODOS os bolões ativos (não só o primeiro),
+  // já que cada um pode cobrir jogos de dias diferentes (ex: bolões por dia da semana).
+  const [jogosHojePorBolao, setJogosHojePorBolao] = useState<Record<string, JogoHoje[]>>({})
 
   useEffect(() => {
-    if (!featured) { setJogosHoje([]); return }
-    fetch(`/api/esporte/jogos?bolao=${featured.slug}`).then(r => r.json()).then(d => {
-      const hoje = new Date().toISOString().slice(0, 10)
-      const jogos: (JogoHoje & { data_jogo?: string; encerrado?: boolean })[] = d.jogos || []
-      setJogosHoje(jogos.filter(j => j.data_jogo === hoje && !j.encerrado))
-    }).catch(() => setJogosHoje([]))
-  }, [featured?.slug])
+    if (boloesEsporte.length === 0) { setJogosHojePorBolao({}); return }
+    const hoje = new Date().toISOString().slice(0, 10)
+
+    Promise.all(boloesEsporte.map(b =>
+      fetch(`/api/esporte/jogos?bolao=${b.slug}`).then(r => r.json()).then(d => {
+        const jogos: (JogoHoje & { data_jogo?: string; encerrado?: boolean })[] = d.jogos || []
+        return [b.slug, jogos.filter(j => j.data_jogo === hoje && !j.encerrado)] as const
+      }).catch(() => [b.slug, []] as const)
+    )).then(entries => setJogosHojePorBolao(Object.fromEntries(entries)))
+  }, [boloesEsporte])
 
   return (
     <div className={`${styles.sorteioCard} ${styles.esporteCarrosselCard}`}>
@@ -236,8 +240,8 @@ function EsporteCardCarrossel({ boloesEsporte, intervaloMs }: { boloesEsporte: B
                 <div className={styles.cardBolaoInfo}>
                   <span className={styles.cardBolaoNome}>{b.nome}</span>
                   {b.competicao && <span className={styles.cardBolaoMeta}>{b.competicao}</span>}
-                  {b.slug === featured.slug && jogosHoje.length > 0 && (
-                    <JogosHojeAlternando jogos={jogosHoje} intervaloMs={intervaloMs} />
+                  {(jogosHojePorBolao[b.slug]?.length || 0) > 0 && (
+                    <JogosHojeAlternando jogos={jogosHojePorBolao[b.slug]} intervaloMs={intervaloMs} />
                   )}
                 </div>
                 <span className={`material-icons-round ${styles.cardBolaoArrow}`}
