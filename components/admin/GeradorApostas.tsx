@@ -128,7 +128,6 @@ const ESTRATEGIAS: { id: Estrategia; label: string; desc: string }[] = [
   { id: 'equilibrado', label: '⚖️ Equilibrada',      desc: 'Mistura frequentes + atrasados' },
   { id: 'frequentes',  label: '🔥 Frequentes',       desc: 'Prioriza os mais sorteados' },
   { id: 'atrasados',   label: '⏳ Atrasados',        desc: 'Prioriza números sem sair há mais tempo' },
-  { id: 'parceiros',   label: '🔗 Duplas Frequentes', desc: 'Número-âncora + seus parceiros históricos mais frequentes (estilo Wonder Grid)' },
   { id: 'aleatoria',   label: '🎲 Aleatória',        desc: 'Seleção puramente aleatória' },
 ]
 
@@ -248,16 +247,16 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
           <div className={styles.geradorConfigGroup}>
             <div className={styles.geradorConfigLabel}>Base dos parceiros</div>
             <div className={styles.geradorEstrategias}>
-              <button type="button" title="Qualquer número que mais saiu junto com a âncora no mesmo sorteio"
-                className={`${styles.geradorEstrBtn} ${fonteParceiros === 'geral' ? styles.geradorEstrBtnAtivo : ''}`}
-                style={fonteParceiros === 'geral' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
-                onClick={() => setFonteParceiros('geral')}>
+              <button type="button" title="Número-âncora + números que mais saíram junto com ele no mesmo sorteio (estilo Wonder Grid)"
+                className={`${styles.geradorEstrBtn} ${estrategia === 'parceiros' && fonteParceiros === 'geral' ? styles.geradorEstrBtnAtivo : ''}`}
+                style={estrategia === 'parceiros' && fonteParceiros === 'geral' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
+                onClick={() => { setEstrategia('parceiros'); setFonteParceiros('geral') }}>
                 🔗 Duplas gerais
               </button>
-              <button type="button" title="Só números literalmente consecutivos à âncora (ex: 43 → 44)"
-                className={`${styles.geradorEstrBtn} ${fonteParceiros === 'consecutiva' ? styles.geradorEstrBtnAtivo : ''}`}
-                style={fonteParceiros === 'consecutiva' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
-                onClick={() => setFonteParceiros('consecutiva')}>
+              <button type="button" title="Número-âncora + números literalmente consecutivos a ele (ex: 43 → 44)"
+                className={`${styles.geradorEstrBtn} ${estrategia === 'parceiros' && fonteParceiros === 'consecutiva' ? styles.geradorEstrBtnAtivo : ''}`}
+                style={estrategia === 'parceiros' && fonteParceiros === 'consecutiva' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
+                onClick={() => { setEstrategia('parceiros'); setFonteParceiros('consecutiva') }}>
                 🔢 Consecutivas
               </button>
             </div>
