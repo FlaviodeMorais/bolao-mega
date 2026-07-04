@@ -348,7 +348,7 @@ export default function IngerirHistorico() {
               </div>
             )}
 
-            <div className={styles.ferrCols}>
+            <div className={styles.ferrCols4}>
               <div className={styles.ferrColuna}>
                 <div className={styles.ferrRankTitle}>🔗 Duplas mais frequentes juntas</div>
                 <div className={styles.ferrRanking}>
@@ -393,9 +393,7 @@ export default function IngerirHistorico() {
                   ))}
                 </div>
               </div>
-            </div>
 
-            <div className={styles.ferrCols}>
               <div className={styles.ferrColuna}>
                 <div className={styles.ferrRankTitle}>🔢 Duplas consecutivas mais frequentes</div>
                 <div className={styles.ferrRanking}>
