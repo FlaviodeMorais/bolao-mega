@@ -35,9 +35,11 @@ export default function IngerirHistorico() {
   const [loadingEstat, setLoadingEstat] = useState(false)
 
   // Combinações & Sequências
-  const [combDistrib, setCombDistrib]   = useState<{ tamanho: string; count: number; pct: number }[]>([])
-  const [combDuplas, setCombDuplas]     = useState<{ par: [number, number]; count: number; pct: number }[]>([])
-  const [combTrincas, setCombTrincas]   = useState<{ trio: [number, number, number]; count: number; pct: number }[]>([])
+  const [combDistrib, setCombDistrib]         = useState<{ tamanho: string; count: number; pct: number }[]>([])
+  const [combDuplas, setCombDuplas]           = useState<{ par: [number, number]; count: number; pct: number }[]>([])
+  const [combTrincas, setCombTrincas]         = useState<{ trio: [number, number, number]; count: number; pct: number }[]>([])
+  const [combDuplasConsec, setCombDuplasConsec]   = useState<{ par: [number, number]; count: number; pct: number }[]>([])
+  const [combTrincasConsec, setCombTrincasConsec] = useState<{ trio: [number, number, number]; count: number; pct: number }[]>([])
   const [combSoma, setCombSoma]         = useState<{ media: number; min: number; max: number } | null>(null)
   const [loadingComb, setLoadingComb]   = useState(false)
 
@@ -59,6 +61,8 @@ export default function IngerirHistorico() {
       setCombDistrib(c.distribuicaoSequencia || [])
       setCombDuplas(c.duplasFrequentes || [])
       setCombTrincas(c.trincasFrequentes || [])
+      setCombDuplasConsec(c.duplasConsecutivas || [])
+      setCombTrincasConsec(c.trincasConsecutivas || [])
       setCombSoma(c.soma || null)
       setLoadingComb(false)
     }).catch(() => setLoadingComb(false))
@@ -174,7 +178,7 @@ export default function IngerirHistorico() {
   }
   const dadosEstat = abaEstat === 'freq' ? freqDados : atrasosDados
   const maxCount    = dadosEstat.length ? Math.max(...dadosEstat.map(d => d.count || d.atraso || 1)) : 1
-  const gridCols    = cfg.totalNumeros <= 25 ? 5 : 10
+  const gridCols    = cfg.totalNumeros <= 25 ? 5 : 6
 
   return (
     <div className={styles.panel}>
@@ -224,9 +228,8 @@ export default function IngerirHistorico() {
         </div>
       )}
 
-      {/* ── Frequência/Atrasos + Combinações lado a lado ── */}
-      <div className={styles.ferrCols}>
-      <div className={styles.ferrColuna}>
+      {/* ── Frequência / Top 15 lado a lado ── */}
+      <div className={styles.ferrSection}>
         <div className={styles.ferrSectionHeader}>
           <span className={styles.ferrSectionLabel}>
             📊 Frequência
@@ -251,48 +254,52 @@ export default function IngerirHistorico() {
             Histórico não carregado — clique em &quot;Carregar histórico&quot; abaixo.
           </div>
         ) : (
-          <>
-            <div className={styles.ferrBallGrid} style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
-              {[...dadosEstat].sort((a, b) => a.numero - b.numero).map((d) => {
-                const rank = dadosEstat.findIndex(x => x.numero === d.numero)
-                return (
-                  <div key={d.numero} className={styles.ferrBallItem}>
-                    <div className={styles.ferrBall} style={{ background: corBola(rank, dadosEstat.length), borderColor: corBorda(rank, dadosEstat.length), color: corTexto(rank, dadosEstat.length) }}>
+          <div className={styles.ferrCols}>
+            <div className={styles.ferrColuna}>
+              <div className={styles.ferrBallGrid} style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
+                {[...dadosEstat].sort((a, b) => a.numero - b.numero).map((d) => {
+                  const rank = dadosEstat.findIndex(x => x.numero === d.numero)
+                  return (
+                    <div key={d.numero} className={styles.ferrBallItem}>
+                      <div className={styles.ferrBall} style={{ background: corBola(rank, dadosEstat.length), borderColor: corBorda(rank, dadosEstat.length), color: corTexto(rank, dadosEstat.length) }}>
+                        {String(d.numero).padStart(2, '0')}
+                      </div>
+                      <div className={styles.ferrBallCount}>
+                        {abaEstat === 'freq' ? `${d.count}x` : `${d.atraso}c`}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+            <div className={styles.ferrColuna}>
+              <div className={styles.ferrRankTitle}>🏆 Top 15</div>
+              <div className={styles.ferrRanking}>
+                {dadosEstat.slice(0, 15).map((d, i) => (
+                  <div key={d.numero} className={styles.ferrRankRow}>
+                    <span className={styles.ferrRankPos}>{i + 1}º</span>
+                    <span className={styles.ferrRankBall} style={{ background: corBola(i, 15), borderColor: corBorda(i, 15), color: corTexto(i, 15) }}>
                       {String(d.numero).padStart(2, '0')}
+                    </span>
+                    <div className={styles.ferrRankBarWrap}>
+                      <div className={styles.ferrRankBar} style={{
+                        width: `${Math.round(((d.count || d.atraso || 0) / maxCount) * 100)}%`,
+                        background: corBola(i, 15),
+                      }} />
                     </div>
-                    <div className={styles.ferrBallCount}>
+                    <span className={styles.ferrRankVal}>
                       {abaEstat === 'freq' ? `${d.count}x` : `${d.atraso}c`}
-                    </div>
+                    </span>
                   </div>
-                )
-              })}
+                ))}
+              </div>
             </div>
-            <div className={styles.ferrRankTitle}>🏆 Top 15</div>
-            <div className={styles.ferrRanking}>
-              {dadosEstat.slice(0, 15).map((d, i) => (
-                <div key={d.numero} className={styles.ferrRankRow}>
-                  <span className={styles.ferrRankPos}>{i + 1}º</span>
-                  <span className={styles.ferrRankBall} style={{ background: corBola(i, 15), borderColor: corBorda(i, 15), color: corTexto(i, 15) }}>
-                    {String(d.numero).padStart(2, '0')}
-                  </span>
-                  <div className={styles.ferrRankBarWrap}>
-                    <div className={styles.ferrRankBar} style={{
-                      width: `${Math.round(((d.count || d.atraso || 0) / maxCount) * 100)}%`,
-                      background: corBola(i, 15),
-                    }} />
-                  </div>
-                  <span className={styles.ferrRankVal}>
-                    {abaEstat === 'freq' ? `${d.count}x` : `${d.atraso}c`}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </>
+          </div>
         )}
       </div>
 
       {/* ── Combinações & Sequências ── */}
-      <div className={styles.ferrColuna}>
+      <div className={styles.ferrSection}>
         <div className={styles.ferrSectionHeader}>
           <span className={styles.ferrSectionLabel}>🔢 Combinações & Sequências</span>
         </div>
@@ -337,49 +344,101 @@ export default function IngerirHistorico() {
               </div>
             )}
 
-            <div className={styles.ferrRankTitle}>🔗 Duplas consecutivas mais frequentes</div>
-            <div className={styles.ferrRanking}>
-              {combDuplas.map((d, i) => (
-                <div key={d.par.join('-')} className={styles.ferrRankRow}>
-                  <span className={styles.ferrRankPos}>{i + 1}º</span>
-                  <span className={styles.ferrRankBall} style={{ background: cfg.cor, borderColor: cfg.cor, color: '#fff' }}>
-                    {String(d.par[0]).padStart(2, '0')}
-                  </span>
-                  <span className={styles.ferrRankBall} style={{ background: cfg.corSecundaria, borderColor: cfg.corSecundaria, color: '#fff' }}>
-                    {String(d.par[1]).padStart(2, '0')}
-                  </span>
-                  <div className={styles.ferrRankBarWrap}>
-                    <div className={styles.ferrRankBar} style={{ width: `${Math.round((d.count / (combDuplas[0]?.count || 1)) * 100)}%`, background: cfg.cor }} />
-                  </div>
-                  <span className={styles.ferrRankVal}>{d.count}x</span>
+            <div className={styles.ferrCols}>
+              <div className={styles.ferrColuna}>
+                <div className={styles.ferrRankTitle}>🔗 Duplas mais frequentes juntas</div>
+                <div className={styles.ferrRanking}>
+                  {combDuplas.map((d, i) => (
+                    <div key={d.par.join('-')} className={styles.ferrRankRow}>
+                      <span className={styles.ferrRankPos}>{i + 1}º</span>
+                      <span className={styles.ferrRankBall} style={{ background: cfg.cor, borderColor: cfg.cor, color: '#fff' }}>
+                        {String(d.par[0]).padStart(2, '0')}
+                      </span>
+                      <span className={styles.ferrRankBall} style={{ background: cfg.corSecundaria, borderColor: cfg.corSecundaria, color: '#fff' }}>
+                        {String(d.par[1]).padStart(2, '0')}
+                      </span>
+                      <div className={styles.ferrRankBarWrap}>
+                        <div className={styles.ferrRankBar} style={{ width: `${Math.round((d.count / (combDuplas[0]?.count || 1)) * 100)}%`, background: cfg.cor }} />
+                      </div>
+                      <span className={styles.ferrRankVal}>{d.count}x</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              <div className={styles.ferrColuna}>
+                <div className={styles.ferrRankTitle}>🔗 Trincas mais frequentes juntas</div>
+                <div className={styles.ferrRanking}>
+                  {combTrincas.map((d, i) => (
+                    <div key={d.trio.join('-')} className={styles.ferrRankRow}>
+                      <span className={styles.ferrRankPos}>{i + 1}º</span>
+                      <span className={styles.ferrRankBall} style={{ background: cfg.cor, borderColor: cfg.cor, color: '#fff' }}>
+                        {String(d.trio[0]).padStart(2, '0')}
+                      </span>
+                      <span className={styles.ferrRankBall} style={{ background: cfg.corSecundaria, borderColor: cfg.corSecundaria, color: '#fff' }}>
+                        {String(d.trio[1]).padStart(2, '0')}
+                      </span>
+                      <span className={styles.ferrRankBall} style={{ background: cfg.cor, borderColor: cfg.cor, color: '#fff' }}>
+                        {String(d.trio[2]).padStart(2, '0')}
+                      </span>
+                      <div className={styles.ferrRankBarWrap}>
+                        <div className={styles.ferrRankBar} style={{ width: `${Math.round((d.count / (combTrincas[0]?.count || 1)) * 100)}%`, background: cfg.cor }} />
+                      </div>
+                      <span className={styles.ferrRankVal}>{d.count}x</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            <div className={styles.ferrRankTitle}>🔗 Trincas consecutivas mais frequentes</div>
-            <div className={styles.ferrRanking}>
-              {combTrincas.map((d, i) => (
-                <div key={d.trio.join('-')} className={styles.ferrRankRow}>
-                  <span className={styles.ferrRankPos}>{i + 1}º</span>
-                  <span className={styles.ferrRankBall} style={{ background: cfg.cor, borderColor: cfg.cor, color: '#fff' }}>
-                    {String(d.trio[0]).padStart(2, '0')}
-                  </span>
-                  <span className={styles.ferrRankBall} style={{ background: cfg.corSecundaria, borderColor: cfg.corSecundaria, color: '#fff' }}>
-                    {String(d.trio[1]).padStart(2, '0')}
-                  </span>
-                  <span className={styles.ferrRankBall} style={{ background: cfg.cor, borderColor: cfg.cor, color: '#fff' }}>
-                    {String(d.trio[2]).padStart(2, '0')}
-                  </span>
-                  <div className={styles.ferrRankBarWrap}>
-                    <div className={styles.ferrRankBar} style={{ width: `${Math.round((d.count / (combTrincas[0]?.count || 1)) * 100)}%`, background: cfg.cor }} />
-                  </div>
-                  <span className={styles.ferrRankVal}>{d.count}x</span>
+            <div className={styles.ferrCols}>
+              <div className={styles.ferrColuna}>
+                <div className={styles.ferrRankTitle}>🔢 Duplas consecutivas mais frequentes</div>
+                <div className={styles.ferrRanking}>
+                  {combDuplasConsec.map((d, i) => (
+                    <div key={d.par.join('-')} className={styles.ferrRankRow}>
+                      <span className={styles.ferrRankPos}>{i + 1}º</span>
+                      <span className={styles.ferrRankBall} style={{ background: cfg.cor, borderColor: cfg.cor, color: '#fff' }}>
+                        {String(d.par[0]).padStart(2, '0')}
+                      </span>
+                      <span className={styles.ferrRankBall} style={{ background: cfg.corSecundaria, borderColor: cfg.corSecundaria, color: '#fff' }}>
+                        {String(d.par[1]).padStart(2, '0')}
+                      </span>
+                      <div className={styles.ferrRankBarWrap}>
+                        <div className={styles.ferrRankBar} style={{ width: `${Math.round((d.count / (combDuplasConsec[0]?.count || 1)) * 100)}%`, background: cfg.cor }} />
+                      </div>
+                      <span className={styles.ferrRankVal}>{d.count}x</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              <div className={styles.ferrColuna}>
+                <div className={styles.ferrRankTitle}>🔢 Trincas consecutivas mais frequentes</div>
+                <div className={styles.ferrRanking}>
+                  {combTrincasConsec.map((d, i) => (
+                    <div key={d.trio.join('-')} className={styles.ferrRankRow}>
+                      <span className={styles.ferrRankPos}>{i + 1}º</span>
+                      <span className={styles.ferrRankBall} style={{ background: cfg.cor, borderColor: cfg.cor, color: '#fff' }}>
+                        {String(d.trio[0]).padStart(2, '0')}
+                      </span>
+                      <span className={styles.ferrRankBall} style={{ background: cfg.corSecundaria, borderColor: cfg.corSecundaria, color: '#fff' }}>
+                        {String(d.trio[1]).padStart(2, '0')}
+                      </span>
+                      <span className={styles.ferrRankBall} style={{ background: cfg.cor, borderColor: cfg.cor, color: '#fff' }}>
+                        {String(d.trio[2]).padStart(2, '0')}
+                      </span>
+                      <div className={styles.ferrRankBarWrap}>
+                        <div className={styles.ferrRankBar} style={{ width: `${Math.round((d.count / (combTrincasConsec[0]?.count || 1)) * 100)}%`, background: cfg.cor }} />
+                      </div>
+                      <span className={styles.ferrRankVal}>{d.count}x</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </>
         )}
-      </div>
       </div>
 
       {/* ── Carregar histórico ── */}

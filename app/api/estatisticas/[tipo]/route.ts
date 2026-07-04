@@ -132,6 +132,8 @@ export async function GET(req: NextRequest, { params }: { params: { tipo: string
       const somas: number[] = []
       const paresCount: Record<string, number> = {}
       const trincasCount: Record<string, number> = {}
+      const paresConsecCount: Record<string, number> = {}
+      const trincasConsecCount: Record<string, number> = {}
 
       for (const row of data) {
         const dez = row.dezenas || []
@@ -143,17 +145,29 @@ export async function GET(req: NextRequest, { params }: { params: { tipo: string
 
         somas.push(dez.reduce((s, n) => s + n, 0))
 
-        // Só conta pares/trincas de números literalmente consecutivos (ex: 43-44, 43-44-45),
-        // não qualquer combinação de números que tenham saído juntos no mesmo sorteio.
         const ordenado = [...dez].sort((a, b) => a - b)
+
+        // Duplas/trincas em geral (qualquer combinação que saiu junta no sorteio)
+        for (let i = 0; i < ordenado.length; i++) {
+          for (let j = i + 1; j < ordenado.length; j++) {
+            const chave = `${ordenado[i]}-${ordenado[j]}`
+            paresCount[chave] = (paresCount[chave] || 0) + 1
+            for (let k = j + 1; k < ordenado.length; k++) {
+              const chaveTrio = `${ordenado[i]}-${ordenado[j]}-${ordenado[k]}`
+              trincasCount[chaveTrio] = (trincasCount[chaveTrio] || 0) + 1
+            }
+          }
+        }
+
+        // Duplas/trincas consecutivas (números literalmente sequenciais, ex: 43-44, 43-44-45)
         for (let i = 0; i < ordenado.length - 1; i++) {
           if (ordenado[i + 1] !== ordenado[i] + 1) continue
           const chave = `${ordenado[i]}-${ordenado[i + 1]}`
-          paresCount[chave] = (paresCount[chave] || 0) + 1
+          paresConsecCount[chave] = (paresConsecCount[chave] || 0) + 1
 
           if (i + 2 < ordenado.length && ordenado[i + 2] === ordenado[i] + 2) {
             const chaveTrio = `${ordenado[i]}-${ordenado[i + 1]}-${ordenado[i + 2]}`
-            trincasCount[chaveTrio] = (trincasCount[chaveTrio] || 0) + 1
+            trincasConsecCount[chaveTrio] = (trincasConsecCount[chaveTrio] || 0) + 1
           }
         }
       }
@@ -173,12 +187,26 @@ export async function GET(req: NextRequest, { params }: { params: { tipo: string
         .sort((a, b) => b.count - a.count)
         .slice(0, 15)
 
+      const duplasConsecutivas = Object.entries(paresConsecCount)
+        .map(([par, count]) => ({ par: par.split('-').map(Number) as [number, number], count, pct: Math.round((count / total) * 1000) / 10 }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 15)
+
+      const trincasConsecutivas = Object.entries(trincasConsecCount)
+        .map(([trio, count]) => ({ trio: trio.split('-').map(Number) as [number, number, number], count, pct: Math.round((count / total) * 1000) / 10 }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 15)
+
       const somaMedia = Math.round(somas.reduce((s, v) => s + v, 0) / (somas.length || 1))
       const somaMin = Math.min(...somas)
       const somaMax = Math.max(...somas)
 
       return NextResponse.json(
-        { tipo, loteria, total_concursos: total, distribuicaoSequencia, duplasFrequentes, trincasFrequentes, soma: { media: somaMedia, min: somaMin, max: somaMax } },
+        {
+          tipo, loteria, total_concursos: total, distribuicaoSequencia,
+          duplasFrequentes, trincasFrequentes, duplasConsecutivas, trincasConsecutivas,
+          soma: { media: somaMedia, min: somaMin, max: somaMax },
+        },
         { next: { revalidate: 3600 } } as never,
       )
     }
