@@ -109,6 +109,68 @@ export async function GET(req: NextRequest, { params }: { params: { tipo: string
       )
     }
 
+    if (tipo === 'combinacoes') {
+      const { data, error } = await fetchAllRows<{ dezenas: number[]; concurso: number }>((from, to) => {
+        const q = legacy
+          ? supabase.from('mega_historico').select('dezenas, concurso')
+          : supabase.from('loteria_historico').select('dezenas, concurso').eq('loteria', loteria)
+        return q.range(from, to)
+      })
+      if (error) return NextResponse.json({ error }, { status: 500 })
+
+      // Maior sequência de números consecutivos em cada sorteio
+      const maxSequencia = (dez: number[]): number => {
+        const s = [...dez].sort((a, b) => a - b)
+        let max = 1, atual = 1
+        for (let i = 1; i < s.length; i++) {
+          if (s[i] === s[i - 1] + 1) { atual++; max = Math.max(max, atual) } else atual = 1
+        }
+        return max
+      }
+
+      const distribSeq: Record<string, number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5+': 0 }
+      const somas: number[] = []
+      const paresCount: Record<string, number> = {}
+
+      for (const row of data) {
+        const dez = row.dezenas || []
+        if (dez.length === 0) continue
+
+        const seq = maxSequencia(dez)
+        const chaveSeq = seq >= 5 ? '5+' : String(seq)
+        distribSeq[chaveSeq] = (distribSeq[chaveSeq] || 0) + 1
+
+        somas.push(dez.reduce((s, n) => s + n, 0))
+
+        const ordenado = [...dez].sort((a, b) => a - b)
+        for (let i = 0; i < ordenado.length; i++) {
+          for (let j = i + 1; j < ordenado.length; j++) {
+            const chave = `${ordenado[i]}-${ordenado[j]}`
+            paresCount[chave] = (paresCount[chave] || 0) + 1
+          }
+        }
+      }
+
+      const total = data.length || 1
+      const distribuicaoSequencia = Object.entries(distribSeq)
+        .map(([tamanho, count]) => ({ tamanho, count, pct: Math.round((count / total) * 1000) / 10 }))
+        .sort((a, b) => (a.tamanho === '5+' ? 1 : b.tamanho === '5+' ? -1 : Number(a.tamanho) - Number(b.tamanho)))
+
+      const duplasFrequentes = Object.entries(paresCount)
+        .map(([par, count]) => ({ par: par.split('-').map(Number) as [number, number], count, pct: Math.round((count / total) * 1000) / 10 }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 15)
+
+      const somaMedia = Math.round(somas.reduce((s, v) => s + v, 0) / (somas.length || 1))
+      const somaMin = Math.min(...somas)
+      const somaMax = Math.max(...somas)
+
+      return NextResponse.json(
+        { tipo, loteria, total_concursos: total, distribuicaoSequencia, duplasFrequentes, soma: { media: somaMedia, min: somaMin, max: somaMax } },
+        { next: { revalidate: 3600 } } as never,
+      )
+    }
+
     if (tipo === 'info') {
       let count: number | null = 0
       let max: number | undefined, min: number | undefined

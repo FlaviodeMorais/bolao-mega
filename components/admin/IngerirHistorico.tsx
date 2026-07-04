@@ -34,6 +34,12 @@ export default function IngerirHistorico() {
   const [infoTotal, setInfoTotal]       = useState<number | null>(null)
   const [loadingEstat, setLoadingEstat] = useState(false)
 
+  // Combinações & Sequências
+  const [combDistrib, setCombDistrib]   = useState<{ tamanho: string; count: number; pct: number }[]>([])
+  const [combDuplas, setCombDuplas]     = useState<{ par: [number, number]; count: number; pct: number }[]>([])
+  const [combSoma, setCombSoma]         = useState<{ media: number; min: number; max: number } | null>(null)
+  const [loadingComb, setLoadingComb]   = useState(false)
+
   useEffect(() => {
     setLoadingEstat(true)
     Promise.all([
@@ -46,6 +52,14 @@ export default function IngerirHistorico() {
       setInfoTotal(i?.total ?? null)
       setLoadingEstat(false)
     }).catch(() => setLoadingEstat(false))
+
+    setLoadingComb(true)
+    fetch(`/api/estatisticas/combinacoes?loteria=${loteria}`).then(r => r.json()).then(c => {
+      setCombDistrib(c.distribuicaoSequencia || [])
+      setCombDuplas(c.duplasFrequentes || [])
+      setCombSoma(c.soma || null)
+      setLoadingComb(false)
+    }).catch(() => setLoadingComb(false))
   }, [loteria])
 
   useEffect(() => {
@@ -263,6 +277,74 @@ export default function IngerirHistorico() {
                   <span className={styles.geradorRankVal}>
                     {abaEstat === 'freq' ? `${d.count}x` : `${d.atraso}c`}
                   </span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ── Combinações & Sequências ── */}
+      <div className={styles.geradorStat}>
+        <div className={styles.geradorStatHeader}>
+          <span className={styles.geradorSectionLabel}>🔢 Combinações & Sequências</span>
+        </div>
+
+        {loadingComb ? (
+          <div className={styles.geradorLoading}>Carregando combinações da {cfg.label}...</div>
+        ) : combDistrib.length === 0 ? (
+          <div className={styles.geradorLoading}>Histórico não carregado.</div>
+        ) : (
+          <>
+            <div className={styles.geradorRankTitle}>Sequências consecutivas por sorteio</div>
+            <div className={styles.geradorRanking}>
+              {combDistrib.map(d => {
+                const label = d.tamanho === '1' ? 'Sem sequência' : d.tamanho === '5+' ? '5+ seguidos' : `${d.tamanho} seguidos`
+                const maxCountSeq = Math.max(...combDistrib.map(x => x.count), 1)
+                return (
+                  <div key={d.tamanho} className={styles.geradorRankRow}>
+                    <span className={styles.geradorRankPos} style={{ width: 90, textAlign: 'left' }}>{label}</span>
+                    <div className={styles.geradorRankBarWrap}>
+                      <div className={styles.geradorRankBar} style={{ width: `${Math.round((d.count / maxCountSeq) * 100)}%`, background: cfg.cor }} />
+                    </div>
+                    <span className={styles.geradorRankVal}>{d.pct}%</span>
+                  </div>
+                )
+              })}
+            </div>
+
+            {combSoma && (
+              <div className={`${styles.detStatsRow} ${styles.detStatsRow3}`} style={{ marginTop: 4 }}>
+                <div className={styles.detStat}>
+                  <div className={styles.detStatVal}>{combSoma.media}</div>
+                  <span className={styles.detStatLbl}>Soma média</span>
+                </div>
+                <div className={styles.detStat}>
+                  <div className={styles.detStatVal}>{combSoma.min}</div>
+                  <span className={styles.detStatLbl}>Menor soma</span>
+                </div>
+                <div className={styles.detStat}>
+                  <div className={styles.detStatVal}>{combSoma.max}</div>
+                  <span className={styles.detStatLbl}>Maior soma</span>
+                </div>
+              </div>
+            )}
+
+            <div className={styles.geradorRankTitle}>🔗 Duplas mais frequentes juntas</div>
+            <div className={styles.geradorRanking}>
+              {combDuplas.map((d, i) => (
+                <div key={d.par.join('-')} className={styles.geradorRankRow}>
+                  <span className={styles.geradorRankPos}>{i + 1}º</span>
+                  <span className={styles.geradorRankBall} style={{ background: cfg.cor, borderColor: cfg.cor, color: '#fff' }}>
+                    {String(d.par[0]).padStart(2, '0')}
+                  </span>
+                  <span className={styles.geradorRankBall} style={{ background: cfg.corSecundaria, borderColor: cfg.corSecundaria, color: '#fff' }}>
+                    {String(d.par[1]).padStart(2, '0')}
+                  </span>
+                  <div className={styles.geradorRankBarWrap}>
+                    <div className={styles.geradorRankBar} style={{ width: `${Math.round((d.count / (combDuplas[0]?.count || 1)) * 100)}%`, background: cfg.cor }} />
+                  </div>
+                  <span className={styles.geradorRankVal}>{d.count}x</span>
                 </div>
               ))}
             </div>
