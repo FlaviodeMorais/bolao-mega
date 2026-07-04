@@ -6,8 +6,18 @@ import TrevoIcon from '@/components/TrevoIcon'
 
 interface NumStat { numero: number; count: number; pct: number; atraso?: number }
 interface Parceiro { parceiro: number; count: number }
-type Estrategia = 'frequentes' | 'atrasados' | 'equilibrado' | 'aleatoria' | 'parceiros'
-type FonteParceiros = 'geral' | 'consecutiva'
+type Estrategia = 'frequentes' | 'atrasados' | 'equilibrado' | 'aleatoria'
+type FonteParceiros = 'geral' | 'consecutiva' | null
+
+// Soma dos counts dos parceiros de cada número — quanto maior, mais "conectado"
+// esse número é historicamente aos demais (base do peso extra no gerador).
+function partnerScorePorNumero(mapa: Record<number, Parceiro[]>): Record<number, number> {
+  const score: Record<number, number> = {}
+  for (const [num, parceiros] of Object.entries(mapa)) {
+    score[Number(num)] = parceiros.reduce((s, p) => s + p.count, 0)
+  }
+  return score
+}
 
 // Maior sequência de números consecutivos numa aposta (ex: 12,13,14 → 3)
 function maxSequencia(aposta: number[]): number {
@@ -23,6 +33,7 @@ function gerarCombinacoes(
   freq: NumStat[], atrasos: NumStat[], estrategia: Estrategia,
   numApostas: number, dezenas: number, totalNums: number,
   filtroParidade: boolean, filtroQuadrante: boolean, filtroSequencia: boolean,
+  parceirosScore: Record<number, number> | null,
 ): number[][] {
   const scores: Record<number, number> = {}
   for (let i = 1; i <= totalNums; i++) scores[i] = 0
@@ -37,6 +48,12 @@ function gerarCombinacoes(
   }
   if (estrategia === 'aleatoria') {
     for (let i = 1; i <= totalNums; i++) scores[i] = Math.random()
+  }
+  // Peso extra combinável: números historicamente mais "conectados" a outros
+  // (estilo Wonder Grid) somam pontuação por cima de qualquer estratégia acima.
+  if (parceirosScore) {
+    const maxP = Math.max(...Object.values(parceirosScore), 1)
+    for (let i = 1; i <= totalNums; i++) scores[i] = (scores[i] || 0) + (parceirosScore[i] || 0) / maxP
   }
 
   const apostas: number[][] = []
@@ -71,43 +88,6 @@ function gerarCombinacoes(
       const limite = Math.max(2, Math.round((dezenas * dezenas) / totalNums) + 2)
       if (maxSequencia(aposta) > limite) continue
     }
-    const chave = aposta.join('-')
-    if (!apostas.some(a => a.join('-') === chave)) apostas.push(aposta)
-  }
-  return apostas
-}
-
-// Estilo "Wonder Grid" (Ion Saliu): cada aposta parte de um número-âncora (os mais
-// frequentes primeiro) e completa com seus parceiros históricos mais frequentes —
-// ou seja, números que mais saíram junto com a âncora no mesmo sorteio.
-function gerarPorParceiros(
-  freq: NumStat[], paresPorNumero: Record<number, Parceiro[]>,
-  numApostas: number, dezenas: number, totalNums: number,
-): number[][] {
-  const anchorPool = freq.length ? freq.map(f => f.numero) : Array.from({ length: totalNums }, (_, i) => i + 1)
-  const apostas: number[][] = []
-  let anchorIdx = 0
-  let tentativas = 0
-
-  while (apostas.length < numApostas && tentativas < numApostas * 20 + 50) {
-    tentativas++
-    const anchor = anchorPool[anchorIdx % anchorPool.length]
-    anchorIdx++
-
-    const selecionados = new Set<number>([anchor])
-    for (const p of paresPorNumero[anchor] || []) {
-      if (selecionados.size >= dezenas) break
-      selecionados.add(p.parceiro)
-    }
-    // Poucos parceiros conhecidos (histórico curto) — completa pelos números mais frequentes em geral
-    for (const f of freq) {
-      if (selecionados.size >= dezenas) break
-      selecionados.add(f.numero)
-    }
-    // Ainda faltando (caso extremo) — completa aleatoriamente
-    while (selecionados.size < dezenas) selecionados.add(Math.floor(Math.random() * totalNums) + 1)
-
-    const aposta = [...selecionados].slice(0, dezenas).sort((a, b) => a - b)
     const chave = aposta.join('-')
     if (!apostas.some(a => a.join('-') === chave)) apostas.push(aposta)
   }
@@ -151,7 +131,7 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
   const [loadingEstat, setLoadingEstat] = useState(false)
 
   const [estrategia, setEstrategia]           = useState<Estrategia>('equilibrado')
-  const [fonteParceiros, setFonteParceiros]   = useState<FonteParceiros>('geral')
+  const [fonteParceiros, setFonteParceiros]   = useState<FonteParceiros>(null)
   const [filtroParidade, setFiltroParidade]     = useState(true)
   const [filtroQuadrante, setFiltroQuadrante]   = useState(false)
   const [filtroSequencia, setFiltroSequencia]   = useState(false)
@@ -184,9 +164,9 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
   const gerar = useCallback(() => {
     setGerando(true)
     setTimeout(() => {
-      const res = estrategia === 'parceiros'
-        ? gerarPorParceiros(freqDados, fonteParceiros === 'geral' ? paresPorNumero : paresConsecPorNumero, numApostas, dezenas, cfg.totalNumeros)
-        : gerarCombinacoes(freqDados, atrasosDados, estrategia, numApostas, dezenas, cfg.totalNumeros, filtroParidade, filtroQuadrante, filtroSequencia)
+      const parceirosMap = fonteParceiros === 'geral' ? paresPorNumero : fonteParceiros === 'consecutiva' ? paresConsecPorNumero : null
+      const parceirosScore = parceirosMap ? partnerScorePorNumero(parceirosMap) : null
+      const res = gerarCombinacoes(freqDados, atrasosDados, estrategia, numApostas, dezenas, cfg.totalNumeros, filtroParidade, filtroQuadrante, filtroSequencia, parceirosScore)
       setApostasGeradas(res); setGerando(false); setCopiado(false)
     }, 50)
   }, [freqDados, atrasosDados, estrategia, fonteParceiros, paresPorNumero, paresConsecPorNumero, numApostas, dezenas, cfg.totalNumeros, filtroParidade, filtroQuadrante, filtroSequencia])
@@ -247,22 +227,22 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
           <div className={styles.geradorConfigGroup}>
             <div className={styles.geradorConfigLabel}>Base dos parceiros</div>
             <div className={styles.geradorEstrategias}>
-              <button type="button" title="Número-âncora + números que mais saíram junto com ele no mesmo sorteio (estilo Wonder Grid)"
-                className={`${styles.geradorEstrBtn} ${estrategia === 'parceiros' && fonteParceiros === 'geral' ? styles.geradorEstrBtnAtivo : ''}`}
-                style={estrategia === 'parceiros' && fonteParceiros === 'geral' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
-                onClick={() => { setEstrategia('parceiros'); setFonteParceiros('geral') }}>
+              <button type="button" title="Soma peso extra aos números que mais saíram juntos historicamente (estilo Wonder Grid) — clique de novo para desativar"
+                className={`${styles.geradorEstrBtn} ${fonteParceiros === 'geral' ? styles.geradorEstrBtnAtivo : ''}`}
+                style={fonteParceiros === 'geral' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
+                onClick={() => setFonteParceiros(f => f === 'geral' ? null : 'geral')}>
                 🔗 Duplas gerais
               </button>
-              <button type="button" title="Número-âncora + números literalmente consecutivos a ele (ex: 43 → 44)"
-                className={`${styles.geradorEstrBtn} ${estrategia === 'parceiros' && fonteParceiros === 'consecutiva' ? styles.geradorEstrBtnAtivo : ''}`}
-                style={estrategia === 'parceiros' && fonteParceiros === 'consecutiva' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
-                onClick={() => { setEstrategia('parceiros'); setFonteParceiros('consecutiva') }}>
+              <button type="button" title="Soma peso extra aos números literalmente consecutivos entre si (ex: 43 → 44) — clique de novo para desativar"
+                className={`${styles.geradorEstrBtn} ${fonteParceiros === 'consecutiva' ? styles.geradorEstrBtnAtivo : ''}`}
+                style={fonteParceiros === 'consecutiva' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
+                onClick={() => setFonteParceiros(f => f === 'consecutiva' ? null : 'consecutiva')}>
                 🔢 Consecutivas
               </button>
             </div>
           </div>
 
-          {cfg.totalNumeros >= 20 && estrategia !== 'parceiros' && (
+          {cfg.totalNumeros >= 20 && (
             <div className={styles.geradorFiltros}>
               <label className={styles.geradorCheck}>
                 <input type="checkbox" checked={filtroParidade} onChange={e => setFiltroParidade(e.target.checked)} />
