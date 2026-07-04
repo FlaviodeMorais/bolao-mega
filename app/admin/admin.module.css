@@ -1197,7 +1197,15 @@
 .crmAcaoBtnComp:disabled { opacity: .5; cursor: default; }
 
 /* ── CONFIGURADOR DE BOLÃO ── */
-.configColuna { min-width: 0; }
+.configuradorCols {
+  display: grid; grid-template-columns: minmax(300px, 360px) 1fr;
+  gap: 24px; align-items: start;
+}
+@media (max-width: 1300px) {
+  .configuradorCols { grid-template-columns: 1fr; }
+  .geradorConfig { padding-top: 20px; border-top: 1px solid rgba(0,171,103,.18); }
+}
+.configColuna { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 .configurador {
   display: flex; flex-direction: column; gap: 20px;
   background: #E6F7EE;
@@ -1675,7 +1683,6 @@
 
 .geradorConfig {
   display: flex; flex-direction: column; gap: 14px;
-  padding-top: 20px; border-top: 1px solid rgba(0,171,103,.18);
 }
 /* Coluna de controles (esquerda) tem conteudo fixo/compacto (botoes de estrategia,
    steppers) - cabe confortavelmente em 300-360px. A coluna de resultado (direita)
