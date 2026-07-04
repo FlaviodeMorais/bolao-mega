@@ -304,7 +304,6 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
                 <div className={styles.geradorApostas}>
                   {apostasGeradas.map((aposta, i) => (
                     <div key={i} className={styles.geradorApostaRow}>
-                      <span className={styles.geradorApostaIdx}>{i + 1}</span>
                       <div className={styles.geradorApostaBalls}>
                         {aposta.map(n => (
                           <span key={n} className={styles.geradorApoBall}
