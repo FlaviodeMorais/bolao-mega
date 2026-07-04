@@ -21,12 +21,13 @@ export default function Configurador(p: Props) {
   const loteriaCfg = getLoteria(bolao.loteria)
 
   return (
-    <>
-      <button type="button" className={styles.configToggle} onClick={p.onToggleConfig}>
-        ⚙️ Configurar Bolão <span>{p.showConfig ? '▲' : '▼'}</span>
-      </button>
-      {p.showConfig && (
-        <div className={styles.configuradorCols}>
+    <div className={styles.configuradorCols}>
+      <div className={styles.configColuna}>
+        <button type="button" className={styles.geradorToggle} onClick={p.onToggleConfig}>
+          <span>⚙️ Configurar Bolão</span>
+          <span>{p.showConfig ? '▲' : '▼'}</span>
+        </button>
+        {p.showConfig && (
           <div className={styles.configurador}>
             <div className={styles.configGrid3}>
               <div className={styles.configField}>
@@ -87,7 +88,11 @@ export default function Configurador(p: Props) {
               {p.salvando ? 'Salvando...' : '💾 Salvar Configuração'}
             </button>
           </div>
+        )}
+      </div>
 
+      {p.showConfig && (
+        <div className={styles.configColuna}>
           <GeradorApostas
             loteria={(bolao.loteria ?? 'mega') as import('@/lib/loterias').LoteriaId}
             dezenasBolao={p.editDezenas}
@@ -97,6 +102,6 @@ export default function Configurador(p: Props) {
           />
         </div>
       )}
-    </>
+    </div>
   )
 }
