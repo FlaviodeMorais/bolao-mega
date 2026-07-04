@@ -1799,25 +1799,23 @@
   border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;
 }
 .geradorResultadoHeader { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-/* Flui em colunas (nao em linhas): ate 6 apostas por coluna, gerando quantas colunas
-   forem necessarias (ate ~13 antes de precisar rolar horizontalmente) - aproveita a
-   largura da coluna de resultado em vez de empilhar tudo verticalmente com scroll. */
+/* Grid fluido: cada cartao tem largura minima confortavel e o grid preenche a linha
+   inteira com quantas colunas couberem (auto-fill), quebrando pra proxima linha sem
+   deixar vao vazio - se adapta tanto a poucas dezenas (6) quanto ao maximo (20). */
 .geradorApostas {
   display: grid;
-  grid-auto-flow: column;
-  grid-template-rows: repeat(6, auto);
-  grid-auto-columns: minmax(152px, max-content);
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 6px;
-  max-width: 100%;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+  max-height: 460px;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 .geradorApostaRow {
-  display: flex; flex-direction: column; gap: 6px; padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 8px; padding: 10px 12px;
   background: #F8FAFB; border-radius: 10px; border: 1px solid #E2E8F0;
 }
 .geradorApostaIdx { font-size: 11px; font-weight: 700; color: #94A3B8; font-family: 'JetBrains Mono', monospace; }
-.geradorApostaBalls { display: flex; gap: 5px; flex-wrap: wrap; max-width: 148px; }
+.geradorApostaBalls { display: flex; gap: 5px; flex-wrap: wrap; }
 .geradorApoBall {
   display: inline-flex; align-items: center; justify-content: center;
   width: 27px; height: 27px; border-radius: 50%;
