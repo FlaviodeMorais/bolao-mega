@@ -70,12 +70,16 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const { id, force } = await req.json()
+  const { id } = await req.json()
   if (!id) return NextResponse.json({ error: 'ID obrigatório' }, { status: 400 })
 
-  const { data: bolaoDb } = await supabase.from('boloes').select('slug, ativo, encerrado').eq('id', id).single()
+  const { data: bolaoDb } = await supabase.from('boloes').select('slug').eq('id', id).single()
   if (!bolaoDb) return NextResponse.json({ error: 'Bolão não encontrado' }, { status: 404 })
 
+  // Exclusão de bolão nunca apaga histórico de participantes (comprovantes,
+  // KPIs e o painel de Histórico dependem desses dados permanecerem). Se há
+  // participantes, o bolão só pode ser ocultado (Cancelar → ativo=false),
+  // nunca excluído de fato - assim os dados históricos ficam sempre intactos.
   const { count } = await supabase
     .from('participantes')
     .select('id', { count: 'exact', head: true })
@@ -83,13 +87,10 @@ export async function DELETE(req: NextRequest) {
     .neq('status', 'cancelado')
 
   if (count && count > 0) {
-    if (!force || bolaoDb.ativo) {
-      return NextResponse.json(
-        { error: `Não é possível excluir: há ${count} participante(s) neste bolão.`, count },
-        { status: 409 },
-      )
-    }
-    await supabase.from('participantes').delete().eq('bolao_slug', bolaoDb.slug)
+    return NextResponse.json(
+      { error: `Este bolão tem ${count} participante(s) no histórico e não pode ser excluído. Use "Cancelar" para ocultá-lo mantendo o histórico.`, count },
+      { status: 409 },
+    )
   }
 
   const { error } = await supabase.from('boloes').delete().eq('id', id)

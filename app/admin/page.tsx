@@ -226,25 +226,27 @@ export default function AdminPage() {
     if (bolaoAtual?.id === b.id) fecharBolao()
   }
 
-  async function excluirBolao(b: Bolao, force = false) {
-    const aviso = force
-      ? `⚠️ ATENÇÃO: Excluir "${b.nome}" junto com TODOS os participantes e histórico?\n\nEsta ação é irreversível.`
-      : `Excluir permanentemente "${b.nome}"?\n\nEsta ação não pode ser desfeita.`
-    if (!confirm(aviso)) return
+  async function excluirBolao(b: Bolao) {
+    if (!confirm(`Excluir permanentemente "${b.nome}"?\n\nEsta ação não pode ser desfeita.`)) return
     const res = await fetch('/api/boloes', {
       method: 'DELETE', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: b.id, force }),
+      body: JSON.stringify({ id: b.id }),
     }).then(r => r.json())
-    if (res.error && res.count > 0 && !force) {
-      const ok = confirm(
-        `❌ Este bolão tem ${res.count} participante(s) no histórico.\n\n` +
-        `Deseja excluir o bolão E todos os participantes permanentemente?\n\n` +
-        `(Isso remove o histórico completo deste bolão)`
-      )
-      if (ok) excluirBolao(b, true)
+    if (res.error) {
+      // Bolão tem histórico de participantes - exclusão nunca apaga esses dados.
+      // Oferece "Cancelar" (ativo=false) como alternativa: some da home, mas
+      // mantém comprovantes, KPIs e o painel de Histórico intactos.
+      const usarCancelar = confirm(`❌ ${res.error}\n\nDeseja ocultar o bolão agora (Cancelar) em vez de excluir?`)
+      if (usarCancelar) {
+        await fetch('/api/boloes', {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: b.id, ativo: false }),
+        })
+        await carregarBoloes()
+        if (bolaoAtual?.id === b.id) fecharBolao()
+      }
       return
     }
-    if (res.error) { alert('❌ ' + res.error); return }
     await carregarBoloes()
     if (bolaoAtual?.id === b.id) fecharBolao()
   }
