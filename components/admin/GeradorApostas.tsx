@@ -307,10 +307,9 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
                     const cols = aposta.length <= 10 ? aposta.length : Math.ceil(aposta.length / 2)
                     return (
                       <div key={i} className={styles.geradorApostaRow}>
-                        <div className={styles.geradorApostaBalls} style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+                        <div className={styles.geradorApostaBalls} style={{ gridTemplateColumns: `repeat(${cols}, max-content)` }}>
                           {aposta.map(n => (
-                            <span key={n} className={styles.geradorApoBall}
-                              style={{ background: `linear-gradient(135deg, ${cfg.corSecundaria} 0%, ${cfg.cor} 100%)` }}>
+                            <span key={n} className={styles.geradorApoBall} style={{ background: cfg.cor }}>
                               {String(n).padStart(2, '0')}
                             </span>
                           ))}
