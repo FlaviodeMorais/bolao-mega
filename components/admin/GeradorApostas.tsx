@@ -187,17 +187,14 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
 
   return (
     <div className={styles.geradorConfig}>
-      <div className={styles.geradorResultadoHeader}>
-        <div className={styles.geradorSectionLabel}>
-          <TrevoIcon loteria={loteria} size={12} /> Gerador de Apostas — {cfg.label}
-        </div>
-        {apostasGeradas.length > 0 && (
+      {apostasGeradas.length > 0 && (
+        <div className={styles.geradorResultadoHeader} style={{ justifyContent: 'flex-end' }}>
           <button type="button" className={styles.btnSecundario}
             onClick={copiar} style={{ padding: '5px 12px', fontSize: 12 }}>
             {copiado ? '✅ Copiado!' : '📋 Copiar'}
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {loadingEstat && (
         <div className={styles.geradorLoading}>Carregando estatísticas da {cfg.label}...</div>
