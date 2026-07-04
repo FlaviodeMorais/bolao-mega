@@ -131,6 +131,7 @@ export async function GET(req: NextRequest, { params }: { params: { tipo: string
       const distribSeq: Record<string, number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5+': 0 }
       const somas: number[] = []
       const paresCount: Record<string, number> = {}
+      const trincasCount: Record<string, number> = {}
 
       for (const row of data) {
         const dez = row.dezenas || []
@@ -147,6 +148,10 @@ export async function GET(req: NextRequest, { params }: { params: { tipo: string
           for (let j = i + 1; j < ordenado.length; j++) {
             const chave = `${ordenado[i]}-${ordenado[j]}`
             paresCount[chave] = (paresCount[chave] || 0) + 1
+            for (let k = j + 1; k < ordenado.length; k++) {
+              const chaveTrio = `${ordenado[i]}-${ordenado[j]}-${ordenado[k]}`
+              trincasCount[chaveTrio] = (trincasCount[chaveTrio] || 0) + 1
+            }
           }
         }
       }
@@ -161,12 +166,17 @@ export async function GET(req: NextRequest, { params }: { params: { tipo: string
         .sort((a, b) => b.count - a.count)
         .slice(0, 15)
 
+      const trincasFrequentes = Object.entries(trincasCount)
+        .map(([trio, count]) => ({ trio: trio.split('-').map(Number) as [number, number, number], count, pct: Math.round((count / total) * 1000) / 10 }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 15)
+
       const somaMedia = Math.round(somas.reduce((s, v) => s + v, 0) / (somas.length || 1))
       const somaMin = Math.min(...somas)
       const somaMax = Math.max(...somas)
 
       return NextResponse.json(
-        { tipo, loteria, total_concursos: total, distribuicaoSequencia, duplasFrequentes, soma: { media: somaMedia, min: somaMin, max: somaMax } },
+        { tipo, loteria, total_concursos: total, distribuicaoSequencia, duplasFrequentes, trincasFrequentes, soma: { media: somaMedia, min: somaMin, max: somaMax } },
         { next: { revalidate: 3600 } } as never,
       )
     }
