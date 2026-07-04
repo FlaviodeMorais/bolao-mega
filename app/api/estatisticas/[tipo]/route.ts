@@ -197,6 +197,24 @@ export async function GET(req: NextRequest, { params }: { params: { tipo: string
         .sort((a, b) => b.count - a.count)
         .slice(0, 15)
 
+      // Parceiros mais frequentes de cada número (base do "Wonder Grid": número-âncora + seus
+      // top parceiros históricos), a partir do mapa completo de pares (antes do slice do top 15).
+      function topParceirosPorNumero(mapa: Record<string, number>, top = 5): Record<number, { parceiro: number; count: number }[]> {
+        const porNumero: Record<number, { parceiro: number; count: number }[]> = {}
+        for (const [chave, count] of Object.entries(mapa)) {
+          const [a, b] = chave.split('-').map(Number)
+          ;(porNumero[a] ??= []).push({ parceiro: b, count })
+          ;(porNumero[b] ??= []).push({ parceiro: a, count })
+        }
+        for (const num of Object.keys(porNumero)) {
+          porNumero[Number(num)] = porNumero[Number(num)].sort((a, b) => b.count - a.count).slice(0, top)
+        }
+        return porNumero
+      }
+
+      const paresPorNumero = topParceirosPorNumero(paresCount)
+      const paresConsecPorNumero = topParceirosPorNumero(paresConsecCount)
+
       const somaMedia = Math.round(somas.reduce((s, v) => s + v, 0) / (somas.length || 1))
       const somaMin = Math.min(...somas)
       const somaMax = Math.max(...somas)
@@ -205,6 +223,7 @@ export async function GET(req: NextRequest, { params }: { params: { tipo: string
         {
           tipo, loteria, total_concursos: total, distribuicaoSequencia,
           duplasFrequentes, trincasFrequentes, duplasConsecutivas, trincasConsecutivas,
+          paresPorNumero, paresConsecPorNumero,
           soma: { media: somaMedia, min: somaMin, max: somaMax },
         },
         { next: { revalidate: 3600 } } as never,
