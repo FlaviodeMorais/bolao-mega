@@ -21,8 +21,8 @@ interface BolaoEsporte {
 
 interface Competicao {
   id: string; nome: string; logo_url?: string; cor?: string
-  fonte: 'fifa' | 'api-football' | 'manual'
-  api_competition_id?: number | null; temporada?: string | null
+  fonte: 'fifa' | 'football-data' | 'manual'
+  api_codigo?: string | null; temporada?: string | null
 }
 
 interface EsporteDefaults {
@@ -78,8 +78,8 @@ export default function BolaoEsporteEditor({ bolao, onSaved, onCancel }: Props) 
   const [competicoes, setCompeticoes]     = useState<Competicao[]>([])
   const [novoCampAberto, setNovoCampAberto] = useState(false)
   const [ncNome, setNcNome]       = useState('')
-  const [ncFonte, setNcFonte]     = useState<'manual'|'api-football'>('manual')
-  const [ncApiId, setNcApiId]     = useState('')
+  const [ncFonte, setNcFonte]     = useState<'manual'|'football-data'>('manual')
+  const [ncApiCodigo, setNcApiCodigo] = useState('')
   const [ncTemporada, setNcTemporada] = useState(String(new Date().getFullYear()))
   const [ncCor, setNcCor]         = useState('#FFB81C')
   const [ncSalvando, setNcSalvando] = useState(false)
@@ -108,18 +108,18 @@ export default function BolaoEsporteEditor({ bolao, onSaved, onCancel }: Props) 
 
   async function criarCampeonato() {
     if (!ncNome.trim()) { setNcErro('Informe o nome do campeonato'); return }
-    if (ncFonte === 'api-football' && !ncApiId.trim()) { setNcErro('Informe o ID da liga na API-Football'); return }
+    if (ncFonte === 'football-data' && !ncApiCodigo.trim()) { setNcErro('Informe o código da competição no football-data.org'); return }
     setNcSalvando(true); setNcErro('')
     const res = await fetch('/api/esporte/campeonatos', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome: ncNome, fonte: ncFonte, api_competition_id: ncApiId ? Number(ncApiId) : null, temporada: ncTemporada, cor: ncCor }),
+      body: JSON.stringify({ nome: ncNome, fonte: ncFonte, api_codigo: ncApiCodigo || null, temporada: ncTemporada, cor: ncCor }),
     }).then(r => r.json())
     setNcSalvando(false)
     if (res.error) { setNcErro(res.error); return }
     setCompeticoes(prev => [...prev, res.competicao])
     aplicarCompeticao(res.competicao)
     setNovoCampAberto(false)
-    setNcNome(''); setNcApiId(''); setNcFonte('manual')
+    setNcNome(''); setNcApiCodigo(''); setNcFonte('manual')
   }
 
   function set(key: keyof BolaoEsporte, val: unknown) {
@@ -215,7 +215,7 @@ export default function BolaoEsporteEditor({ bolao, onSaved, onCancel }: Props) 
                   <option value="" disabled>Selecione um campeonato…</option>
                   {competicoes.map(c => (
                     <option key={c.id} value={c.id}>
-                      {c.nome} {c.fonte === 'fifa' ? '· FIFA (auto)' : c.fonte === 'api-football' ? '· API-Football (auto)' : '· manual'}
+                      {c.nome} {c.fonte === 'fifa' ? '· FIFA (auto)' : c.fonte === 'football-data' ? '· football-data.org (auto)' : '· manual'}
                     </option>
                   ))}
                 </select>
@@ -236,17 +236,17 @@ export default function BolaoEsporteEditor({ bolao, onSaved, onCancel }: Props) 
                 <label className={styles.esporteEditorLabel}>
                   Fonte dos jogos
                   <select className={styles.esporteEditorInput} value={ncFonte}
-                    onChange={e => setNcFonte(e.target.value as 'manual' | 'api-football')}>
+                    onChange={e => setNcFonte(e.target.value as 'manual' | 'football-data')}>
                     <option value="manual">Manual (admin cadastra cada jogo)</option>
-                    <option value="api-football">API-Football (importação automática)</option>
+                    <option value="football-data">football-data.org (importação automática)</option>
                   </select>
                 </label>
-                {ncFonte === 'api-football' && (
+                {ncFonte === 'football-data' && (
                   <div className={styles.esporteEditorRow3}>
                     <label className={styles.esporteEditorLabel}>
-                      ID da liga (API-Football)
-                      <input className={styles.esporteEditorInput} value={ncApiId}
-                        onChange={e => setNcApiId(e.target.value)} placeholder="ex: 71 (Brasileirão)" />
+                      Código da competição (football-data.org)
+                      <input className={styles.esporteEditorInput} value={ncApiCodigo}
+                        onChange={e => setNcApiCodigo(e.target.value.toUpperCase())} placeholder="ex: BSA (Brasileirão), PL (Premier League)" />
                     </label>
                     <label className={styles.esporteEditorLabel}>
                       Temporada

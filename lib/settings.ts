@@ -78,7 +78,7 @@ export interface PaginaEsporteSettings {
   label_jogo_hoje_default: string
   label_noticias_default:  string
   premiacao:               PremiacaoItem[]
-  api_football_key:        string
+  football_data_key:       string
 }
 
 export interface AllSettings {
@@ -182,7 +182,7 @@ export const DEFAULTS: AllSettings = {
       { lugar: 2, emoji: '🥈', label: '2º lugar', categoria: 'Acertou o Vencedor',            pts: 3, pct: 30 },
       { lugar: 3, emoji: '🥉', label: '3º lugar', categoria: 'Acertou o Placar',              pts: 2, pct: 20 },
     ],
-    api_football_key: process.env.API_FOOTBALL_KEY || '',
+    football_data_key: process.env.FOOTBALL_DATA_KEY || '',
   },
 }
 

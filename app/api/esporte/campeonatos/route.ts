@@ -16,15 +16,15 @@ export async function POST(req: NextRequest) {
   if (!token || !(await verificarToken(token))) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const body = await req.json()
-  const { nome, logo_url, cor, fonte, api_competition_id, temporada } = body
+  const { nome, logo_url, cor, fonte, api_codigo, temporada } = body
   if (!nome) return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 })
-  if (fonte === 'api-football' && !api_competition_id) {
-    return NextResponse.json({ error: 'Informe o ID da liga na API-Football' }, { status: 400 })
+  if (fonte === 'football-data' && !api_codigo) {
+    return NextResponse.json({ error: 'Informe o código da competição no football-data.org' }, { status: 400 })
   }
 
   const { data, error } = await supabase
     .from('competicoes_esporte')
-    .insert({ nome, logo_url: logo_url || null, cor: cor || '#FFB81C', fonte: fonte || 'manual', api_competition_id: api_competition_id || null, temporada: temporada || null })
+    .insert({ nome, logo_url: logo_url || null, cor: cor || '#FFB81C', fonte: fonte || 'manual', api_codigo: api_codigo || null, temporada: temporada || null })
     .select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

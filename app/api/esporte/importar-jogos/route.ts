@@ -93,7 +93,7 @@ interface JogoNormalizado {
 }
 
 // POST — recebe jogos já buscados pelo browser (fonte='fifa', formato bruto FIFA)
-// ou já normalizados (fonte='api-football') e salva no banco
+// ou já normalizados (fonte='football-data') e salva no banco
 export async function POST(req: NextRequest) {
   const token = req.cookies.get('admin_token')?.value
   if (!token || !(await verificarToken(token))) {
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
   // Sempre apaga TODOS os jogos do bolão antes de reimportar
   await supabase.from('jogos').delete().eq('bolao_slug', bolao_slug)
 
-  if (fonte === 'api-football') {
+  if (fonte === 'football-data') {
     let importados = 0
     let ignorados = 0
     for (const j of jogos as JogoNormalizado[]) {
