@@ -15,6 +15,7 @@ interface Jogo {
   data_jogo?: string; hora_jogo?: string
   fase: string; grupo?: string; ordem: number
   gol_casa?: number | null; gol_fora?: number | null; encerrado: boolean
+  api_jogo_id?: string | null
 }
 interface RankingPart { id: string; nome: string; pontos_total: number }
 interface Participante {
@@ -260,6 +261,8 @@ export default function EsporteAdmin() {
   const [buscandoFifa, setBuscandoFifa]   = useState(false)
   const [jogosPreview, setJogosPreview]   = useState<JogoPreview[] | null>(null)
   const [fonteImportacao, setFonteImportacao] = useState<'fifa' | 'football-data'>('fifa')
+  const [buscandoRes, setBuscandoRes]     = useState(false)
+  const [buscarResMsg, setBuscarResMsg]   = useState('')
 
   // Editar bolão
   const [editNome, setEditNome]   = useState('')
@@ -413,6 +416,25 @@ export default function EsporteAdmin() {
     setTimeout(() => setResMsg(''), 4000)
   }
 
+  async function buscarResultadosAuto() {
+    if (!bolaoSel) return
+    setBuscandoRes(true); setBuscarResMsg('')
+    const res = await fetch('/api/esporte/buscar-resultados', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bolao_slug: bolaoSel.slug }),
+    }).then(r => r.json())
+    setBuscandoRes(false)
+    if (res.error) {
+      setBuscarResMsg('❌ ' + res.error)
+    } else if (res.atualizados > 0) {
+      setBuscarResMsg(`✅ ${res.atualizados} jogo${res.atualizados !== 1 ? 's' : ''} atualizado${res.atualizados !== 1 ? 's' : ''} (${res.jogosVerificados} verificado${res.jogosVerificados !== 1 ? 's' : ''})`)
+      await selBolao(bolaoSel)
+    } else {
+      setBuscarResMsg('ℹ️ Nenhum jogo novo finalizado ainda')
+    }
+    setTimeout(() => setBuscarResMsg(''), 6000)
+  }
+
   const jogoResSel = jogos.find(j => j.id === resId)
 
   return (
@@ -556,7 +578,14 @@ export default function EsporteAdmin() {
                     disabled={buscandoFifa || importando}>
                     {buscandoFifa ? 'Buscando jogos…' : `🌐 Importar jogos — ${bolaoSel.competicao}`}
                   </button>
+                  {bolaoSel.fonte === 'football-data' && (
+                    <button type="button" className={styles.btnAcao}
+                      onClick={buscarResultadosAuto} disabled={buscandoRes}>
+                      {buscandoRes ? 'Buscando resultados…' : '🔄 Buscar resultados'}
+                    </button>
+                  )}
                   {importMsg && <div className={styles.esporteImportMsg}>{importMsg}</div>}
+                  {buscarResMsg && <div className={styles.esporteImportMsg}>{buscarResMsg}</div>}
                 </div>
               )}
 

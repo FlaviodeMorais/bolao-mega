@@ -87,6 +87,7 @@ function parseFifaDate(dateStr: string): { data: string; hora: string } {
 
 // Formato já normalizado (ex: vindo da API-Football) — ver app/api/esporte/campeonatos/[id]/jogos/route.ts
 interface JogoNormalizado {
+  id: string // id da partida no football-data.org — necessário para buscar resultado depois
   nomeCasa: string; nomeFora: string
   data: string; hora: string
   fase: string; grupo: string | null; ordem: number
@@ -125,6 +126,7 @@ export async function POST(req: NextRequest) {
         grupo: j.grupo,
         ordem: j.ordem,
         encerrado: false,
+        api_jogo_id: j.id || null,
       })
       if (!error) importados++
       else ignorados++
