@@ -28,7 +28,6 @@ export default function IngerirHistorico() {
   const abortRef                    = useRef(false)
 
   // Estatísticas (Frequência / Atrasos / Top 15) da loteria selecionada
-  const [abaEstat, setAbaEstat]         = useState<'freq' | 'atrasos'>('freq')
   const [freqDados, setFreqDados]       = useState<NumStat[]>([])
   const [atrasosDados, setAtrasosDados] = useState<NumStat[]>([])
   const [infoTotal, setInfoTotal]       = useState<number | null>(null)
@@ -176,9 +175,8 @@ export default function IngerirHistorico() {
     const pct = 1 - pos / total
     return pct > 0.33 ? '#fff' : cfg.cor
   }
-  const dadosEstat = abaEstat === 'freq' ? freqDados : atrasosDados
-  const maxCount    = dadosEstat.length ? Math.max(...dadosEstat.map(d => d.count || d.atraso || 1)) : 1
-  const gridCols    = cfg.totalNumeros <= 25 ? 5 : 6
+  const maxFreq   = freqDados.length ? Math.max(...freqDados.map(d => d.count || 1)) : 1
+  const maxAtraso = atrasosDados.length ? Math.max(...atrasosDados.map(d => d.atraso || 1)) : 1
 
   return (
     <div className={styles.panel}>
@@ -228,68 +226,70 @@ export default function IngerirHistorico() {
         </div>
       )}
 
-      {/* ── Frequência / Top 15 lado a lado ── */}
+      {/* ── Frequência / Top 15 / Atrasos lado a lado ── */}
       <div className={styles.ferrSection}>
         <div className={styles.ferrSectionHeader}>
           <span className={styles.ferrSectionLabel}>
             📊 Frequência
             {infoTotal ? <span className={styles.ferrSectionMeta}>— {infoTotal.toLocaleString('pt-BR')} concursos</span> : ''}
           </span>
-          <div className={styles.ferrAbas}>
-            <button type="button"
-              className={`${styles.ferrAbaBtn} ${abaEstat === 'freq' ? styles.ferrAbaBtnAtivo : ''}`}
-              style={abaEstat === 'freq' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
-              onClick={() => setAbaEstat('freq')}>Frequência</button>
-            <button type="button"
-              className={`${styles.ferrAbaBtn} ${abaEstat === 'atrasos' ? styles.ferrAbaBtnAtivo : ''}`}
-              style={abaEstat === 'atrasos' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
-              onClick={() => setAbaEstat('atrasos')}>Atrasos</button>
-          </div>
         </div>
 
         {loadingEstat ? (
           <div className={styles.ferrLoading}>Carregando estatísticas da {cfg.label}...</div>
-        ) : dadosEstat.length === 0 ? (
+        ) : freqDados.length === 0 ? (
           <div className={styles.ferrLoading}>
             Histórico não carregado — clique em &quot;Carregar histórico&quot; abaixo.
           </div>
         ) : (
-          <div className={styles.ferrCols}>
+          <div className={styles.ferrCols3}>
             <div className={styles.ferrColuna}>
-              <div className={styles.ferrBallGrid} style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
-                {[...dadosEstat].sort((a, b) => a.numero - b.numero).map((d) => {
-                  const rank = dadosEstat.findIndex(x => x.numero === d.numero)
+              <div className={styles.ferrBallGrid} style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+                {[...freqDados].sort((a, b) => a.numero - b.numero).map((d) => {
+                  const rank = freqDados.findIndex(x => x.numero === d.numero)
                   return (
                     <div key={d.numero} className={styles.ferrBallItem}>
-                      <div className={styles.ferrBall} style={{ background: corBola(rank, dadosEstat.length), borderColor: corBorda(rank, dadosEstat.length), color: corTexto(rank, dadosEstat.length) }}>
+                      <div className={styles.ferrBall} style={{ background: corBola(rank, freqDados.length), borderColor: corBorda(rank, freqDados.length), color: corTexto(rank, freqDados.length) }}>
                         {String(d.numero).padStart(2, '0')}
                       </div>
-                      <div className={styles.ferrBallCount}>
-                        {abaEstat === 'freq' ? `${d.count}x` : `${d.atraso}c`}
-                      </div>
+                      <div className={styles.ferrBallCount}>{d.count}x</div>
                     </div>
                   )
                 })}
               </div>
             </div>
+
             <div className={styles.ferrColuna}>
               <div className={styles.ferrRankTitle}>🏆 Top 15</div>
               <div className={styles.ferrRanking}>
-                {dadosEstat.slice(0, 15).map((d, i) => (
+                {freqDados.slice(0, 15).map((d, i) => (
                   <div key={d.numero} className={styles.ferrRankRow}>
                     <span className={styles.ferrRankPos}>{i + 1}º</span>
                     <span className={styles.ferrRankBall} style={{ background: corBola(i, 15), borderColor: corBorda(i, 15), color: corTexto(i, 15) }}>
                       {String(d.numero).padStart(2, '0')}
                     </span>
                     <div className={styles.ferrRankBarWrap}>
-                      <div className={styles.ferrRankBar} style={{
-                        width: `${Math.round(((d.count || d.atraso || 0) / maxCount) * 100)}%`,
-                        background: corBola(i, 15),
-                      }} />
+                      <div className={styles.ferrRankBar} style={{ width: `${Math.round((d.count / maxFreq) * 100)}%`, background: corBola(i, 15) }} />
                     </div>
-                    <span className={styles.ferrRankVal}>
-                      {abaEstat === 'freq' ? `${d.count}x` : `${d.atraso}c`}
+                    <span className={styles.ferrRankVal}>{d.count}x</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className={styles.ferrColuna}>
+              <div className={styles.ferrRankTitle}>⏳ Atrasos</div>
+              <div className={styles.ferrRanking}>
+                {atrasosDados.slice(0, 15).map((d, i) => (
+                  <div key={d.numero} className={styles.ferrRankRow}>
+                    <span className={styles.ferrRankPos}>{i + 1}º</span>
+                    <span className={styles.ferrRankBall} style={{ background: corBola(i, 15), borderColor: corBorda(i, 15), color: corTexto(i, 15) }}>
+                      {String(d.numero).padStart(2, '0')}
                     </span>
+                    <div className={styles.ferrRankBarWrap}>
+                      <div className={styles.ferrRankBar} style={{ width: `${Math.round(((d.atraso || 0) / maxAtraso) * 100)}%`, background: corBola(i, 15) }} />
+                    </div>
+                    <span className={styles.ferrRankVal}>{d.atraso}c</span>
                   </div>
                 ))}
               </div>
