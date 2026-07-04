@@ -155,38 +155,10 @@
   color: #fff;
 }
 
-/* ── BANNER DO CAMPEONATO EM DESTAQUE (card esportivo) ── */
-.esporteBanner {
-  position: relative;
-  overflow: hidden;
-  display: flex; align-items: center; gap: 12px;
-  padding: 16px 20px;
-  text-decoration: none;
-  background:
-    radial-gradient(ellipse 100% 120% at 0% 0%, color-mix(in srgb, var(--comp-cor) 22%, transparent) 0%, transparent 70%),
-    linear-gradient(180deg, #0d2044 0%, #091629 100%);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-.esporteBannerLogo {
-  width: auto; height: 40px; max-width: 48px;
-  object-fit: contain; flex-shrink: 0;
-  border-radius: 8px;
-}
-.esporteBannerTitulo {
-  font-size: 16px; font-weight: 800;
-  color: var(--comp-cor);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  line-height: 1.2;
-}
-
-/* ── JOGO DE HOJE (card esportivo) ── */
-.esporteJogoHojeBox {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 20px;
-  text-decoration: none;
-  background: rgba(255,90,31,0.08);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+/* ── JOGO DE HOJE (dentro do item de bolão na lista) ── */
+.cardBolaoJogoHoje {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  margin-top: 4px;
 }
 .esporteJogoHojeBadge {
   font-size: 10px; font-weight: 800; color: #FF8A3D;
@@ -194,15 +166,13 @@
   white-space: nowrap;
 }
 .esporteJogoHojeTimes {
-  flex: 1; min-width: 0;
-  font-size: 13px; font-weight: 700; color: #fff;
-  display: flex; align-items: center; gap: 6px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 12px; font-weight: 700; color: #fff;
+  display: inline-flex; align-items: center; gap: 5px;
 }
-.esporteJogoHojeVs { color: rgba(255,255,255,0.4); font-size: 11px; }
+.esporteJogoHojeVs { color: rgba(255,255,255,0.4); font-size: 10px; }
 .esporteJogoHojeHora {
-  font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.6);
-  font-family: 'JetBrains Mono', monospace; flex-shrink: 0;
+  font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.6);
+  font-family: 'JetBrains Mono', monospace;
 }
 
 /* ── BOLÕES DENTRO DO CARD DE SORTEIO ── */
