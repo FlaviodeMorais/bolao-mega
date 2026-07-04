@@ -77,7 +77,6 @@ interface Props {
 export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas, apostasMsg, onInserirApostas }: Props) {
   const cfg = getLoteria(loteria)
 
-  const [aberto, setAberto]             = useState(false)
   const [freqDados, setFreqDados]       = useState<NumStat[]>([])
   const [atrasosDados, setAtrasosDados] = useState<NumStat[]>([])
   const [loadingEstat, setLoadingEstat] = useState(false)
@@ -98,7 +97,7 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
   }, [loteria, dezenasBolao])
 
   useEffect(() => {
-    if (!aberto || freqDados.length > 0) return
+    if (freqDados.length > 0) return
     setLoadingEstat(true)
     Promise.all([
       fetch(`/api/estatisticas/frequencia?loteria=${loteria}`).then(r => r.json()),
@@ -108,7 +107,7 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
       setAtrasosDados(a.numeros || [])
       setLoadingEstat(false)
     }).catch(() => setLoadingEstat(false))
-  }, [aberto, loteria, freqDados.length])
+  }, [loteria, freqDados.length])
 
   const gerar = useCallback(() => {
     setGerando(true)
@@ -133,26 +132,16 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
   }
 
   return (
-    <div className={styles.geradorWrap}>
-      <button type="button" className={styles.geradorToggle} onClick={() => setAberto(v => !v)}>
-        <span><TrevoIcon loteria={loteria} size={16} /> Gerador de Apostas — {cfg.label}</span>
-        <span>{aberto ? '▲' : '▼'}</span>
-      </button>
-
-      {aberto && (
-        <div className={styles.geradorBody}>
-
-          {/* ── Gerador ── */}
-          <div className={styles.geradorConfig}>
-            {loadingEstat && (
-              <div className={styles.geradorLoading}>Carregando estatísticas da {cfg.label}...</div>
-            )}
-            {!loadingEstat && freqDados.length === 0 && (
-              <div className={styles.geradorLoading}>
-                Histórico não carregado — acesse 🛠️ Ferramentas → <TrevoIcon loteria={loteria} size={12} /> {cfg.label}
-              </div>
-            )}
-            <div className={styles.geradorSectionLabel}>✨ Gerador — {cfg.label}</div>
+    <div className={styles.geradorConfig}>
+      <div className={styles.geradorSectionLabel}><TrevoIcon loteria={loteria} size={12} /> Gerador de Apostas — {cfg.label}</div>
+      {loadingEstat && (
+        <div className={styles.geradorLoading}>Carregando estatísticas da {cfg.label}...</div>
+      )}
+      {!loadingEstat && freqDados.length === 0 && (
+        <div className={styles.geradorLoading}>
+          Histórico não carregado — acesse 🛠️ Ferramentas → <TrevoIcon loteria={loteria} size={12} /> {cfg.label}
+        </div>
+      )}
 
             <div className={styles.geradorConfigGroup}>
               <div className={styles.geradorConfigLabel}>Estratégia</div>
@@ -246,9 +235,5 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
               </div>
             )}
           </div>
-
-        </div>
-      )}
-    </div>
   )
 }
