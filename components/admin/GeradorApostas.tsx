@@ -208,6 +208,8 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
         </div>
       )}
 
+      <div className={styles.geradorSplit}>
+      <div className={styles.geradorSplitCol}>
             <div className={styles.geradorConfigGroup}>
               <div className={styles.geradorConfigLabel}>Estratégia</div>
               <div className={styles.geradorEstrategias}>
@@ -283,8 +285,10 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
               onClick={gerar} disabled={gerando || freqDados.length === 0}>
               {gerando ? '⟳ Gerando...' : `✨ Gerar Combinações`}
             </button>
+      </div>
 
-            {apostasGeradas.length > 0 && (
+      <div className={styles.geradorSplitCol}>
+            {apostasGeradas.length > 0 ? (
               <div className={styles.geradorResultado}>
                 <div className={styles.geradorResultadoHeader}>
                   <span className={styles.geradorConfigLabel}>
@@ -322,7 +326,13 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
                   </div>
                 )}
               </div>
+            ) : (
+              <div className={styles.geradorLoading}>
+                As combinações geradas vão aparecer aqui.
+              </div>
             )}
-          </div>
+      </div>
+      </div>
+    </div>
   )
 }

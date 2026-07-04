@@ -1198,12 +1198,12 @@
 /* ── CONFIGURADOR DE BOLÃO ── */
 .configuradorCols {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 0.7fr 1.3fr;
   gap: 16px;
   align-items: start;
 }
 .configColuna { min-width: 0; }
-@media (max-width: 860px) {
+@media (max-width: 900px) {
   .configuradorCols { grid-template-columns: 1fr; }
 }
 .configTitulo {
@@ -1745,6 +1745,13 @@
 .geradorRankVal { font-size: 10px; color: #64748B; font-family: 'JetBrains Mono', monospace; width: 32px; text-align: right; flex-shrink: 0; }
 
 .geradorConfig { display: flex; flex-direction: column; gap: 12px; }
+.geradorSplit {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;
+}
+.geradorSplitCol { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+@media (max-width: 700px) {
+  .geradorSplit { grid-template-columns: 1fr; }
+}
 .geradorConfigGroup { display: flex; flex-direction: column; gap: 6px; }
 .geradorConfigLabel { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #94A3B8; }
 
