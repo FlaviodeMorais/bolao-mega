@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import styles from '@/app/admin/admin.module.css'
 import { LOTERIA_LIST, type LoteriaId } from '@/lib/loterias'
 import TrevoIcon from '@/components/TrevoIcon'
@@ -50,6 +51,13 @@ export default function BolaoList({
   onNovoNomeChange, onNovoSlugChange, onNovaLoteriaChange, onShowCreateToggle,
   actions,
 }: BolaoListProps) {
+  // Bolões encerrados (ativo=false) ficam ocultos por padrão - só o admin
+  // ativo aparece na lista principal, senão o painel cresce sem limite com
+  // bolões antigos. Histórico/KPIs/comprovantes continuam intactos mesmo
+  // ocultos aqui, pois consultam os dados diretamente, não esta lista.
+  const [mostrarEncerrados, setMostrarEncerrados] = useState(false)
+  const totalEncerrados = boloes.filter(b => !b.ativo).length
+
   function abrirCreate(loteria: LoteriaId) {
     onNovaLoteriaChange(loteria)
     onShowCreateToggle(true)
@@ -57,11 +65,20 @@ export default function BolaoList({
 
   return (
     <div className={styles.panel}>
-      <div className={styles.panelTitle}>🎰 Bolões</div>
+      <div className={styles.panelTitle}>
+        🎰 Bolões
+        {totalEncerrados > 0 && (
+          <button type="button" className={styles.btnAcao} onClick={() => setMostrarEncerrados(v => !v)}
+            style={{ textTransform: 'none', letterSpacing: 'normal', fontWeight: 700 }}>
+            {mostrarEncerrados ? 'Ocultar encerrados' : `🗄 Encerrados (${totalEncerrados})`}
+          </button>
+        )}
+      </div>
 
       <div className={styles.bolaoColumns}>
         {LOTERIAS_COL.map(lot => {
-          const grupo = boloes.filter(b => (b.loteria ?? 'mega') === lot.id)
+          const grupoLot = boloes.filter(b => (b.loteria ?? 'mega') === lot.id)
+          const grupo = mostrarEncerrados ? grupoLot : grupoLot.filter(b => b.ativo)
           return (
             <div key={lot.id} className={styles.bolaoColumn}>
               <div className={styles.bolaoColumnHeader} style={{ color: lot.cor }}>
