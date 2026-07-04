@@ -1,10 +1,12 @@
 import { supabase } from '@/lib/supabase'
 import { getEsporteSettings } from '@/lib/settings'
 
-// Categoria A: acertou o placar exato (e, por consequência, o vencedor) → 5 pts
-// Categoria B: acertou só o vencedor (placar diferente)                 → 3 pts
-// Categoria C: acertou o total de gols da partida, mas errou o vencedor → 2 pts
-// Sem nenhum acerto acima                                                → 0 pts
+// Categoria A: acertou o placar exato                                        → 5 pts
+// Categoria B: acertou o vencedor (ou o empate), independente do placar       → 3 pts
+// Categoria C: errou o vencedor, mas acertou a margem de gols (diferença
+//              absoluta entre os gols) - ex: previu casa vencendo por 1,
+//              saiu fora vencendo por 1                                       → 2 pts
+// Errou tudo acima                                                            → 0 pts
 function calcularCategoria(palCasa: number, palFora: number, resCasa: number, resFora: number): 'A' | 'B' | 'C' | null {
   const acertouPlacar = palCasa === resCasa && palFora === resFora
   if (acertouPlacar) return 'A'
@@ -13,7 +15,9 @@ function calcularCategoria(palCasa: number, palFora: number, resCasa: number, re
   const resVenc = resCasa > resFora ? 'casa' : resCasa < resFora ? 'fora' : 'empate'
   if (palVenc === resVenc) return 'B'
 
-  if (palCasa + palFora === resCasa + resFora) return 'C'
+  const margemPalpite = Math.abs(palCasa - palFora)
+  const margemReal = Math.abs(resCasa - resFora)
+  if (margemReal > 0 && margemPalpite === margemReal) return 'C'
 
   return null
 }
