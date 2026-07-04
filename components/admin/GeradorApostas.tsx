@@ -248,7 +248,7 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
           {estrategia === 'parceiros' && (
             <div className={styles.geradorConfigGroup}>
               <div className={styles.geradorConfigLabel}>Base dos parceiros</div>
-              <div className={styles.geradorEstrategias} style={{ gridTemplateColumns: '1fr 1fr' }}>
+              <div className={styles.geradorEstrategias}>
                 <button type="button" title="Qualquer número que mais saiu junto com a âncora no mesmo sorteio"
                   className={`${styles.geradorEstrBtn} ${fonteParceiros === 'geral' ? styles.geradorEstrBtnAtivo : ''}`}
                   style={fonteParceiros === 'geral' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
