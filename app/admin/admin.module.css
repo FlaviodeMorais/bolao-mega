@@ -1691,8 +1691,9 @@
 .geradorConfigGroup { display: flex; flex-direction: column; gap: 6px; }
 .geradorConfigLabel { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #94A3B8; }
 
-.geradorEstrategias { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.geradorEstrategias { display: grid; grid-template-columns: 175px; gap: 6px; }
 .geradorEstrBtn {
+  width: 175px;
   padding: 8px 10px; border-radius: 9px; border: 1px solid #E2E8F0;
   background: #FFFFFF; color: #475569;
   font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 600;
