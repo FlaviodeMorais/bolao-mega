@@ -29,26 +29,36 @@ function maxSequencia(aposta: number[]): number {
   return max
 }
 
+// Score por número segundo um critério (frequentes/atrasados/equilibrado/aleatória) -
+// extraído pra ser reaproveitado tanto pela geração por sorteio ponderado quanto
+// pela escolha do pool do Sistema de Fechamento (mesmo critério, usos diferentes).
+function scorePorCriterio(
+  freq: NumStat[], atrasos: NumStat[], criterio: Estrategia, totalNums: number,
+): Record<number, number> {
+  const scores: Record<number, number> = {}
+  for (let i = 1; i <= totalNums; i++) scores[i] = 0
+
+  if (criterio === 'frequentes' || criterio === 'equilibrado') {
+    const max = Math.max(...freq.map(f => f.count), 1)
+    freq.forEach(f => { scores[f.numero] = (scores[f.numero] || 0) + f.count / max })
+  }
+  if (criterio === 'atrasados' || criterio === 'equilibrado') {
+    const maxAt = Math.max(...atrasos.map(a => a.atraso || 0), 1)
+    atrasos.forEach(a => { scores[a.numero] = (scores[a.numero] || 0) + (a.atraso || 0) / maxAt })
+  }
+  if (criterio === 'aleatoria') {
+    for (let i = 1; i <= totalNums; i++) scores[i] = Math.random()
+  }
+  return scores
+}
+
 function gerarCombinacoes(
   freq: NumStat[], atrasos: NumStat[], estrategia: Estrategia,
   numApostas: number, dezenas: number, totalNums: number,
   filtroParidade: boolean, filtroQuadrante: boolean, filtroSequencia: boolean,
   parceirosScore: Record<number, number> | null,
 ): number[][] {
-  const scores: Record<number, number> = {}
-  for (let i = 1; i <= totalNums; i++) scores[i] = 0
-
-  if (estrategia === 'frequentes' || estrategia === 'equilibrado') {
-    const max = Math.max(...freq.map(f => f.count), 1)
-    freq.forEach(f => { scores[f.numero] = (scores[f.numero] || 0) + f.count / max })
-  }
-  if (estrategia === 'atrasados' || estrategia === 'equilibrado') {
-    const maxAt = Math.max(...atrasos.map(a => a.atraso || 0), 1)
-    atrasos.forEach(a => { scores[a.numero] = (scores[a.numero] || 0) + (a.atraso || 0) / maxAt })
-  }
-  if (estrategia === 'aleatoria') {
-    for (let i = 1; i <= totalNums; i++) scores[i] = Math.random()
-  }
+  const scores = scorePorCriterio(freq, atrasos, estrategia, totalNums)
   // Peso extra combinável: números historicamente mais "conectados" a outros
   // (estilo Wonder Grid) somam pontuação por cima de qualquer estratégia acima.
   if (parceirosScore) {
@@ -228,6 +238,7 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
   const [filtroQuadrante, setFiltroQuadrante]   = useState(false)
   const [filtroSequencia, setFiltroSequencia]   = useState(false)
   const [poolSize, setPoolSize]               = useState(dezenasBolao + 4)
+  const [poolCriterio, setPoolCriterio]       = useState<'equilibrado' | 'frequentes' | 'atrasados'>('equilibrado')
   const [coberturaInfo, setCoberturaInfo]     = useState<{ pct: number; apostasUsadas: number } | null>(null)
   const [apostasGeradas, setApostasGeradas]   = useState<number[][]>([])
   const [gerando, setGerando]                 = useState(false)
@@ -282,7 +293,14 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
     setCoberturaInfo(null)
     setTimeout(() => {
       if (estrategia === 'fechamento') {
-        const pool = freqDados.slice(0, poolSize).map(f => f.numero)
+        // Pool escolhido pelo mesmo critério de score das outras estratégias
+        // (Equilibrada por padrão: frequência + atraso combinados) - o Fechamento
+        // garante cobertura combinatória sobre quem quer que entre no pool.
+        const scores = scorePorCriterio(freqDados, atrasosDados, poolCriterio, cfg.totalNumeros)
+        const pool = Object.entries(scores)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, poolSize)
+          .map(([n]) => Number(n))
         const { apostas, cobertura } = gerarPorFechamento(pool, numApostas, dezenas)
         setCoberturaInfo({ pct: Math.round(cobertura * 1000) / 10, apostasUsadas: apostas.length })
         setApostasGeradas(apostas); setGerando(false); setCopiado(false)
@@ -293,7 +311,7 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
       const res = gerarCombinacoes(freqDados, atrasosDados, estrategia, numApostas, dezenas, cfg.totalNumeros, filtroParidade, filtroQuadrante, filtroSequencia, parceirosScore)
       setApostasGeradas(res); setGerando(false); setCopiado(false)
     }, 50)
-  }, [freqDados, atrasosDados, estrategia, fonteParceiros, paresPorNumero, paresConsecPorNumero, numApostas, dezenas, poolSize, cfg.totalNumeros, filtroParidade, filtroQuadrante, filtroSequencia])
+  }, [freqDados, atrasosDados, estrategia, fonteParceiros, paresPorNumero, paresConsecPorNumero, numApostas, dezenas, poolSize, poolCriterio, cfg.totalNumeros, filtroParidade, filtroQuadrante, filtroSequencia])
 
   function copiar() {
     const txt = apostasGeradas.map((a, i) =>
@@ -346,19 +364,45 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
           </div>
 
           {estrategia === 'fechamento' ? (
-            <div className={styles.geradorConfigGroup}>
-              <div className={styles.geradorConfigLabel}>Tamanho do pool ({poolMin}–{poolMax})</div>
-              <div className={styles.geradorStepper}>
-                <button type="button" onClick={() => setPoolSize(n => Math.max(poolMin, n - 1))}>−</button>
-                <span>{poolSize}</span>
-                <button type="button" onClick={() => setPoolSize(n => Math.min(poolMax, n + 1))}>+</button>
+            <>
+              <div className={styles.geradorConfigGroup}>
+                <div className={styles.geradorConfigLabel}>Critério do pool</div>
+                <div className={styles.geradorEstrategias}>
+                  <button type="button" title="Frequência + atraso combinados (mesmo critério da estratégia Equilibrada)"
+                    className={`${styles.geradorEstrBtn} ${poolCriterio === 'equilibrado' ? styles.geradorEstrBtnAtivo : ''}`}
+                    style={poolCriterio === 'equilibrado' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
+                    onClick={() => setPoolCriterio('equilibrado')}>
+                    ⚖️ Equilibrada
+                  </button>
+                  <button type="button" title="Só os números mais sorteados"
+                    className={`${styles.geradorEstrBtn} ${poolCriterio === 'frequentes' ? styles.geradorEstrBtnAtivo : ''}`}
+                    style={poolCriterio === 'frequentes' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
+                    onClick={() => setPoolCriterio('frequentes')}>
+                    🔥 Frequentes
+                  </button>
+                  <button type="button" title="Só os números sem sair há mais tempo"
+                    className={`${styles.geradorEstrBtn} ${poolCriterio === 'atrasados' ? styles.geradorEstrBtnAtivo : ''}`}
+                    style={poolCriterio === 'atrasados' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
+                    onClick={() => setPoolCriterio('atrasados')}>
+                    ⏳ Atrasados
+                  </button>
+                </div>
               </div>
-              <div className={styles.geradorFechamentoHint}>
-                Distribui os {poolSize} números mais frequentes entre as apostas, garantindo cobertura
-                combinatória de trios (design de cobertura / wheeling). Reduz a variância do bolão —
-                não aumenta a chance de ganhar.
+
+              <div className={styles.geradorConfigGroup}>
+                <div className={styles.geradorConfigLabel}>Tamanho do pool ({poolMin}–{poolMax})</div>
+                <div className={styles.geradorStepper}>
+                  <button type="button" onClick={() => setPoolSize(n => Math.max(poolMin, n - 1))}>−</button>
+                  <span>{poolSize}</span>
+                  <button type="button" onClick={() => setPoolSize(n => Math.min(poolMax, n + 1))}>+</button>
+                </div>
+                <div className={styles.geradorFechamentoHint}>
+                  Distribui os {poolSize} números top do critério acima entre as apostas, garantindo
+                  cobertura combinatória de trios (design de cobertura / wheeling). Reduz a variância
+                  do bolão — não aumenta a chance de ganhar.
+                </div>
               </div>
-            </div>
+            </>
           ) : (
             <div className={styles.geradorConfigGroup}>
               <div className={styles.geradorConfigLabel}>Base dos parceiros</div>
