@@ -1815,7 +1815,11 @@
   background: #F8FAFB; border-radius: 10px; border: 1px solid #E2E8F0;
 }
 .geradorApostaIdx { font-size: 11px; font-weight: 700; color: #94A3B8; font-family: 'JetBrains Mono', monospace; }
-.geradorApostaBalls { display: flex; gap: 5px; flex-wrap: wrap; }
+/* Grade fixa de 5 colunas dentro do cartao da aposta - organiza bem tanto apostas
+   pequenas (6 dezenas = 1-2 linhas) quanto o maximo permitido (20 dezenas = 4 linhas),
+   sempre mostrando todos os numeros (nunca corta/oculta), sem crescer o card principal
+   (o scroll fica no container .geradorApostas, nao aqui). */
+.geradorApostaBalls { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
 .geradorApoBall {
   display: inline-flex; align-items: center; justify-content: center;
   width: 27px; height: 27px; border-radius: 50%;
