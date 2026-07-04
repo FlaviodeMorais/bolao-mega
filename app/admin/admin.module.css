@@ -1206,11 +1206,14 @@
 @media (max-width: 860px) {
   .configuradorCols { grid-template-columns: 1fr; }
 }
+.configTitulo {
+  font-size: 13px; font-weight: 700; color: #334155;
+  margin: 14px 0 8px;
+}
 .configurador {
   background: #E6F7EE;
   border: 1px solid rgba(0,171,103,.22);
-  border-top: none;
-  border-radius: 0 0 14px 14px;
+  border-radius: 14px;
   padding: 20px 18px 18px;
   margin-bottom: 10px;
 }

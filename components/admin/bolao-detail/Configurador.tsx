@@ -6,11 +6,11 @@ import { getLoteria } from '@/lib/loterias'
 import type { BolaoDetailPanelProps } from './types'
 
 type Props = Pick<BolaoDetailPanelProps,
-  | 'bolao' | 'showConfig'
+  | 'bolao'
   | 'editDezenas' | 'editApostas' | 'editCotas' | 'editTaxa'
   | 'precoCaixa' | 'custoApostas' | 'totalBolao' | 'valorPorCota'
   | 'configSalva' | 'salvando' | 'apostasMsg' | 'uploadingApostas'
-  | 'onToggleConfig' | 'onEditDezenasChange' | 'onEditApostasChange'
+  | 'onEditDezenasChange' | 'onEditApostasChange'
   | 'onEditCotasChange' | 'onEditTaxaChange' | 'onSalvarConfig'
   | 'onInserirApostasGeradas'
 >
@@ -22,12 +22,8 @@ export default function Configurador(p: Props) {
 
   return (
     <>
-      <button type="button" className={styles.geradorToggle} onClick={p.onToggleConfig}>
-        <span>⚙️ Configurar Bolão</span>
-        <span>{p.showConfig ? '▲' : '▼'}</span>
-      </button>
-      {p.showConfig && (
-        <div className={styles.configuradorCols}>
+      <div className={styles.configTitulo}>⚙️ Configurar Bolão</div>
+      <div className={styles.configuradorCols}>
           <div className={styles.configurador}>
             <div className={styles.configGrid3}>
               <div className={styles.configField}>
@@ -98,8 +94,7 @@ export default function Configurador(p: Props) {
               onInserirApostas={p.onInserirApostasGeradas}
             />
           </div>
-        </div>
-      )}
+      </div>
     </>
   )
 }
