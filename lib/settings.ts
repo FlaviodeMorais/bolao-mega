@@ -52,7 +52,6 @@ export interface EmailSettings {
 
 export interface PaginaHomeSettings {
   titulo:        string
-  link_stats:    string
   rodape:        string
   msg_sem_bolao: string
 }
@@ -133,7 +132,6 @@ export const DEFAULTS: AllSettings = {
   },
   'paginas.home': {
     titulo:        '🎰 Escolha seu Bolão',
-    link_stats:    '📊 Análises & Estatísticas',
     rodape:        'Boa sorte a todos! 🍀',
     msg_sem_bolao: 'Nenhum bolão disponível no momento',
   },

@@ -18,7 +18,6 @@ export interface SettingsData {
   'paginas.bolao'?: Record<string, { regras: string[] }>
   'paginas.home'?: {
     titulo?: string
-    link_stats?: string
     rodape?: string
     msg_sem_bolao?: string
   }
