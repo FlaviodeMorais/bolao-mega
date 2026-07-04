@@ -336,7 +336,7 @@ export default function IngerirHistorico() {
               </div>
             )}
 
-            <div className={styles.ferrRankTitle}>🔗 Duplas mais frequentes juntas</div>
+            <div className={styles.ferrRankTitle}>🔗 Duplas consecutivas mais frequentes</div>
             <div className={styles.ferrRanking}>
               {combDuplas.map((d, i) => (
                 <div key={d.par.join('-')} className={styles.ferrRankRow}>
@@ -355,7 +355,7 @@ export default function IngerirHistorico() {
               ))}
             </div>
 
-            <div className={styles.ferrRankTitle}>🔗 Sequências mais frequentes juntas</div>
+            <div className={styles.ferrRankTitle}>🔗 Trincas consecutivas mais frequentes</div>
             <div className={styles.ferrRanking}>
               {combTrincas.map((d, i) => (
                 <div key={d.trio.join('-')} className={styles.ferrRankRow}>
