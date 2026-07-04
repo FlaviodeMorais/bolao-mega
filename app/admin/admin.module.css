@@ -1731,10 +1731,12 @@
 }
 .geradorApostaRow:last-child { border-bottom: none; }
 .geradorApostaIdx { font-size: 11px; font-weight: 700; color: #94A3B8; font-family: 'JetBrains Mono', monospace; }
-/* Sempre uma linha só (6 a 20 dezenas): tamanho da bolinha/fonte vem via inline
-   style (tamanhoBola()), interpolado linearmente conforme a quantidade de dezenas
-   cresce, para nunca precisar quebrar em múltiplas linhas nem estourar a largura. */
-.geradorApostaBalls { display: flex; flex-wrap: nowrap; justify-content: flex-start; gap: 6px; }
+/* Sempre uma linha só: tamanho da bolinha/fonte é calculado em JS a partir da
+   largura real do card (tamanhoBola()), preenchendo a linha por completo. Em
+   telas muito estreitas com muitas dezenas o tamanho mínimo (18px) pode ainda
+   não caber - overflow-x:auto evita que a linha estoure o card nesse caso raro,
+   virando scroll horizontal em vez de quebrar o layout. */
+.geradorApostaBalls { display: flex; flex-wrap: nowrap; justify-content: flex-start; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
 .geradorApoBall {
   display: inline-flex; align-items: center; justify-content: center;
   border-radius: 50%;
