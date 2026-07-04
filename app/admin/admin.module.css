@@ -1561,6 +1561,11 @@
 }
 .esporteEditorInput:focus { border-color: rgba(0,171,103,0.5); }
 .esporteEditorInput:disabled { opacity: 0.4; cursor: not-allowed; }
+/* O <select> herda color:#fff, mas o dropdown nativo do navegador usa fundo branco —
+   sem isso as opções ficam brancas sobre branco (invisíveis, exceto no hover). */
+.esporteEditorInput option {
+  background: #0D1B2A; color: #fff;
+}
 .esporteEditorRow3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 .esporteEditorColorRow { display: flex; gap: 8px; align-items: center; }
 .esporteEditorColorPicker {

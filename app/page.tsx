@@ -5,7 +5,14 @@ import LoginModal from '@/components/LoginModal'
 import styles from './home.module.css'
 
 interface Bolao { id: string; nome: string; slug: string; ativo: boolean; dezenas: number; num_apostas: number; loteria?: string }
-interface BolaoEsporte { id: string; nome: string; slug: string; descricao?: string; valor_cota: number }
+interface BolaoEsporte {
+  id: string; nome: string; slug: string; descricao?: string; valor_cota: number
+  competicao?: string; logo_url?: string; cor_primaria?: string
+}
+interface JogoHoje {
+  time_casa: string; time_fora: string; hora_jogo?: string
+  bandeira_casa?: string; bandeira_fora?: string
+}
 
 interface SorteioInfo {
   id: string
@@ -155,24 +162,60 @@ function SorteioCard({ s, boloes, host, msgSemBolao }: { s: SorteioInfo; boloes:
 
 function EsporteCardCarrossel({ boloesEsporte }: { boloesEsporte: BolaoEsporte[] }) {
   const corEsporte = '#1D6EA6'
+  const featured = boloesEsporte[0]
+  const cor = featured?.cor_primaria || '#FFB81C'
+  const outros = boloesEsporte.slice(1)
+  const [jogoHoje, setJogoHoje] = useState<JogoHoje | null>(null)
+
+  useEffect(() => {
+    if (!featured) { setJogoHoje(null); return }
+    fetch(`/api/esporte/jogos?bolao=${featured.slug}`).then(r => r.json()).then(d => {
+      const hoje = new Date().toISOString().slice(0, 10)
+      const jogos: (JogoHoje & { data_jogo?: string; encerrado?: boolean })[] = d.jogos || []
+      setJogoHoje(jogos.find(j => j.data_jogo === hoje && !j.encerrado) || null)
+    }).catch(() => setJogoHoje(null))
+  }, [featured?.slug])
+
   return (
     <div className={`${styles.sorteioCard} ${styles.esporteCarrosselCard}`}>
-      <div className={styles.sorteioCardHead} style={{ borderBottom: `1px solid ${corEsporte}30` }}>
-        <img src="/icon.png" alt="Bet+" style={{ width: 24, height: 24, borderRadius: 6, objectFit: 'cover' }} />
-        <span className={styles.sorteioCardTitle}>Bolão Esportivo</span>
-        {boloesEsporte.length > 0 && (
-          <span className={styles.sorteioBadge} style={{ background: `${corEsporte}30`, borderColor: `${corEsporte}55`, color: '#60b4f0' }}>
-            {boloesEsporte.length} ativo{boloesEsporte.length > 1 ? 's' : ''}
-          </span>
-        )}
-      </div>
+      {featured ? (
+        <a href={`/esporte/${featured.slug}`} className={styles.esporteBanner} style={{ '--comp-cor': cor } as React.CSSProperties}>
+          {featured.logo_url && <img src={featured.logo_url} alt={featured.competicao} className={styles.esporteBannerLogo} />}
+          <span className={styles.esporteBannerTitulo}>{featured.competicao || 'Bolão Esportivo'}</span>
+        </a>
+      ) : (
+        <div className={styles.sorteioCardHead} style={{ borderBottom: `1px solid ${corEsporte}30` }}>
+          <img src="/icon.png" alt="Bet+" style={{ width: 24, height: 24, borderRadius: 6, objectFit: 'cover' }} />
+          <span className={styles.sorteioCardTitle}>Bolão Esportivo</span>
+        </div>
+      )}
+
+      {jogoHoje && (
+        <a href={`/esporte/${featured.slug}`} className={styles.esporteJogoHojeBox}>
+          <span className={styles.esporteJogoHojeBadge}>🔥 Jogo de hoje!</span>
+          <div className={styles.esporteJogoHojeTimes}>
+            {jogoHoje.time_casa}
+            <span className={styles.esporteJogoHojeVs}>×</span>
+            {jogoHoje.time_fora}
+          </div>
+          {jogoHoje.hora_jogo && <span className={styles.esporteJogoHojeHora}>{jogoHoje.hora_jogo}</span>}
+        </a>
+      )}
+
       <div className={styles.sorteioCardBody}>
         {boloesEsporte.length > 0 ? (
           <div className={styles.cardBoloes}>
             <div className={styles.cardBoloesTitulo} style={{ color: '#60b4f0' }}>
               🏆 Bolões disponíveis
             </div>
-            {boloesEsporte.map(b => (
+            <a href={`/esporte/${featured.slug}`} className={styles.cardBolaoItem} style={{ borderColor: `${corEsporte}30` }}>
+              <div className={styles.cardBolaoInfo}>
+                <span className={styles.cardBolaoNome}>{featured.nome}</span>
+                {featured.descricao && <span className={styles.cardBolaoMeta}>{featured.descricao}</span>}
+              </div>
+              <span className={`material-icons-round ${styles.cardBolaoArrow}`} style={{ color: '#60b4f0' }}>arrow_forward_ios</span>
+            </a>
+            {outros.map(b => (
               <a key={b.id} href={`/esporte/${b.slug}`} className={styles.cardBolaoItem}
                 style={{ borderColor: `${corEsporte}30` }}>
                 <div className={styles.cardBolaoInfo}>
