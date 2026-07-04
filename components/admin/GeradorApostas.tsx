@@ -209,7 +209,9 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
   return (
     <div className={styles.geradorConfig}>
       <div className={styles.geradorResultadoHeader}>
-        <div className={styles.geradorSectionLabel}><TrevoIcon loteria={loteria} size={12} /> Gerador de Apostas — {cfg.label}</div>
+        <div className={styles.geradorSectionLabel}>
+          <TrevoIcon loteria={loteria} size={12} /> Gerador de Apostas — {cfg.label}
+        </div>
         {apostasGeradas.length > 0 && (
           <button type="button" className={styles.btnSecundario}
             onClick={copiar} style={{ padding: '5px 12px', fontSize: 12 }}>
@@ -217,6 +219,7 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
           </button>
         )}
       </div>
+
       {loadingEstat && (
         <div className={styles.geradorLoading}>Carregando estatísticas da {cfg.label}...</div>
       )}
@@ -227,105 +230,105 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
       )}
 
       <div className={styles.geradorSplit}>
-      <div className={styles.geradorSplitCol}>
+        <div className={styles.geradorSplitCol}>
+          <div className={styles.geradorConfigGroup}>
+            <div className={styles.geradorConfigLabel}>Estratégia</div>
+            <div className={styles.geradorEstrategias}>
+              {ESTRATEGIAS.map(e => (
+                <button key={e.id} type="button" title={e.desc}
+                  className={`${styles.geradorEstrBtn} ${estrategia === e.id ? styles.geradorEstrBtnAtivo : ''}`}
+                  style={estrategia === e.id ? { background: cfg.cor, borderColor: cfg.cor } : {}}
+                  onClick={() => setEstrategia(e.id)}>
+                  {e.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {estrategia === 'parceiros' && (
             <div className={styles.geradorConfigGroup}>
-              <div className={styles.geradorConfigLabel}>Estratégia</div>
-              <div className={styles.geradorEstrategias}>
-                {ESTRATEGIAS.map(e => (
-                  <button key={e.id} type="button" title={e.desc}
-                    className={`${styles.geradorEstrBtn} ${estrategia === e.id ? styles.geradorEstrBtnAtivo : ''}`}
-                    style={estrategia === e.id ? { background: cfg.cor, borderColor: cfg.cor } : {}}
-                    onClick={() => setEstrategia(e.id)}>
-                    {e.label}
-                  </button>
-                ))}
+              <div className={styles.geradorConfigLabel}>Base dos parceiros</div>
+              <div className={styles.geradorEstrategias} style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <button type="button" title="Qualquer número que mais saiu junto com a âncora no mesmo sorteio"
+                  className={`${styles.geradorEstrBtn} ${fonteParceiros === 'geral' ? styles.geradorEstrBtnAtivo : ''}`}
+                  style={fonteParceiros === 'geral' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
+                  onClick={() => setFonteParceiros('geral')}>
+                  🔗 Duplas gerais
+                </button>
+                <button type="button" title="Só números literalmente consecutivos à âncora (ex: 43 → 44)"
+                  className={`${styles.geradorEstrBtn} ${fonteParceiros === 'consecutiva' ? styles.geradorEstrBtnAtivo : ''}`}
+                  style={fonteParceiros === 'consecutiva' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
+                  onClick={() => setFonteParceiros('consecutiva')}>
+                  🔢 Consecutivas
+                </button>
               </div>
             </div>
+          )}
 
-            {estrategia === 'parceiros' && (
-              <div className={styles.geradorConfigGroup}>
-                <div className={styles.geradorConfigLabel}>Base dos parceiros</div>
-                <div className={styles.geradorEstrategias} style={{ gridTemplateColumns: '1fr 1fr' }}>
-                  <button type="button" title="Qualquer número que mais saiu junto com a âncora no mesmo sorteio"
-                    className={`${styles.geradorEstrBtn} ${fonteParceiros === 'geral' ? styles.geradorEstrBtnAtivo : ''}`}
-                    style={fonteParceiros === 'geral' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
-                    onClick={() => setFonteParceiros('geral')}>
-                    🔗 Duplas gerais
-                  </button>
-                  <button type="button" title="Só números literalmente consecutivos à âncora (ex: 43 → 44)"
-                    className={`${styles.geradorEstrBtn} ${fonteParceiros === 'consecutiva' ? styles.geradorEstrBtnAtivo : ''}`}
-                    style={fonteParceiros === 'consecutiva' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
-                    onClick={() => setFonteParceiros('consecutiva')}>
-                    🔢 Consecutivas
-                  </button>
-                </div>
-              </div>
-            )}
+          {cfg.totalNumeros >= 20 && estrategia !== 'parceiros' && (
+            <div className={styles.geradorFiltros}>
+              <label className={styles.geradorCheck}>
+                <input type="checkbox" checked={filtroParidade} onChange={e => setFiltroParidade(e.target.checked)} />
+                <span>Paridade equilibrada</span>
+              </label>
+              <label className={styles.geradorCheck}>
+                <input type="checkbox" checked={filtroQuadrante} onChange={e => setFiltroQuadrante(e.target.checked)} />
+                <span>Distribuição por faixas</span>
+              </label>
+              <label className={styles.geradorCheck}>
+                <input type="checkbox" checked={filtroSequencia} onChange={e => setFiltroSequencia(e.target.checked)} />
+                <span>Evitar sequências longas</span>
+              </label>
+            </div>
+          )}
 
-            {cfg.totalNumeros >= 20 && estrategia !== 'parceiros' && (
-              <div className={styles.geradorFiltros}>
-                <label className={styles.geradorCheck}>
-                  <input type="checkbox" checked={filtroParidade} onChange={e => setFiltroParidade(e.target.checked)} />
-                  <span>Paridade equilibrada</span>
-                </label>
-                <label className={styles.geradorCheck}>
-                  <input type="checkbox" checked={filtroQuadrante} onChange={e => setFiltroQuadrante(e.target.checked)} />
-                  <span>Distribuição por faixas</span>
-                </label>
-                <label className={styles.geradorCheck}>
-                  <input type="checkbox" checked={filtroSequencia} onChange={e => setFiltroSequencia(e.target.checked)} />
-                  <span>Evitar sequências longas</span>
-                </label>
-              </div>
-            )}
+          <button type="button" className={styles.btnPrimario}
+            style={{ background: cfg.cor, width: '100%', justifyContent: 'center', marginTop: 4 }}
+            onClick={gerar} disabled={gerando || freqDados.length === 0}>
+            {gerando ? '⟳ Gerando...' : '✨ Gerar Combinações'}
+          </button>
+        </div>
 
-            <button type="button" className={styles.btnPrimario}
-              style={{ background: cfg.cor, width: '100%', justifyContent: 'center', marginTop: 4 }}
-              onClick={gerar} disabled={gerando || freqDados.length === 0}>
-              {gerando ? '⟳ Gerando...' : `✨ Gerar Combinações`}
-            </button>
-      </div>
-
-      <div className={styles.geradorSplitCol}>
-            {apostasGeradas.length > 0 ? (
-              <div className={styles.geradorResultado}>
-                <div className={styles.geradorApostas}>
-                  {apostasGeradas.map((aposta, i) => {
-                    // Sempre uma linha só (6 a 20 dezenas) - bolinha e fonte encolhem
-                    // proporcionalmente conforme a quantidade de dezenas cresce.
-                    const { ballSize, fontSize } = tamanhoBola(aposta.length)
-                    return (
-                      <div key={i} className={styles.geradorApostaRow}>
-                        <div className={styles.geradorApostaBalls}>
-                          {aposta.map(n => (
-                            <span key={n} className={styles.geradorApoBall}
-                              style={{ background: cfg.cor, width: ballSize, height: ballSize, fontSize }}>
-                              {String(n).padStart(2, '0')}
-                            </span>
-                          ))}
-                        </div>
+        <div className={styles.geradorSplitCol}>
+          {apostasGeradas.length > 0 ? (
+            <div className={styles.geradorResultado}>
+              <div className={styles.geradorApostas}>
+                {apostasGeradas.map((aposta, i) => {
+                  // Sempre uma linha só (6 a 20 dezenas) - bolinha e fonte encolhem
+                  // proporcionalmente conforme a quantidade de dezenas cresce.
+                  const { ballSize, fontSize } = tamanhoBola(aposta.length)
+                  return (
+                    <div key={i} className={styles.geradorApostaRow}>
+                      <div className={styles.geradorApostaBalls}>
+                        {aposta.map(n => (
+                          <span key={n} className={styles.geradorApoBall}
+                            style={{ background: cfg.cor, width: ballSize, height: ballSize, fontSize }}>
+                            {String(n).padStart(2, '0')}
+                          </span>
+                        ))}
                       </div>
-                    )
-                  })}
+                    </div>
+                  )
+                })}
+              </div>
+              <button type="button" className={styles.btnPrimario}
+                style={{ background: cfg.cor, width: '100%', justifyContent: 'center', marginTop: 8 }}
+                onClick={handleInserir} disabled={uploadingApostas}>
+                {uploadingApostas ? '⟳ Inserindo...' : '📊 Inserir apostas neste bolão'}
+              </button>
+              {apostasMsg && (
+                <div className={apostasMsg.startsWith('✅') ? styles.lembreteMsg : styles.loginErr}
+                  style={{ marginTop: 8, textAlign: 'center' }}>
+                  {apostasMsg}
                 </div>
-                <button type="button" className={styles.btnPrimario}
-                  style={{ background: cfg.cor, width: '100%', justifyContent: 'center', marginTop: 8 }}
-                  onClick={handleInserir} disabled={uploadingApostas}>
-                  {uploadingApostas ? '⟳ Inserindo...' : '📊 Inserir apostas neste bolão'}
-                </button>
-                {apostasMsg && (
-                  <div className={apostasMsg.startsWith('✅') ? styles.lembreteMsg : styles.loginErr}
-                    style={{ marginTop: 8, textAlign: 'center' }}>
-                    {apostasMsg}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className={styles.geradorLoading}>
-                As combinações geradas vão aparecer aqui.
-              </div>
-            )}
-      </div>
+              )}
+            </div>
+          ) : (
+            <div className={styles.geradorLoading}>
+              As combinações geradas vão aparecer aqui.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

@@ -21,77 +21,80 @@ export default function Configurador(p: Props) {
   const loteriaCfg = getLoteria(bolao.loteria)
 
   return (
-    <>
-      <div className={styles.configTitulo}>⚙️ Configurar Bolão</div>
-      <div className={styles.configurador}>
-            <div className={styles.configGrid4}>
-              <div className={styles.configField}>
-                <label className={styles.configLabel}>Dezenas / Aposta</label>
-                <select className={styles.configSelect} value={p.editDezenas}
-                  title="Dezenas por aposta" onChange={e => p.onEditDezenasChange(Number(e.target.value))}>
-                  {Object.entries(loteriaCfg.precos).map(([d, pr]) => (
-                    <option key={d} value={d}>{d} dez — R$ {(pr as number).toLocaleString('pt-BR')},00</option>
-                  ))}
-                </select>
-              </div>
-              <div className={styles.configField}>
-                <label className={styles.configLabel}>Apostas</label>
-                <input type="number" min={1} max={999} className={styles.configInput}
-                  title="Apostas no bolão" placeholder="Ex: 100"
-                  value={p.editApostas} onChange={e => p.onEditApostasChange(Math.max(1, Number(e.target.value)))} />
-              </div>
-              <div className={styles.configField}>
-                <label className={styles.configLabel}>Total de Cotas</label>
-                <input type="number" min={1} max={200} className={styles.configInput}
-                  title="Total de cotas" placeholder="Ex: 20"
-                  value={p.editCotas} onChange={e => p.onEditCotasChange(Math.max(1, Number(e.target.value)))} />
-              </div>
-              <div className={styles.configField}>
-                <label className={styles.configLabel}>Tx de Admin (R$)</label>
-                <input type="number" min={0} step={0.01} className={styles.configInput}
-                  title="Taxa admin" placeholder="0,00"
-                  value={p.editTaxa} onChange={e => p.onEditTaxaChange(Math.max(0, Number(e.target.value)))} />
-              </div>
-            </div>
-            <div className={styles.configCalc}>
-              <div className={styles.calcRow}>
-                <span>Preço Caixa — {p.editDezenas} dezenas</span>
-                <span>R$ {p.precoCaixa.toLocaleString('pt-BR')},00 / aposta</span>
-              </div>
-              <div className={styles.calcRow}>
-                <span>{p.editApostas} × R$ {p.precoCaixa.toLocaleString('pt-BR')},00</span>
-                <span>R$ {p.custoApostas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-              </div>
-              {p.editTaxa > 0 && (
-                <div className={styles.calcRow}>
-                  <span>Taxa de administração</span>
-                  <span>+ R$ {p.editTaxa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                </div>
-              )}
-              <div className={`${styles.calcRow} ${styles.calcSeparator}`}>
-                <span>Total do bolão</span>
-                <span>R$ {p.totalBolao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className={`${styles.calcRow} ${styles.calcDestaque}`}>
-                <span>Valor por cota ({p.editCotas} cotas)</span>
-                <span>R$ {p.valorPorCota.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-              </div>
-            </div>
-
-            <GeradorApostas
-              loteria={(bolao.loteria ?? 'mega') as import('@/lib/loterias').LoteriaId}
-              dezenasBolao={p.editDezenas}
-              numApostas={p.editApostas}
-              uploadingApostas={p.uploadingApostas}
-              apostasMsg={p.apostasMsg}
-              onInserirApostas={p.onInserirApostasGeradas}
-            />
-
-            {p.configSalva && <div className={styles.configOk}>✅ Configuração salva!</div>}
-            <button type="button" className={styles.btnCreate} onClick={p.onSalvarConfig} disabled={p.salvando}>
-              {p.salvando ? 'Salvando...' : '💾 Salvar Configuração'}
-            </button>
+    <div className={styles.configurador}>
+      <div className={styles.configHeader}>
+        <span className={styles.configHeaderIcon}>⚙️</span>
+        <span className={styles.configHeaderTitle}>Configurar Bolão</span>
       </div>
-    </>
+
+      <div className={styles.configGrid4}>
+        <div className={styles.configField}>
+          <label className={styles.configLabel}>Dezenas / Aposta</label>
+          <select className={styles.configSelect} value={p.editDezenas}
+            title="Dezenas por aposta" onChange={e => p.onEditDezenasChange(Number(e.target.value))}>
+            {Object.entries(loteriaCfg.precos).map(([d, pr]) => (
+              <option key={d} value={d}>{d} dez — R$ {(pr as number).toLocaleString('pt-BR')},00</option>
+            ))}
+          </select>
+        </div>
+        <div className={styles.configField}>
+          <label className={styles.configLabel}>Apostas</label>
+          <input type="number" min={1} max={999} className={styles.configInput}
+            title="Apostas no bolão" placeholder="Ex: 100"
+            value={p.editApostas} onChange={e => p.onEditApostasChange(Math.max(1, Number(e.target.value)))} />
+        </div>
+        <div className={styles.configField}>
+          <label className={styles.configLabel}>Total de Cotas</label>
+          <input type="number" min={1} max={200} className={styles.configInput}
+            title="Total de cotas" placeholder="Ex: 20"
+            value={p.editCotas} onChange={e => p.onEditCotasChange(Math.max(1, Number(e.target.value)))} />
+        </div>
+        <div className={styles.configField}>
+          <label className={styles.configLabel}>Tx de Admin (R$)</label>
+          <input type="number" min={0} step={0.01} className={styles.configInput}
+            title="Taxa admin" placeholder="0,00"
+            value={p.editTaxa} onChange={e => p.onEditTaxaChange(Math.max(0, Number(e.target.value)))} />
+        </div>
+      </div>
+
+      <div className={styles.configCalc}>
+        <div className={styles.calcRow}>
+          <span>Preço Caixa — {p.editDezenas} dezenas</span>
+          <span>R$ {p.precoCaixa.toLocaleString('pt-BR')},00 / aposta</span>
+        </div>
+        <div className={styles.calcRow}>
+          <span>{p.editApostas} × R$ {p.precoCaixa.toLocaleString('pt-BR')},00</span>
+          <span>R$ {p.custoApostas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+        </div>
+        {p.editTaxa > 0 && (
+          <div className={styles.calcRow}>
+            <span>Taxa de administração</span>
+            <span>+ R$ {p.editTaxa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+          </div>
+        )}
+        <div className={`${styles.calcRow} ${styles.calcSeparator}`}>
+          <span>Total do bolão</span>
+          <span>R$ {p.totalBolao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+        </div>
+        <div className={`${styles.calcRow} ${styles.calcDestaque}`}>
+          <span>Valor por cota ({p.editCotas} cotas)</span>
+          <span>R$ {p.valorPorCota.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+        </div>
+      </div>
+
+      <GeradorApostas
+        loteria={(bolao.loteria ?? 'mega') as import('@/lib/loterias').LoteriaId}
+        dezenasBolao={p.editDezenas}
+        numApostas={p.editApostas}
+        uploadingApostas={p.uploadingApostas}
+        apostasMsg={p.apostasMsg}
+        onInserirApostas={p.onInserirApostasGeradas}
+      />
+
+      {p.configSalva && <div className={styles.configOk}>✅ Configuração salva!</div>}
+      <button type="button" className={styles.btnCreate} onClick={p.onSalvarConfig} disabled={p.salvando}>
+        {p.salvando ? 'Salvando...' : '💾 Salvar Configuração'}
+      </button>
+    </div>
   )
 }

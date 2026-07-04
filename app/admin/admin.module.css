@@ -1197,16 +1197,18 @@
 
 /* ── CONFIGURADOR DE BOLÃO ── */
 .configColuna { min-width: 0; }
-.configTitulo {
-  font-size: 13px; font-weight: 700; color: #334155;
-  margin: 14px 0 8px;
-}
 .configurador {
+  display: flex; flex-direction: column; gap: 20px;
   background: #E6F7EE;
   border: 1px solid rgba(0,171,103,.22);
   border-radius: 14px;
-  padding: 20px 18px 18px;
+  padding: 20px;
   margin-bottom: 10px;
+}
+.configHeader { display: flex; align-items: center; gap: 8px; }
+.configHeaderIcon { font-size: 15px; line-height: 1; }
+.configHeaderTitle {
+  font-size: 13px; font-weight: 800; letter-spacing: .2px; color: #0D1B2A;
 }
 .configTitle {
   font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
@@ -1214,10 +1216,10 @@
   margin-bottom: 16px;
 }
 .configGrid3 {
-  display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 10px;
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 10px;
 }
 .configGrid4 {
-  display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 10px;
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 10px;
 }
 @media (max-width: 700px) {
   .configGrid4 { grid-template-columns: repeat(2,1fr); }
@@ -1227,7 +1229,7 @@
 }
 .configFieldNarrow {
   display: flex; flex-direction: column; gap: 5px;
-  max-width: 220px; margin-bottom: 14px;
+  max-width: 220px;
 }
 .configLabel { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #64748B; }
 .configSelect {
@@ -1250,7 +1252,7 @@
 
 .configCalc {
   background: #FFFFFF; border: 1px solid #E2E8F0;
-  border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;
+  border-radius: 12px; padding: 14px 16px;
 }
 .calcRow {
   display: flex; justify-content: space-between; align-items: center;
@@ -1264,7 +1266,7 @@
 .configOk {
   font-size: 13px; font-weight: 700; color: #007A45;
   background: #E6F7EE; border: 1px solid rgba(0,171,103,.25);
-  border-radius: 8px; padding: 8px 14px; margin-bottom: 10px;
+  border-radius: 8px; padding: 8px 14px;
 }
 
 .btnAcao {
@@ -1468,59 +1470,12 @@
    GERADOR DE APOSTAS (admin)
 ══════════════════════════════════════════ */
 
-.geradorWrap { margin-top: 0; }
-
-.geradorToggle {
-  width: 100%; display: flex; justify-content: space-between; align-items: center;
-  padding: 12px 14px; border-radius: 12px; cursor: pointer;
-  background: #F8FAFB; border: 1px solid #E2E8F0;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 13px; font-weight: 700; color: #334155;
-  transition: all .15s;
-}
-.geradorToggle:hover { border-color: var(--green); color: #007A45; background: #E6F7EE; }
-
-.geradorBody {
-  display: flex; flex-direction: column; gap: 14px;
-  padding: 20px 18px 18px; margin-top: 0;
-  background: #E6F7EE; border: 1px solid rgba(0,171,103,.22);
-  border-top: none;
-  border-radius: 0 0 14px 14px;
-}
-
-.geradorStat { display: flex; flex-direction: column; gap: 10px; }
-
-.geradorStatHeader {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
-}
-
 .geradorSectionLabel {
-  font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
-  text-transform: uppercase; color: #64748B;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 800; letter-spacing: .2px; color: #0D1B2A;
 }
-
-.geradorAbas { display: flex; gap: 4px; }
-.geradorAbaBtn {
-  padding: 4px 12px; border-radius: 7px; border: 1px solid #E2E8F0;
-  background: #FFFFFF; color: #64748B;
-  font-size: 11px; font-weight: 600; cursor: pointer; transition: all .15s;
-}
-.geradorAbaBtn:hover { border-color: var(--green); color: #007A45; }
-.geradorAbaBtnAtivo { background: var(--green) !important; color: #fff !important; border-color: var(--green) !important; }
 
 .geradorLoading { font-size: 12px; color: #94A3B8; padding: 12px 0; }
-
-.geradorBallGrid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
-.geradorBallItem { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.geradorBall {
-  width: 26px; height: 26px; border-radius: 50%;
-  font-size: 9px; font-weight: 800; font-family: 'JetBrains Mono', monospace;
-  display: flex; align-items: center; justify-content: center;
-  /* cor e borda definidas via inline style (herança de corBola/corTexto) */
-  border: 1.5px solid transparent;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 1px 4px rgba(0,0,0,0.3);
-}
-.geradorBallCount { font-size: 8px; color: #94A3B8; font-family: 'JetBrains Mono', monospace; }
 
 /* ── ABA FERRAMENTAS: tipografia maior/espaçamento consistente (tela cheia, não é widget compacto) ── */
 .ferrSection { margin-bottom: 28px; }
@@ -1717,27 +1672,9 @@
 .esporteEditorBtnSalvar:disabled { opacity: 0.5; cursor: not-allowed; }
 .esporteEditorErro { padding: 0 20px 12px; font-size: 12px; color: #EF4444; }
 
-.geradorRankTitle {
-  font-size: 10px; font-weight: 700; color: #64748B;
-  text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;
-}
-.geradorRanking { display: flex; flex-direction: column; gap: 4px; }
-.geradorRankRow { display: flex; align-items: center; gap: 6px; }
-.geradorRankPos { font-size: 10px; color: #94A3B8; width: 18px; text-align: right; flex-shrink: 0; }
-.geradorRankBall {
-  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
-  font-size: 9px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  border: 1.5px solid transparent;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 1px 4px rgba(0,0,0,0.3);
-}
-.geradorRankBarWrap { flex: 1; height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
-.geradorRankBar { height: 100%; border-radius: 3px; transition: width .4s ease; }
-.geradorRankVal { font-size: 10px; color: #64748B; font-family: 'JetBrains Mono', monospace; width: 32px; text-align: right; flex-shrink: 0; }
-
 .geradorConfig {
-  display: flex; flex-direction: column; gap: 12px;
-  margin-top: 4px; padding-top: 14px; border-top: 1px solid #E2E8F0;
+  display: flex; flex-direction: column; gap: 14px;
+  padding-top: 20px; border-top: 1px solid rgba(0,171,103,.18);
 }
 /* Coluna de controles (esquerda) tem conteudo fixo/compacto (botoes de estrategia,
    steppers) - cabe confortavelmente em 300-360px. A coluna de resultado (direita)
@@ -1764,23 +1701,6 @@
 .geradorEstrBtn:hover { border-color: var(--green); color: #007A45; background: #E6F7EE; }
 .geradorEstrBtnAtivo { background: var(--green) !important; color: #fff !important; border-color: var(--green) !important; }
 
-.geradorParamRow { display: flex; gap: 12px; }
-.geradorParam { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-
-.geradorStepper {
-  display: flex; align-items: center;
-  background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden;
-}
-.geradorStepper button {
-  width: 34px; height: 36px; background: #F8FAFB; border: none; cursor: pointer;
-  font-size: 16px; font-weight: 700; color: #475569; transition: background .15s;
-}
-.geradorStepper button:hover { background: #E6F7EE; color: #007A45; }
-.geradorStepper span {
-  flex: 1; text-align: center; font-size: 15px; font-weight: 800;
-  font-family: 'JetBrains Mono', monospace; color: #0D1B2A;
-}
-
 .geradorFiltros { display: flex; flex-direction: column; gap: 6px; }
 .geradorCheck {
   display: flex; align-items: center; gap: 8px; cursor: pointer;
@@ -1789,8 +1709,8 @@
 .geradorCheck input[type="checkbox"] { accent-color: var(--green); width: 14px; height: 14px; cursor: pointer; }
 
 .geradorResultado {
-  margin-top: 4px; background: #FFFFFF; border: 1px solid #E2E8F0;
-  border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;
+  background: #FFFFFF; border: 1px solid #E2E8F0;
+  border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;
 }
 .geradorResultadoHeader { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 /* Grid fluido: cada cartao tem largura minima confortavel e o grid preenche a linha
