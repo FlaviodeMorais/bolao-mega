@@ -288,17 +288,19 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
       </div>
 
       <div className={styles.geradorSplitCol}>
+            <div className={styles.geradorResultadoHeader}>
+              <span className={styles.geradorConfigLabel}>
+                {apostasGeradas.length > 0 ? `${apostasGeradas.length} combinaç${apostasGeradas.length !== 1 ? 'ões' : 'ão'}` : 'Resultado'}
+              </span>
+              {apostasGeradas.length > 0 && (
+                <button type="button" className={styles.btnSecundario}
+                  onClick={copiar} style={{ padding: '5px 12px', fontSize: 12 }}>
+                  {copiado ? '✅ Copiado!' : '📋 Copiar'}
+                </button>
+              )}
+            </div>
             {apostasGeradas.length > 0 ? (
               <div className={styles.geradorResultado}>
-                <div className={styles.geradorResultadoHeader}>
-                  <span className={styles.geradorConfigLabel}>
-                    {apostasGeradas.length} combinaç{apostasGeradas.length !== 1 ? 'ões' : 'ão'}
-                  </span>
-                  <button type="button" className={styles.btnSecundario}
-                    onClick={copiar} style={{ padding: '5px 12px', fontSize: 12 }}>
-                    {copiado ? '✅ Copiado!' : '📋 Copiar'}
-                  </button>
-                </div>
                 <div className={styles.geradorApostas}>
                   {apostasGeradas.map((aposta, i) => (
                     <div key={i} className={styles.geradorApostaRow}>
