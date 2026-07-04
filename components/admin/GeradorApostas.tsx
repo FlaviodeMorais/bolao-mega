@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import styles from '@/app/admin/admin.module.css'
 import { getLoteria, type LoteriaId } from '@/lib/loterias'
 import TrevoIcon from '@/components/TrevoIcon'
@@ -94,13 +94,16 @@ function gerarCombinacoes(
   return apostas
 }
 
-// Bolinha e fonte encolhem linearmente de 6 (maior) até 20 dezenas (menor),
-// garantindo que qualquer aposta (6 a 20 dezenas) caiba numa única linha.
-function tamanhoBola(dezenas: number): { ballSize: number; fontSize: number } {
-  const MIN_DEZ = 6, MAX_DEZ = 20
-  const t = Math.min(1, Math.max(0, (dezenas - MIN_DEZ) / (MAX_DEZ - MIN_DEZ)))
-  const ballSize = Math.round(34 - t * (34 - 20))
-  const fontSize = Math.round(14 - t * (14 - 10))
+const BALL_GAP = 6
+
+// Calcula o tamanho de bolinha que preenche a largura disponível por completo
+// com a quantidade de dezenas da aposta (todas as apostas têm o mesmo número de
+// dezenas, definido em Configurar Bolão), em vez de um tamanho fixo por faixa.
+function tamanhoBola(larguraDisponivel: number, dezenas: number): { ballSize: number; fontSize: number } {
+  if (dezenas <= 0 || larguraDisponivel <= 0) return { ballSize: 34, fontSize: 14 }
+  const bruto = (larguraDisponivel - BALL_GAP * (dezenas - 1)) / dezenas
+  const ballSize = Math.max(18, Math.min(40, Math.floor(bruto)))
+  const fontSize = Math.max(9, Math.min(15, Math.round(ballSize * 0.42)))
   return { ballSize, fontSize }
 }
 
@@ -138,6 +141,20 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
   const [apostasGeradas, setApostasGeradas]   = useState<number[][]>([])
   const [gerando, setGerando]                 = useState(false)
   const [copiado, setCopiado]                 = useState(false)
+  const [larguraLinha, setLarguraLinha]        = useState(0)
+  const linhaRef = useRef<HTMLDivElement>(null)
+
+  // Recalcula a largura disponível pra bolinha preencher a linha inteira sempre
+  // que o card é redimensionado (resize da janela, colapso de breakpoint, etc).
+  useEffect(() => {
+    if (!linhaRef.current || apostasGeradas.length === 0) return
+    const el = linhaRef.current
+    const medir = () => setLarguraLinha(el.clientWidth)
+    medir()
+    const ro = new ResizeObserver(medir)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [apostasGeradas])
 
   // Reset ao mudar loteria
   useEffect(() => {
@@ -282,12 +299,13 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
             <div className={styles.geradorResultado}>
               <div className={styles.geradorApostas}>
                 {apostasGeradas.map((aposta, i) => {
-                  // Sempre uma linha só (6 a 20 dezenas) - bolinha e fonte encolhem
-                  // proporcionalmente conforme a quantidade de dezenas cresce.
-                  const { ballSize, fontSize } = tamanhoBola(aposta.length)
+                  // Todas as apostas têm a mesma quantidade de dezenas (definida em
+                  // Configurar Bolão) - bolinha/fonte são calculadas a partir da
+                  // largura real disponível, preenchendo a linha inteira sempre.
+                  const { ballSize, fontSize } = tamanhoBola(larguraLinha, aposta.length)
                   return (
                     <div key={i} className={styles.geradorApostaRow}>
-                      <div className={styles.geradorApostaBalls}>
+                      <div className={styles.geradorApostaBalls} ref={i === 0 ? linhaRef : undefined}>
                         {aposta.map(n => (
                           <span key={n} className={styles.geradorApoBall}
                             style={{ background: cfg.cor, width: ballSize, height: ballSize, fontSize }}>
