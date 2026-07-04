@@ -1745,11 +1745,16 @@
 .geradorRankVal { font-size: 10px; color: #64748B; font-family: 'JetBrains Mono', monospace; width: 32px; text-align: right; flex-shrink: 0; }
 
 .geradorConfig { display: flex; flex-direction: column; gap: 12px; }
+/* Coluna de controles (esquerda) tem conteudo fixo/compacto (botoes de estrategia,
+   steppers) - cabe confortavelmente em 300-360px. A coluna de resultado (direita)
+   precisa do espaco que sobrar: Mega e Lotofacil permitem ate 20 dezenas por aposta
+   (Lotofacil nunca tem menos de 15), entao as linhas de bolinhas do resultado sao as
+   que mais se beneficiam de largura extra - por isso ela fica com 1fr, nao 50/50. */
 .geradorSplit {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;
+  display: grid; grid-template-columns: minmax(300px, 360px) 1fr; gap: 20px; align-items: start;
 }
 .geradorSplitCol { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-@media (max-width: 700px) {
+@media (max-width: 1000px) {
   .geradorSplit { grid-template-columns: 1fr; }
 }
 .geradorConfigGroup { display: flex; flex-direction: column; gap: 6px; }
