@@ -283,10 +283,23 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
           )}
 
           <button type="button" className={styles.btnPrimario}
-            style={{ background: cfg.cor, width: '100%', justifyContent: 'center', marginTop: 4 }}
+            style={{ background: cfg.cor, width: 175, justifyContent: 'center', marginTop: 4 }}
             onClick={gerar} disabled={gerando || freqDados.length === 0}>
             {gerando ? '⟳ Gerando...' : '✨ Gerar Combinações'}
           </button>
+
+          {apostasGeradas.length > 0 && (
+            <button type="button" className={styles.btnPrimario}
+              style={{ background: cfg.cor, width: 175, justifyContent: 'center' }}
+              onClick={handleInserir} disabled={uploadingApostas}>
+              {uploadingApostas ? '⟳ Inserindo...' : '📊 Inserir apostas neste bolão'}
+            </button>
+          )}
+          {apostasMsg && (
+            <div className={apostasMsg.startsWith('✅') ? styles.lembreteMsg : styles.loginErr}>
+              {apostasMsg}
+            </div>
+          )}
         </div>
 
         <div className={styles.geradorSplitCol}>
@@ -311,17 +324,6 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
                   )
                 })}
               </div>
-              <button type="button" className={styles.btnPrimario}
-                style={{ background: cfg.cor, width: '100%', justifyContent: 'center', marginTop: 8 }}
-                onClick={handleInserir} disabled={uploadingApostas}>
-                {uploadingApostas ? '⟳ Inserindo...' : '📊 Inserir apostas neste bolão'}
-              </button>
-              {apostasMsg && (
-                <div className={apostasMsg.startsWith('✅') ? styles.lembreteMsg : styles.loginErr}
-                  style={{ marginTop: 8, textAlign: 'center' }}>
-                  {apostasMsg}
-                </div>
-              )}
             </div>
           ) : (
             <div className={styles.geradorLoading}>
