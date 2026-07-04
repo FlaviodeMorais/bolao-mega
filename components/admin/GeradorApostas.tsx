@@ -230,7 +230,7 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
       )}
 
       <div className={styles.geradorSplit}>
-        <div className={styles.geradorSplitCol}>
+        <div className={`${styles.geradorSplitCol} ${styles.geradorControlsCol}`}>
           <div className={styles.geradorConfigGroup}>
             <div className={styles.geradorConfigLabel}>Estratégia</div>
             <div className={styles.geradorEstrategias}>
@@ -296,7 +296,8 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
             </button>
           )}
           {apostasMsg && (
-            <div className={apostasMsg.startsWith('✅') ? styles.lembreteMsg : styles.loginErr}>
+            <div className={apostasMsg.startsWith('✅') ? styles.lembreteMsg : styles.loginErr}
+              style={{ width: 175, textAlign: 'center' }}>
               {apostasMsg}
             </div>
           )}
