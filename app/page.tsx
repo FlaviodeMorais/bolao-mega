@@ -160,18 +160,57 @@ function SorteioCard({ s, boloes, host, msgSemBolao }: { s: SorteioInfo; boloes:
   )
 }
 
+function BandeiraJogo({ codigo }: { codigo?: string }) {
+  if (!codigo) return null
+  return <span className={`fi fi-${codigo} ${styles.jogoHojeBandeira}`} />
+}
+
+function JogosHojeAlternando({ jogos }: { jogos: JogoHoje[] }) {
+  const [idx, setIdx] = useState(0)
+
+  useEffect(() => {
+    if (jogos.length <= 1) return
+    const id = setInterval(() => setIdx(i => (i + 1) % jogos.length), 4000)
+    return () => clearInterval(id)
+  }, [jogos.length])
+
+  if (jogos.length === 0) return null
+  const jogo = jogos[idx % jogos.length]
+
+  return (
+    <div className={styles.cardBolaoJogoHoje}>
+      <span className={styles.esporteJogoHojeBadge}>🔥 Jogo de hoje!</span>
+      <span className={styles.esporteJogoHojeTimes}>
+        <BandeiraJogo codigo={jogo.bandeira_casa} />
+        {jogo.time_casa}
+        <span className={styles.esporteJogoHojeVs}>×</span>
+        {jogo.time_fora}
+        <BandeiraJogo codigo={jogo.bandeira_fora} />
+      </span>
+      {jogo.hora_jogo && <span className={styles.esporteJogoHojeHora}>{jogo.hora_jogo}</span>}
+      {jogos.length > 1 && (
+        <span className={styles.jogoHojeDots}>
+          {jogos.map((_, i) => (
+            <span key={i} className={`${styles.jogoHojeDot} ${i === idx ? styles.jogoHojeDotAtivo : ''}`} />
+          ))}
+        </span>
+      )}
+    </div>
+  )
+}
+
 function EsporteCardCarrossel({ boloesEsporte }: { boloesEsporte: BolaoEsporte[] }) {
   const corEsporte = '#1D6EA6'
   const featured = boloesEsporte[0]
-  const [jogoHoje, setJogoHoje] = useState<JogoHoje | null>(null)
+  const [jogosHoje, setJogosHoje] = useState<JogoHoje[]>([])
 
   useEffect(() => {
-    if (!featured) { setJogoHoje(null); return }
+    if (!featured) { setJogosHoje([]); return }
     fetch(`/api/esporte/jogos?bolao=${featured.slug}`).then(r => r.json()).then(d => {
       const hoje = new Date().toISOString().slice(0, 10)
       const jogos: (JogoHoje & { data_jogo?: string; encerrado?: boolean })[] = d.jogos || []
-      setJogoHoje(jogos.find(j => j.data_jogo === hoje && !j.encerrado) || null)
-    }).catch(() => setJogoHoje(null))
+      setJogosHoje(jogos.filter(j => j.data_jogo === hoje && !j.encerrado))
+    }).catch(() => setJogosHoje([]))
   }, [featured?.slug])
 
   return (
@@ -197,14 +236,8 @@ function EsporteCardCarrossel({ boloesEsporte }: { boloesEsporte: BolaoEsporte[]
                 <div className={styles.cardBolaoInfo}>
                   <span className={styles.cardBolaoNome}>{b.nome}</span>
                   {b.competicao && <span className={styles.cardBolaoMeta}>{b.competicao}</span>}
-                  {b.slug === featured.slug && jogoHoje && (
-                    <div className={styles.cardBolaoJogoHoje}>
-                      <span className={styles.esporteJogoHojeBadge}>🔥 Jogo de hoje!</span>
-                      <span className={styles.esporteJogoHojeTimes}>
-                        {jogoHoje.time_casa}<span className={styles.esporteJogoHojeVs}>×</span>{jogoHoje.time_fora}
-                      </span>
-                      {jogoHoje.hora_jogo && <span className={styles.esporteJogoHojeHora}>{jogoHoje.hora_jogo}</span>}
-                    </div>
+                  {b.slug === featured.slug && jogosHoje.length > 0 && (
+                    <JogosHojeAlternando jogos={jogosHoje} />
                   )}
                 </div>
                 <span className={`material-icons-round ${styles.cardBolaoArrow}`}
