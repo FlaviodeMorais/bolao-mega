@@ -114,6 +114,16 @@ function gerarPorParceiros(
   return apostas
 }
 
+// Bolinha e fonte encolhem linearmente de 6 (maior) até 20 dezenas (menor),
+// garantindo que qualquer aposta (6 a 20 dezenas) caiba numa única linha.
+function tamanhoBola(dezenas: number): { ballSize: number; fontSize: number } {
+  const MIN_DEZ = 6, MAX_DEZ = 20
+  const t = Math.min(1, Math.max(0, (dezenas - MIN_DEZ) / (MAX_DEZ - MIN_DEZ)))
+  const ballSize = Math.round(34 - t * (34 - 20))
+  const fontSize = Math.round(14 - t * (14 - 10))
+  return { ballSize, fontSize }
+}
+
 const ESTRATEGIAS: { id: Estrategia; label: string; desc: string }[] = [
   { id: 'equilibrado', label: '⚖️ Equilibrada',      desc: 'Mistura frequentes + atrasados' },
   { id: 'frequentes',  label: '🔥 Frequentes',       desc: 'Prioriza os mais sorteados' },
@@ -300,13 +310,15 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
               <div className={styles.geradorResultado}>
                 <div className={styles.geradorApostas}>
                   {apostasGeradas.map((aposta, i) => {
-                    // 6–10 dezenas: tudo numa linha só. Acima de 10: divide em 2 linhas.
-                    const cols = aposta.length <= 10 ? aposta.length : Math.ceil(aposta.length / 2)
+                    // Sempre uma linha só (6 a 20 dezenas) - bolinha e fonte encolhem
+                    // proporcionalmente conforme a quantidade de dezenas cresce.
+                    const { ballSize, fontSize } = tamanhoBola(aposta.length)
                     return (
                       <div key={i} className={styles.geradorApostaRow}>
-                        <div className={styles.geradorApostaBalls} style={{ gridTemplateColumns: `repeat(${cols}, max-content)` }}>
+                        <div className={styles.geradorApostaBalls}>
                           {aposta.map(n => (
-                            <span key={n} className={styles.geradorApoBall} style={{ background: cfg.cor }}>
+                            <span key={n} className={styles.geradorApoBall}
+                              style={{ background: cfg.cor, width: ballSize, height: ballSize, fontSize }}>
                               {String(n).padStart(2, '0')}
                             </span>
                           ))}

@@ -1816,15 +1816,14 @@
 }
 .geradorApostaRow:last-child { border-bottom: none; }
 .geradorApostaIdx { font-size: 11px; font-weight: 700; color: #94A3B8; font-family: 'JetBrains Mono', monospace; }
-/* Colunas definidas por aposta via inline style: 6-10 dezenas cabem numa linha so
-   (cols = dezenas); acima de 10, divide em 2 linhas (cols = ceil(dezenas/2)).
-   max-content nas colunas + justify-content:start mantem as bolinhas juntas em vez
-   de esticar (1fr) e espalhar por toda a largura da linha quando ha poucas dezenas. */
-.geradorApostaBalls { display: grid; justify-content: start; gap: 8px; }
+/* Sempre uma linha só (6 a 20 dezenas): tamanho da bolinha/fonte vem via inline
+   style (tamanhoBola()), interpolado linearmente conforme a quantidade de dezenas
+   cresce, para nunca precisar quebrar em múltiplas linhas nem estourar a largura. */
+.geradorApostaBalls { display: flex; flex-wrap: nowrap; justify-content: flex-start; gap: 6px; }
 .geradorApoBall {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 34px; height: 34px; border-radius: 50%;
-  color: #fff; font-size: 14px; font-weight: 800; font-family: 'JetBrains Mono', monospace;
+  border-radius: 50%;
+  color: #fff; font-weight: 800; font-family: 'JetBrains Mono', monospace;
   flex-shrink: 0;
 }
 
