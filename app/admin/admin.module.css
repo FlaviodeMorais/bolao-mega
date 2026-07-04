@@ -1196,6 +1196,15 @@
 .crmAcaoBtnComp:disabled { opacity: .5; cursor: default; }
 
 /* ── CONFIGURADOR DE BOLÃO ── */
+.configuradorCols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .configuradorCols { grid-template-columns: 1fr; }
+}
 .configurador {
   background: #E6F7EE;
   border: 1px solid rgba(0,171,103,.22);
