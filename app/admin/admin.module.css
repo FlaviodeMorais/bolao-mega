@@ -1811,7 +1811,7 @@
   padding-right: 2px;
 }
 .geradorApostaRow {
-  padding: 8px 4px;
+  padding: 4px 4px;
   border-bottom: 1px solid #F1F5F9;
 }
 .geradorApostaRow:last-child { border-bottom: none; }
