@@ -2,18 +2,19 @@ import { supabase } from '@/lib/supabase'
 import { getEsporteSettings } from '@/lib/settings'
 
 // Categoria A: acertou o placar exato                                        → 5 pts
-// Categoria B: acertou o vencedor (ou o empate), independente do placar       → 3 pts
+// Categoria B: acertou vencedor casa ou fora (não empate), placar diferente   → 3 pts
 // Categoria C: errou o vencedor, mas acertou a margem de gols (diferença
 //              absoluta entre os gols) - ex: previu casa vencendo por 1,
 //              saiu fora vencendo por 1                                       → 2 pts
+// Categoria D: previu empate e saiu empate, mas placar diferente              → 1 pt
 // Errou tudo acima                                                            → 0 pts
-function calcularCategoria(palCasa: number, palFora: number, resCasa: number, resFora: number): 'A' | 'B' | 'C' | null {
+function calcularCategoria(palCasa: number, palFora: number, resCasa: number, resFora: number): 'A' | 'B' | 'C' | 'D' | null {
   const acertouPlacar = palCasa === resCasa && palFora === resFora
   if (acertouPlacar) return 'A'
 
   const palVenc = palCasa > palFora ? 'casa' : palCasa < palFora ? 'fora' : 'empate'
   const resVenc = resCasa > resFora ? 'casa' : resCasa < resFora ? 'fora' : 'empate'
-  if (palVenc === resVenc) return 'B'
+  if (palVenc === resVenc) return palVenc === 'empate' ? 'D' : 'B'
 
   const margemPalpite = Math.abs(palCasa - palFora)
   const margemReal = Math.abs(resCasa - resFora)
@@ -22,10 +23,11 @@ function calcularCategoria(palCasa: number, palFora: number, resCasa: number, re
   return null
 }
 
-function categoriaPontos(cat: 'A' | 'B' | 'C' | null): number {
+function categoriaPontos(cat: 'A' | 'B' | 'C' | 'D' | null): number {
   if (cat === 'A') return 5
   if (cat === 'B') return 3
   if (cat === 'C') return 2
+  if (cat === 'D') return 1
   return 0
 }
 
