@@ -12,6 +12,7 @@ interface BolaoEsporte {
 interface JogoHoje {
   time_casa: string; time_fora: string; hora_jogo?: string
   bandeira_casa?: string; bandeira_fora?: string
+  data_jogo?: string; encerrado?: boolean
 }
 
 interface SorteioInfo {
@@ -165,7 +166,15 @@ function BandeiraJogo({ codigo }: { codigo?: string }) {
   return <span className={`fi fi-${codigo} ${styles.jogoHojeBandeira}`} />
 }
 
-function JogosHojeAlternando({ jogos, intervaloMs }: { jogos: JogoHoje[]; intervaloMs: number }) {
+function badgeJogo(dataJogo?: string): string {
+  if (!dataJogo) return '⚽ Próximo jogo'
+  const hoje = new Date().toISOString().slice(0, 10)
+  if (dataJogo === hoje) return '🔥 Jogo de hoje!'
+  const [, mes, dia] = dataJogo.split('-')
+  return `📅 ${dia}/${mes}`
+}
+
+function JogosAlternando({ jogos, intervaloMs }: { jogos: JogoHoje[]; intervaloMs: number }) {
   const [idx, setIdx] = useState(0)
 
   useEffect(() => {
@@ -179,7 +188,7 @@ function JogosHojeAlternando({ jogos, intervaloMs }: { jogos: JogoHoje[]; interv
 
   return (
     <div className={styles.cardBolaoJogoHoje}>
-      <span className={styles.esporteJogoHojeBadge}>🔥 Jogo de hoje!</span>
+      <span className={styles.esporteJogoHojeBadge}>{badgeJogo(jogo.data_jogo)}</span>
       <span className={styles.esporteJogoHojeTimes}>
         <BandeiraJogo codigo={jogo.bandeira_casa} />
         {jogo.time_casa}
@@ -201,22 +210,21 @@ function JogosHojeAlternando({ jogos, intervaloMs }: { jogos: JogoHoje[]; interv
 
 function EsporteCardCarrossel({ boloesEsporte, intervaloMs }: { boloesEsporte: BolaoEsporte[]; intervaloMs: number }) {
   const corEsporte = '#1D6EA6'
-  // Todos os jogos de cada bolão (não só os de hoje) — usados tanto pra achar o
-  // "jogo de hoje" quanto pra ordenar os bolões pela data do jogo mais próximo.
-  const [jogosPorBolao, setJogosPorBolao] = useState<Record<string, (JogoHoje & { data_jogo?: string; encerrado?: boolean })[]>>({})
+  // Todos os jogos de cada bolão — usados tanto pra montar o carrossel de jogos
+  // (alternando entre eles, não só os de hoje) quanto pra ordenar os bolões
+  // pela data do jogo mais próximo.
+  const [jogosPorBolao, setJogosPorBolao] = useState<Record<string, JogoHoje[]>>({})
 
   useEffect(() => {
     if (boloesEsporte.length === 0) { setJogosPorBolao({}); return }
 
     Promise.all(boloesEsporte.map(b =>
       fetch(`/api/esporte/jogos?bolao=${b.slug}`).then(r => r.json()).then(d => {
-        const jogos: (JogoHoje & { data_jogo?: string; encerrado?: boolean })[] = d.jogos || []
+        const jogos: JogoHoje[] = d.jogos || []
         return [b.slug, jogos] as const
       }).catch(() => [b.slug, []] as const)
     )).then(entries => setJogosPorBolao(Object.fromEntries(entries)))
   }, [boloesEsporte])
-
-  const hoje = new Date().toISOString().slice(0, 10)
 
   // Data do jogo (ainda não encerrado) mais próximo de cada bolão — bolões sem
   // jogos futuros ficam por último.
@@ -247,15 +255,15 @@ function EsporteCardCarrossel({ boloesEsporte, intervaloMs }: { boloesEsporte: B
               🏆 Bolões disponíveis
             </div>
             {boloesOrdenados.map(b => {
-              const jogosHoje = (jogosPorBolao[b.slug] || []).filter(j => j.data_jogo === hoje && !j.encerrado)
+              const jogosProximos = (jogosPorBolao[b.slug] || []).filter(j => !j.encerrado)
               return (
                 <a key={b.id} href={`/esporte/${b.slug}`} className={styles.cardBolaoItem}
                   style={{ borderColor: `${corEsporte}30` }}>
                   <div className={styles.cardBolaoInfo}>
                     <span className={styles.cardBolaoNome}>{b.nome}</span>
                     {b.competicao && <span className={styles.cardBolaoMeta}>{b.competicao}</span>}
-                    {jogosHoje.length > 0 && (
-                      <JogosHojeAlternando jogos={jogosHoje} intervaloMs={intervaloMs} />
+                    {jogosProximos.length > 0 && (
+                      <JogosAlternando jogos={jogosProximos} intervaloMs={intervaloMs} />
                     )}
                   </div>
                   <span className={`material-icons-round ${styles.cardBolaoArrow}`}
