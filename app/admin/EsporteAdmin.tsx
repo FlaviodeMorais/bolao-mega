@@ -17,7 +17,14 @@ interface Jogo {
   gol_casa?: number | null; gol_fora?: number | null; encerrado: boolean
   api_jogo_id?: string | null
 }
-interface RankingPart { id: string; nome: string; pontos_total: number }
+interface PalpiteDetalhado {
+  jogo_id: string; time_casa: string; time_fora: string
+  gol_casa_real: number | null; gol_fora_real: number | null
+  palpite_casa: number; palpite_fora: number
+  pontos: number | null; encerrado: boolean
+  fase: string; data_jogo: string | null; hora_jogo: string | null
+}
+interface RankingPart { id: string; nome: string; pontos_total: number; palpites: PalpiteDetalhado[] }
 interface Participante {
   id: string; nome: string; telefone: string; email?: string
   total: number; status: 'aguardando'|'pago'|'cancelado'
@@ -239,6 +246,7 @@ export default function EsporteAdmin() {
   const [bolaoSel, setBolaoSel]           = useState<BolaoEsporte | null>(null)
   const [jogos, setJogos]                 = useState<Jogo[]>([])
   const [ranking, setRanking]             = useState<RankingPart[]>([])
+  const [rankExpandido, setRankExpandido] = useState<string | null>(null)
   const [participantes, setParticipantes] = useState<Participante[]>([])
   const [show, setShow]                   = useState(true)
   const [aba, setAba]                     = useState<'jogos'|'participantes'|'ranking'|'novo'>('jogos')
@@ -713,15 +721,52 @@ export default function EsporteAdmin() {
             <div className={styles.esporteRankingWrap}>
               {ranking.length === 0
                 ? <div className={styles.empty}>Nenhum participante pago ainda.</div>
-                : ranking.map((p, i) => (
-                  <div key={p.id} className={styles.esporteRankRow}>
-                    <div className={`${styles.esporteRankPos} ${i === 0 ? styles.esporteRankGold : i === 1 ? styles.esporteRankSilver : i === 2 ? styles.esporteRankBronze : ''}`}>
-                      {i + 1}
+                : ranking.map((p, i) => {
+                  const expandido = rankExpandido === p.id
+                  const palpitesOrdenados = [...(p.palpites || [])]
+                  return (
+                    <div key={p.id} className={styles.esporteRankItem}>
+                      <button type="button" className={styles.esporteRankRow}
+                        onClick={() => setRankExpandido(expandido ? null : p.id)}>
+                        <div className={`${styles.esporteRankPos} ${i === 0 ? styles.esporteRankGold : i === 1 ? styles.esporteRankSilver : i === 2 ? styles.esporteRankBronze : ''}`}>
+                          {i + 1}
+                        </div>
+                        <div className={styles.esporteRankNome}>{p.nome}</div>
+                        <div className={styles.esporteRankPts}>{p.pontos_total} pts</div>
+                        <span className={styles.esporteRankToggle}>{expandido ? '▲' : '▼'}</span>
+                      </button>
+
+                      {expandido && (
+                        <div className={styles.esporteRankDetalhe}>
+                          {palpitesOrdenados.length === 0 && (
+                            <div className={styles.esporteRankDetalheVazio}>Nenhum palpite registrado.</div>
+                          )}
+                          {palpitesOrdenados.map(pl => (
+                            <div key={pl.jogo_id} className={styles.esporteRankDetalheRow}>
+                              <div className={styles.esporteRankDetalheJogo}>
+                                <span>{pl.time_casa} × {pl.time_fora}</span>
+                                <span className={styles.esporteRankDetalheMeta}>
+                                  {pl.fase}{pl.data_jogo ? ` · ${formatData(pl.data_jogo)}` : ''}
+                                </span>
+                              </div>
+                              <div className={styles.esporteRankDetalhePalpite}>
+                                Palpite: {pl.palpite_casa}–{pl.palpite_fora}
+                              </div>
+                              <div className={styles.esporteRankDetalheReal}>
+                                {pl.encerrado
+                                  ? `Real: ${pl.gol_casa_real}–${pl.gol_fora_real}`
+                                  : 'Aguardando resultado'}
+                              </div>
+                              <div className={`${styles.esporteRankDetalhePts} ${pl.pontos ? styles.esporteRankDetalhePtsGanho : ''}`}>
+                                {pl.encerrado ? `${pl.pontos ?? 0} pts` : '—'}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div className={styles.esporteRankNome}>{p.nome}</div>
-                    <div className={styles.esporteRankPts}>{p.pontos_total} pts</div>
-                  </div>
-                ))
+                  )
+                })
               }
             </div>
           )}
