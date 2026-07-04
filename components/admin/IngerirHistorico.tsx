@@ -210,7 +210,35 @@ export default function IngerirHistorico() {
           <button className={`${styles.btnLoad} ${styles.btnLoadInline}`} onClick={verificar} disabled={verificando}>
             {verificando ? '⟳' : '🔍'} Verificar banco
           </button>
+          {!rodando && (
+            <button className={`${styles.btnLoad} ${styles.btnLoadInline}`} onClick={iniciar}>
+              ⬇️ Carregar histórico — <TrevoIcon loteria={loteria} size={14} /> {cfg.label} (~{totais[loteria]} concursos)
+            </button>
+          )}
         </div>
+
+        {!rodando && (
+          <p className={styles.helpText} style={{ marginTop: 10 }}>
+            Busca os concursos da <strong style={{ color: cfg.cor }}>{cfg.label}</strong> do seu browser e salva no banco.
+            Aprox. <strong>{totais[loteria].toLocaleString('pt-BR')}</strong> concursos — leva ~15 min. <strong>Não feche esta aba.</strong>
+          </p>
+        )}
+
+        {rodando && (
+          <>
+            <div className={styles.progressWrap}>
+              <div className={styles.progressFill} style={{ width: `${pct}%`, background: cfg.cor }} />
+            </div>
+            <div className={styles.helpText}>{pct}% — {resumo}</div>
+            <button className={styles.btnPerigoPad} onClick={() => { abortRef.current = true }}>
+              ⏹ Parar
+            </button>
+          </>
+        )}
+
+        {!rodando && resumo && (
+          <div className={`${styles.resumoMsg} ${resumo.includes('✅') ? styles.resumoMsgOk : styles.resumoMsgErr}`}>{resumo}</div>
+        )}
       </div>
 
       {/* Seletor de loteria */}
@@ -443,37 +471,6 @@ export default function IngerirHistorico() {
         )}
       </div>
 
-      {/* ── Carregar histórico ── */}
-      <div className={styles.ferrSection}>
-        {!rodando && (
-          <p className={styles.helpText}>
-            Busca os concursos da <strong style={{ color: cfg.cor }}>{cfg.label}</strong> do seu browser e salva no banco.
-            Aprox. <strong>{totais[loteria].toLocaleString('pt-BR')}</strong> concursos — leva ~15 min. <strong>Não feche esta aba.</strong>
-          </p>
-        )}
-
-        {!rodando && (
-          <button className={styles.btnLoad} onClick={iniciar}>
-            ⬇️ Carregar histórico — <TrevoIcon loteria={loteria} size={14} /> {cfg.label} (~{totais[loteria]} concursos)
-          </button>
-        )}
-
-        {rodando && (
-          <>
-            <div className={styles.progressWrap}>
-              <div className={styles.progressFill} style={{ width: `${pct}%`, background: cfg.cor }} />
-            </div>
-            <div className={styles.helpText}>{pct}% — {resumo}</div>
-            <button className={styles.btnPerigoPad} onClick={() => { abortRef.current = true }}>
-              ⏹ Parar
-            </button>
-          </>
-        )}
-
-        {!rodando && resumo && (
-          <div className={`${styles.resumoMsg} ${resumo.includes('✅') ? styles.resumoMsgOk : styles.resumoMsgErr}`}>{resumo}</div>
-        )}
-      </div>
     </div>
   )
 }
