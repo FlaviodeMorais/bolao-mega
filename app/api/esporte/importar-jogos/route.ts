@@ -85,14 +85,22 @@ function parseFifaDate(dateStr: string): { data: string; hora: string } {
   }
 }
 
-// POST — recebe jogos já buscados pelo browser e salva no banco
+// Formato já normalizado (ex: vindo da API-Football) — ver app/api/esporte/campeonatos/[id]/jogos/route.ts
+interface JogoNormalizado {
+  nomeCasa: string; nomeFora: string
+  data: string; hora: string
+  fase: string; grupo: string | null; ordem: number
+}
+
+// POST — recebe jogos já buscados pelo browser (fonte='fifa', formato bruto FIFA)
+// ou já normalizados (fonte='api-football') e salva no banco
 export async function POST(req: NextRequest) {
   const token = req.cookies.get('admin_token')?.value
   if (!token || !(await verificarToken(token))) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const { bolao_slug, sobrescrever, jogos } = await req.json()
+  const { bolao_slug, jogos, fonte } = await req.json()
   if (!bolao_slug) return NextResponse.json({ error: 'bolao_slug obrigatório' }, { status: 400 })
   if (!Array.isArray(jogos) || jogos.length === 0) {
     return NextResponse.json({ error: 'Nenhum jogo recebido' }, { status: 400 })
@@ -100,6 +108,29 @@ export async function POST(req: NextRequest) {
 
   // Sempre apaga TODOS os jogos do bolão antes de reimportar
   await supabase.from('jogos').delete().eq('bolao_slug', bolao_slug)
+
+  if (fonte === 'api-football') {
+    let importados = 0
+    let ignorados = 0
+    for (const j of jogos as JogoNormalizado[]) {
+      const { error } = await supabase.from('jogos').insert({
+        bolao_slug,
+        time_casa: j.nomeCasa,
+        time_fora: j.nomeFora,
+        bandeira_casa: null,
+        bandeira_fora: null,
+        data_jogo: j.data || null,
+        hora_jogo: j.hora || null,
+        fase: j.fase,
+        grupo: j.grupo,
+        ordem: j.ordem,
+        encerrado: false,
+      })
+      if (!error) importados++
+      else ignorados++
+    }
+    return NextResponse.json({ ok: true, importados, ignorados, total: jogos.length })
+  }
 
   let importados = 0
   let ignorados = 0

@@ -25,6 +25,6 @@ export async function GET() {
     },
     home,
     bolao,
-    esporte,
+    esporte: { ...esporte, api_football_key: undefined },
   })
 }

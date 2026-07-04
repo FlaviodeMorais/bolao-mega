@@ -14,6 +14,7 @@ interface Props extends TabProps {
     label_jogo_hoje_default?: string
     label_noticias_default?: string
     premiacao?: unknown[]
+    api_football_key?: string
   }
 }
 
@@ -28,6 +29,16 @@ export default function EsporteTab({ esporte, updateNs, salvar, saving }: Props)
 
   return (
     <div className={styles.settingsGrid}>
+      <div className={styles.settingsInfoBox}>
+        <b>🌐 Importação automática de jogos (API-Football)</b>
+        <p>Chave gratuita em <a href="https://www.api-football.com/" target="_blank" rel="noopener noreferrer">api-football.com</a> — usada para buscar jogos/placares de campeonatos cadastrados com fonte &quot;API-Football&quot; (limite: 100 requisições/dia no plano grátis, por isso os resultados ficam em cache por 1h).</p>
+      </div>
+
+      <Field label="Chave da API-Football" name="api_football_key"
+        value={String(esporte.api_football_key ?? '')}
+        onChange={v => updateNs('paginas.esporte','api_football_key',v)}
+        placeholder="cole aqui sua API key" />
+
       <div className={styles.settingsInfoBox}>
         <b>📋 Padrões para novos bolões esportivos</b>
         <p>Estes valores são usados como template ao criar um novo bolão. Cada bolão pode sobrescrever individualmente no painel Esporte.</p>

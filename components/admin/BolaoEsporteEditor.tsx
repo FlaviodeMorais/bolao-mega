@@ -9,13 +9,20 @@ interface PremiacaoItem {
 
 interface BolaoEsporte {
   id?: string
-  slug: string; nome: string; descricao?: string; competicao: string
+  slug: string; nome: string; descricao?: string; competicao: string; competicao_id?: string | null
+  fonte?: string
   logo_url?: string; cor_primaria?: string; header_desc?: string
   label_cta?: string; label_palpites?: string
   label_jogo_hoje?: string; label_noticias?: string
   valor_cota: number; taxa_admin: number; total_cotas: number
   ativo?: boolean; encerrado?: boolean
   premiacao?: PremiacaoItem[]
+}
+
+interface Competicao {
+  id: string; nome: string; logo_url?: string; cor?: string
+  fonte: 'fifa' | 'api-football' | 'manual'
+  api_competition_id?: number | null; temporada?: string | null
 }
 
 interface EsporteDefaults {
@@ -66,6 +73,54 @@ export default function BolaoEsporteEditor({ bolao, onSaved, onCancel }: Props) 
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
   const [aba, setAba] = useState<'geral'|'visual'|'textos'|'premiacao'>('geral')
+
+  // Campeonatos cadastrados (tabela competicoes_esporte)
+  const [competicoes, setCompeticoes]     = useState<Competicao[]>([])
+  const [novoCampAberto, setNovoCampAberto] = useState(false)
+  const [ncNome, setNcNome]       = useState('')
+  const [ncFonte, setNcFonte]     = useState<'manual'|'api-football'>('manual')
+  const [ncApiId, setNcApiId]     = useState('')
+  const [ncTemporada, setNcTemporada] = useState(String(new Date().getFullYear()))
+  const [ncCor, setNcCor]         = useState('#FFB81C')
+  const [ncSalvando, setNcSalvando] = useState(false)
+  const [ncErro, setNcErro]       = useState('')
+
+  function carregarCompeticoes() {
+    fetch('/api/esporte/campeonatos').then(r => r.json()).then(d => setCompeticoes(d.competicoes || [])).catch(() => {})
+  }
+  useEffect(() => { carregarCompeticoes() }, [])
+
+  function aplicarCompeticao(c: Competicao) {
+    setForm(f => ({
+      ...f,
+      competicao_id: c.id,
+      competicao: c.nome,
+      fonte: c.fonte,
+      logo_url: f.logo_url || c.logo_url || f.logo_url,
+      cor_primaria: (!f.cor_primaria || f.cor_primaria === '#FFB81C') ? (c.cor || f.cor_primaria) : f.cor_primaria,
+    }))
+  }
+
+  function selecionarCompeticao(id: string) {
+    const c = competicoes.find(x => x.id === id)
+    if (c) aplicarCompeticao(c)
+  }
+
+  async function criarCampeonato() {
+    if (!ncNome.trim()) { setNcErro('Informe o nome do campeonato'); return }
+    if (ncFonte === 'api-football' && !ncApiId.trim()) { setNcErro('Informe o ID da liga na API-Football'); return }
+    setNcSalvando(true); setNcErro('')
+    const res = await fetch('/api/esporte/campeonatos', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome: ncNome, fonte: ncFonte, api_competition_id: ncApiId ? Number(ncApiId) : null, temporada: ncTemporada, cor: ncCor }),
+    }).then(r => r.json())
+    setNcSalvando(false)
+    if (res.error) { setNcErro(res.error); return }
+    setCompeticoes(prev => [...prev, res.competicao])
+    aplicarCompeticao(res.competicao)
+    setNovoCampAberto(false)
+    setNcNome(''); setNcApiId(''); setNcFonte('manual')
+  }
 
   function set(key: keyof BolaoEsporte, val: unknown) {
     setForm(f => ({ ...f, [key]: val }))
@@ -153,10 +208,64 @@ export default function BolaoEsporteEditor({ bolao, onSaved, onCancel }: Props) 
                 onChange={e => set('nome', e.target.value)} placeholder="ex: Eliminatórias FIFA 2026" />
             </label>
             <label className={styles.esporteEditorLabel}>
-              Nome da competição
-              <input className={styles.esporteEditorInput} value={form.competicao}
-                onChange={e => set('competicao', e.target.value)} placeholder="ex: UEFA Champions League 2025/26" />
+              Campeonato
+              <div className={styles.esporteEditorColorRow}>
+                <select className={styles.esporteEditorInput} value={form.competicao_id || ''}
+                  onChange={e => selecionarCompeticao(e.target.value)}>
+                  <option value="" disabled>Selecione um campeonato…</option>
+                  {competicoes.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.nome} {c.fonte === 'fifa' ? '· FIFA (auto)' : c.fonte === 'api-football' ? '· API-Football (auto)' : '· manual'}
+                    </option>
+                  ))}
+                </select>
+                <button type="button" className={styles.esporteEditorBtnSecundario}
+                  onClick={() => setNovoCampAberto(v => !v)}>
+                  {novoCampAberto ? '✕ Cancelar' : '+ Novo'}
+                </button>
+              </div>
             </label>
+
+            {novoCampAberto && (
+              <div className={styles.esporteEditorPreview}>
+                <label className={styles.esporteEditorLabel}>
+                  Nome do campeonato
+                  <input className={styles.esporteEditorInput} value={ncNome}
+                    onChange={e => setNcNome(e.target.value)} placeholder="ex: Campeonato Baiano 2026" />
+                </label>
+                <label className={styles.esporteEditorLabel}>
+                  Fonte dos jogos
+                  <select className={styles.esporteEditorInput} value={ncFonte}
+                    onChange={e => setNcFonte(e.target.value as 'manual' | 'api-football')}>
+                    <option value="manual">Manual (admin cadastra cada jogo)</option>
+                    <option value="api-football">API-Football (importação automática)</option>
+                  </select>
+                </label>
+                {ncFonte === 'api-football' && (
+                  <div className={styles.esporteEditorRow3}>
+                    <label className={styles.esporteEditorLabel}>
+                      ID da liga (API-Football)
+                      <input className={styles.esporteEditorInput} value={ncApiId}
+                        onChange={e => setNcApiId(e.target.value)} placeholder="ex: 71 (Brasileirão)" />
+                    </label>
+                    <label className={styles.esporteEditorLabel}>
+                      Temporada
+                      <input className={styles.esporteEditorInput} value={ncTemporada}
+                        onChange={e => setNcTemporada(e.target.value)} placeholder="2026" />
+                    </label>
+                  </div>
+                )}
+                <label className={styles.esporteEditorLabel}>
+                  Cor
+                  <input type="color" value={ncCor} onChange={e => setNcCor(e.target.value)}
+                    className={styles.esporteEditorColorPicker} />
+                </label>
+                {ncErro && <div className={styles.esporteEditorErro}>{ncErro}</div>}
+                <button type="button" className={styles.esporteEditorBtnSalvar} onClick={criarCampeonato} disabled={ncSalvando}>
+                  {ncSalvando ? 'Criando…' : '✅ Criar campeonato'}
+                </button>
+              </div>
+            )}
             <label className={styles.esporteEditorLabel}>
               Descrição (interna)
               <input className={styles.esporteEditorInput} value={form.descricao || ''}

@@ -2,11 +2,10 @@
 import { useState, useEffect, useMemo } from 'react'
 import styles from './admin.module.css'
 import BolaoEsporteEditor from '@/components/admin/BolaoEsporteEditor'
-import { getCompeticao } from '@/lib/competicoes'
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 interface BolaoEsporte {
-  id: string; slug: string; nome: string; competicao: string; fonte?: string
+  id: string; slug: string; nome: string; competicao: string; competicao_id?: string | null; fonte?: string
   valor_cota: number; taxa_admin: number; total_cotas: number
   ativo: boolean; encerrado: boolean
 }
@@ -68,7 +67,7 @@ function parseFifaDate(dateStr: string): { data: string; hora: string } {
   return { data: br.toISOString().slice(0, 10), hora: br.toISOString().slice(11, 16) }
 }
 
-// Jogo processado para exibição no seletor
+// Jogo processado para exibição no seletor (fonte FIFA ou API-Football)
 interface JogoPreview {
   id: string
   nomeCasa: string; nomeFora: string
@@ -76,7 +75,12 @@ interface JogoPreview {
   data: string; hora: string
   fase: string; grupo: string | null
   ordem: number
-  raw: FifaMatch  // mantém o dado bruto para enviar ao backend
+  raw: unknown  // mantém o dado bruto para enviar ao backend (formato depende da fonte)
+}
+
+interface JogoApiFootball {
+  id: string; nomeCasa: string; nomeFora: string
+  data: string; hora: string; fase: string; grupo: string | null; ordem: number
 }
 
 function processarFifaMatch(j: FifaMatch): JogoPreview | null {
@@ -106,11 +110,12 @@ function formatData(d?: string) {
 // ── Seletor de Jogos FIFA ─────────────────────────────────────────────────────
 interface SeletorProps {
   jogosDisponiveis: JogoPreview[]
-  onConfirmar: (selecionados: FifaMatch[]) => void
+  onConfirmar: (selecionados: unknown[]) => void
   onFechar: () => void
+  titulo?: string
 }
 
-function SeletorJogosFifa({ jogosDisponiveis, onConfirmar, onFechar }: SeletorProps) {
+function SeletorJogosFifa({ jogosDisponiveis, onConfirmar, onFechar, titulo }: SeletorProps) {
   const [sel, setSel]         = useState<Set<string>>(() => new Set(jogosDisponiveis.map(j => j.id)))
   const [filtro, setFiltro]   = useState('')
 
@@ -167,7 +172,7 @@ function SeletorJogosFifa({ jogosDisponiveis, onConfirmar, onFechar }: SeletorPr
       <div className={styles.fifaSheet}>
         <div className={styles.fifaSheetHeader}>
           <div className={styles.fifaSheetTitle}>
-            <span>🌐 Selecionar Jogos — {jogosDisponiveis.length} disponíveis</span>
+            <span>{titulo || '🌐 Selecionar Jogos'} — {jogosDisponiveis.length} disponíveis</span>
             <button type="button" onClick={onFechar} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94A3B8' }}>✕</button>
           </div>
           <div className={styles.fifaSheetControls}>
@@ -254,6 +259,7 @@ export default function EsporteAdmin() {
   const [importando, setImportando]       = useState(false)
   const [buscandoFifa, setBuscandoFifa]   = useState(false)
   const [jogosPreview, setJogosPreview]   = useState<JogoPreview[] | null>(null)
+  const [fonteImportacao, setFonteImportacao] = useState<'fifa' | 'api-football'>('fifa')
 
   // Editar bolão
   const [editNome, setEditNome]   = useState('')
@@ -312,8 +318,9 @@ export default function EsporteAdmin() {
   }
 
   // Passo 1: busca agenda na FIFA e abre o seletor
-  async function abrirSeletor() {
+  async function abrirSeletorFifa() {
     if (!bolaoSel) return
+    setFonteImportacao('fifa')
     setBuscandoFifa(true); setImportMsg('Conectando à API da FIFA…')
     try {
       const params = new URLSearchParams({ idCompetition: '17', idSeason: '285023', count: '200', language: 'pt' })
@@ -334,8 +341,31 @@ export default function EsporteAdmin() {
     setBuscandoFifa(false)
   }
 
+  // Passo 1 (alternativo): busca agenda na API-Football (com cache no servidor) e abre o seletor
+  async function abrirSeletorApiFootball() {
+    if (!bolaoSel?.competicao_id) return
+    setFonteImportacao('api-football')
+    setBuscandoFifa(true); setImportMsg('Buscando jogos na API-Football…')
+    try {
+      const r = await fetch(`/api/esporte/campeonatos/${bolaoSel.competicao_id}/jogos`)
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error || `API retornou ${r.status}`)
+      const jogos: JogoApiFootball[] = d.jogos || []
+      const preview: JogoPreview[] = jogos.map(j => ({
+        id: j.id, nomeCasa: j.nomeCasa, nomeFora: j.nomeFora,
+        isoCasa: '', isoFora: '', data: j.data, hora: j.hora,
+        fase: j.fase, grupo: j.grupo, ordem: j.ordem, raw: j,
+      }))
+      setImportMsg(d.stale ? '⚠️ Dados podem estar desatualizados (API indisponível no momento)' : '')
+      setJogosPreview(preview)
+    } catch (e) {
+      setImportMsg('❌ Erro ao buscar jogos: ' + String(e))
+    }
+    setBuscandoFifa(false)
+  }
+
   // Passo 2: confirma os jogos selecionados e importa
-  async function importarSelecionados(selecionados: FifaMatch[]) {
+  async function importarSelecionados(selecionados: unknown[]) {
     if (!bolaoSel) return
     setJogosPreview(null)
     setImportando(true); setImportMsg(`Salvando ${selecionados.length} jogos…`)
@@ -345,7 +375,7 @@ export default function EsporteAdmin() {
 
       const res = await fetch('/api/esporte/importar-jogos', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bolao_slug: bolaoSel.slug, sobrescrever: true, jogos: selecionados }),
+        body: JSON.stringify({ bolao_slug: bolaoSel.slug, jogos: selecionados, fonte: fonteImportacao }),
       }).then(r => r.json())
 
       if (res.ok) {
@@ -417,7 +447,7 @@ export default function EsporteAdmin() {
                 onClick={() => selBolao(b)}>
                 <div className={styles.esporteBolaoBtnNome}>{b.nome}</div>
                 <div className={styles.esporteBolaoBtnMeta}>
-                  {(() => { const c = getCompeticao(b.competicao); return c ? c.label : b.competicao })()}
+                  {b.competicao}
                   {' · '}R$ {Number(b.valor_cota).toFixed(2).replace('.', ',')}
                 </div>
               </button>
@@ -518,22 +548,17 @@ export default function EsporteAdmin() {
           {bolaoSel && aba === 'jogos' && (
             <div className={styles.esporteJogosWrap}>
 
-              {/* Importar da FIFA — só para bolões com fonte FIFA */}
-              {(() => {
-                const comp = getCompeticao(bolaoSel.competicao)
-                const isFifa = (bolaoSel.fonte ?? comp?.fonte) === 'fifa'
-                if (!isFifa) return null
-                return (
-                  <div className={styles.esporteImportWrap}>
-                    <button type="button" className={styles.btnAcao}
-                      onClick={abrirSeletor}
-                      disabled={buscandoFifa || importando}>
-                      {buscandoFifa ? 'Buscando jogos…' : `🌐 Importar jogos — ${comp?.label ?? 'FIFA'}`}
-                    </button>
-                    {importMsg && <div className={styles.esporteImportMsg}>{importMsg}</div>}
-                  </div>
-                )
-              })()}
+              {/* Importar automaticamente — só para bolões com fonte fifa/api-football */}
+              {(bolaoSel.fonte === 'fifa' || bolaoSel.fonte === 'api-football') && (
+                <div className={styles.esporteImportWrap}>
+                  <button type="button" className={styles.btnAcao}
+                    onClick={bolaoSel.fonte === 'fifa' ? abrirSeletorFifa : abrirSeletorApiFootball}
+                    disabled={buscandoFifa || importando}>
+                    {buscandoFifa ? 'Buscando jogos…' : `🌐 Importar jogos — ${bolaoSel.competicao}`}
+                  </button>
+                  {importMsg && <div className={styles.esporteImportMsg}>{importMsg}</div>}
+                </div>
+              )}
 
               {/* Lista de jogos */}
               {jogos.length === 0 && <div className={styles.empty}>Nenhum jogo cadastrado. Adicione manualmente ou importe da API.</div>}

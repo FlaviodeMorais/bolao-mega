@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   if (!token || !(await verificarToken(token))) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const body = await req.json()
-  const { slug, nome, descricao, competicao, fonte, valor_cota, taxa_admin, total_cotas,
+  const { slug, nome, descricao, competicao, competicao_id, fonte, valor_cota, taxa_admin, total_cotas,
           logo_url, cor_primaria, header_desc, label_cta, label_palpites,
           label_jogo_hoje, label_noticias, premiacao } = body
 
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('boloes_esporte')
-    .insert({ slug, nome, descricao, competicao, fonte: fonte || 'manual', valor_cota, taxa_admin, total_cotas,
+    .insert({ slug, nome, descricao, competicao, competicao_id: competicao_id || null, fonte: fonte || 'manual', valor_cota, taxa_admin, total_cotas,
               logo_url, cor_primaria, header_desc, label_cta, label_palpites,
               label_jogo_hoje, label_noticias, premiacao })
     .select().single()
