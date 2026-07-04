@@ -2,28 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verificarToken } from '@/lib/auth'
 
-// Categoria A: acertou vencedor E placar exato → 40%
-// Categoria B: acertou só o vencedor            → 20%
-// Categoria C: acertou só o placar exato        → 20%
-// Sem acerto                                    →  0
-function calcularCategoria(palCasa: number, palFora: number, resCasa: number, resFora: number): 'A' | 'B' | 'C' | null {
+// Categoria A: acertou vencedor E placar exato → 5 pts
+// Categoria B: acertou só o vencedor            → 3 pts
+// Sem acerto                                    → 0 pts
+// (acertar o placar exato sem acertar o vencedor é matematicamente impossível —
+// os mesmos números que definem o placar também definem o vencedor)
+function calcularCategoria(palCasa: number, palFora: number, resCasa: number, resFora: number): 'A' | 'B' | null {
   const acertouPlacar = palCasa === resCasa && palFora === resFora
+  if (acertouPlacar) return 'A'
 
   const palVenc = palCasa > palFora ? 'casa' : palCasa < palFora ? 'fora' : 'empate'
   const resVenc = resCasa > resFora ? 'casa' : resCasa < resFora ? 'fora' : 'empate'
-  const acertouVencedor = palVenc === resVenc
+  if (palVenc === resVenc) return 'B'
 
-  if (acertouVencedor && acertouPlacar) return 'A'
-  if (acertouVencedor && !acertouPlacar) return 'B'
-  if (!acertouVencedor && acertouPlacar) return 'C'
   return null
 }
 
-// Pontos para manter ranking ordenável: A=5, B=3, C=2, null=0
-function categoriaPontos(cat: 'A' | 'B' | 'C' | null): number {
+function categoriaPontos(cat: 'A' | 'B' | null): number {
   if (cat === 'A') return 5
   if (cat === 'B') return 3
-  if (cat === 'C') return 2
   return 0
 }
 
@@ -51,26 +48,43 @@ export async function POST(req: NextRequest) {
 
   if (!palpites || palpites.length === 0) return NextResponse.json({ ok: true, atualizados: 0 })
 
-  let atualizados = 0
+  const erros: string[] = []
+  const participantesAfetados = new Set<string>()
+
   for (const p of palpites) {
     const cat = calcularCategoria(p.gol_casa, p.gol_fora, gol_casa, gol_fora)
     const pontos = categoriaPontos(cat)
 
-    await supabase.from('palpites').update({ pontos }).eq('id', p.id)
-
-    const { data: part } = await supabase
-      .from('participantes_esporte')
-      .select('pontos_total')
-      .eq('id', p.participante_id).single()
-
-    if (part) {
-      await supabase
-        .from('participantes_esporte')
-        .update({ pontos_total: (part.pontos_total || 0) + pontos })
-        .eq('id', p.participante_id)
-    }
-    atualizados++
+    const { error } = await supabase.from('palpites').update({ pontos }).eq('id', p.id)
+    if (error) { erros.push(`palpite ${p.id}: ${error.message}`); continue }
+    participantesAfetados.add(p.participante_id)
   }
 
-  return NextResponse.json({ ok: true, atualizados, resultado: { gol_casa, gol_fora } })
+  // Recalcula pontos_total do zero (soma de todos os palpites do participante em
+  // todo o bolão) em vez de incrementar - assim reenviar um resultado corrigido
+  // para o mesmo jogo substitui os pontos antigos em vez de duplicá-los.
+  for (const participanteId of participantesAfetados) {
+    const { data: todosPalpites, error: selErr } = await supabase
+      .from('palpites')
+      .select('pontos')
+      .eq('participante_id', participanteId)
+
+    if (selErr) { erros.push(`participante ${participanteId}: ${selErr.message}`); continue }
+
+    const total = (todosPalpites || []).reduce((s, row) => s + (row.pontos || 0), 0)
+
+    const { error: updErr } = await supabase
+      .from('participantes_esporte')
+      .update({ pontos_total: total })
+      .eq('id', participanteId)
+
+    if (updErr) erros.push(`participante ${participanteId}: ${updErr.message}`)
+  }
+
+  return NextResponse.json({
+    ok: erros.length === 0,
+    atualizados: palpites.length - erros.length,
+    resultado: { gol_casa, gol_fora },
+    ...(erros.length > 0 && { erros }),
+  })
 }

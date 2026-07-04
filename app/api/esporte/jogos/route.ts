@@ -39,7 +39,14 @@ export async function PATCH(req: NextRequest) {
   const token = req.cookies.get('admin_token')?.value
   if (!token || !(await verificarToken(token))) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const { id, ...updates } = await req.json()
+  const { id, gol_casa, gol_fora, encerrado, ...updates } = await req.json()
+  // Placar/encerramento só podem ser definidos via POST /api/esporte/resultado,
+  // que recalcula os pontos dos participantes - gravar aqui dessincronizaria
+  // o resultado do jogo do ranking.
+  if (gol_casa !== undefined || gol_fora !== undefined || encerrado !== undefined) {
+    return NextResponse.json({ error: 'Use /api/esporte/resultado para lançar placar (recalcula pontos)' }, { status: 400 })
+  }
+
   const { data, error } = await supabase.from('jogos').update(updates).eq('id', id).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ jogo: data })
