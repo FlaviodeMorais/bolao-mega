@@ -1799,18 +1799,30 @@
   border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;
 }
 .geradorResultadoHeader { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.geradorApostas { display: flex; flex-direction: column; gap: 5px; max-height: 260px; overflow-y: auto; }
-.geradorApostaRow {
-  display: flex; align-items: center; gap: 8px; padding: 5px 8px;
-  background: #F8FAFB; border-radius: 8px;
+/* Flui em colunas (nao em linhas): ate 6 apostas por coluna, gerando quantas colunas
+   forem necessarias (ate ~13 antes de precisar rolar horizontalmente) - aproveita a
+   largura da coluna de resultado em vez de empilhar tudo verticalmente com scroll. */
+.geradorApostas {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(6, auto);
+  grid-auto-columns: minmax(152px, max-content);
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  max-width: 100%;
 }
-.geradorApostaIdx { font-size: 10px; color: #94A3B8; width: 18px; text-align: right; flex-shrink: 0; font-family: 'JetBrains Mono', monospace; }
-.geradorApostaBalls { display: flex; gap: 4px; flex-wrap: wrap; }
+.geradorApostaRow {
+  display: flex; flex-direction: column; gap: 6px; padding: 8px 10px;
+  background: #F8FAFB; border-radius: 10px; border: 1px solid #E2E8F0;
+}
+.geradorApostaIdx { font-size: 11px; font-weight: 700; color: #94A3B8; font-family: 'JetBrains Mono', monospace; }
+.geradorApostaBalls { display: flex; gap: 5px; flex-wrap: wrap; max-width: 148px; }
 .geradorApoBall {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px; border-radius: 50%;
+  width: 27px; height: 27px; border-radius: 50%;
   background: linear-gradient(135deg, #007A45 0%, var(--green) 100%);
-  color: #fff; font-size: 9px; font-weight: 800; font-family: 'JetBrains Mono', monospace;
+  color: #fff; font-size: 11px; font-weight: 800; font-family: 'JetBrains Mono', monospace;
   flex-shrink: 0;
 }
 
