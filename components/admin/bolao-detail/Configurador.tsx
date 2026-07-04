@@ -22,13 +22,13 @@ export default function Configurador(p: Props) {
 
   return (
     <div className={styles.configurador}>
-      <div className={styles.configHeader}>
-        <span className={styles.configHeaderIcon}>⚙️</span>
-        <span className={styles.configHeaderTitle}>Configurar Bolão</span>
-      </div>
-
       <div className={styles.configuradorCols}>
         <div className={styles.configColuna}>
+          <div className={styles.configHeader}>
+            <span className={styles.configHeaderIcon}>⚙️</span>
+            <span className={styles.configHeaderTitle}>Configurar Bolão</span>
+          </div>
+
           <div className={styles.configGrid4}>
             <div className={styles.configField}>
               <label className={styles.configLabel}>Dezenas / Aposta</label>
