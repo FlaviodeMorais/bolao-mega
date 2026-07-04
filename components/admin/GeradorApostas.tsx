@@ -230,7 +230,7 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
       )}
 
       <div className={styles.geradorSplit}>
-        <div className={`${styles.geradorSplitCol} ${styles.geradorControlsCol}`}>
+        <div className={styles.geradorSplitCol}>
           <div className={styles.geradorConfigGroup}>
             <div className={styles.geradorConfigLabel}>Estratégia</div>
             <div className={styles.geradorEstrategias}>
