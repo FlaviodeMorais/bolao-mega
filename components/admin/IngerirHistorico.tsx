@@ -1,11 +1,11 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import styles from '@/app/admin/admin.module.css'
 import { LOTERIA_LIST, getLoteria, type LoteriaId } from '@/lib/loterias'
 import TrevoIcon from '@/components/TrevoIcon'
 
-// Totais aproximados por loteria para a barra de progresso
-const TOTAIS: Record<LoteriaId, number> = { mega: 3024, lotofacil: 3100, quina: 6400 }
+// Totais de fallback (usados só se a busca do concurso atual falhar)
+const TOTAIS_FALLBACK: Record<LoteriaId, number> = { mega: 3024, lotofacil: 3100, quina: 6400 }
 
 // URL da API Caixa por loteria
 const CAIXA_URL: Record<LoteriaId, string> = {
@@ -23,7 +23,25 @@ export default function IngerirHistorico() {
   const [resumo, setResumo]         = useState('')
   const [info, setInfo]             = useState<Record<LoteriaId, string | null>>({ mega: null, lotofacil: null, quina: null })
   const [verificando, setVerif]     = useState(false)
+  const [totais, setTotais]         = useState<Record<LoteriaId, number>>(TOTAIS_FALLBACK)
   const abortRef                    = useRef(false)
+
+  useEffect(() => {
+    Promise.all(
+      LOTERIA_LIST.map(l =>
+        fetch(`/api/resultados/${getLoteria(l.id).apiSlug}`).then(r => r.json()).catch(() => null)
+      )
+    ).then(results => {
+      setTotais(prev => {
+        const novo = { ...prev }
+        LOTERIA_LIST.forEach((l, i) => {
+          const num = results[i]?.numero
+          if (typeof num === 'number' && num > 0) novo[l.id] = num
+        })
+        return novo
+      })
+    })
+  }, [])
 
   async function verificar() {
     setVerif(true)
@@ -46,7 +64,7 @@ export default function IngerirHistorico() {
   async function iniciar() {
     abortRef.current = false
     setRodando(true); setPct(0)
-    const total    = TOTAIS[loteria]
+    const total    = totais[loteria]
     const baseUrl  = CAIXA_URL[loteria]
     const cfg      = getLoteria(loteria)
     let inseridos  = 0
@@ -127,9 +145,6 @@ export default function IngerirHistorico() {
         <button className={`${styles.btnLoad} ${styles.btnLoadInline}`} onClick={verificar} disabled={verificando}>
           {verificando ? '⟳' : '🔍'} Verificar banco
         </button>
-        <a href="/estatisticas" target="_blank" className={`${styles.btnLoad} ${styles.btnLoadInline}`}>
-          📊 Ver Estatísticas
-        </a>
       </div>
 
       {/* Seletor de loteria */}
@@ -149,13 +164,13 @@ export default function IngerirHistorico() {
       {!rodando && (
         <p className={styles.helpText}>
           Busca os concursos da <strong style={{ color: cfg.cor }}>{cfg.label}</strong> do seu browser e salva no banco.
-          Aprox. <strong>{TOTAIS[loteria].toLocaleString('pt-BR')}</strong> concursos — leva ~15 min. <strong>Não feche esta aba.</strong>
+          Aprox. <strong>{totais[loteria].toLocaleString('pt-BR')}</strong> concursos — leva ~15 min. <strong>Não feche esta aba.</strong>
         </p>
       )}
 
       {!rodando && (
         <button className={styles.btnLoad} onClick={iniciar}>
-          ⬇️ Carregar histórico — <TrevoIcon loteria={loteria} size={14} /> {cfg.label} (~{TOTAIS[loteria]} concursos)
+          ⬇️ Carregar histórico — <TrevoIcon loteria={loteria} size={14} /> {cfg.label} (~{totais[loteria]} concursos)
         </button>
       )}
 
