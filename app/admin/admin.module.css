@@ -1225,6 +1225,12 @@
 .configGrid3 {
   display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 10px;
 }
+.configGrid4 {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 10px;
+}
+@media (max-width: 700px) {
+  .configGrid4 { grid-template-columns: repeat(2,1fr); }
+}
 .configField {
   display: flex; flex-direction: column; gap: 5px;
 }

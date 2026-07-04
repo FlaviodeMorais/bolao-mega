@@ -25,7 +25,7 @@ export default function Configurador(p: Props) {
       <div className={styles.configTitulo}>⚙️ Configurar Bolão</div>
       <div className={styles.configuradorCols}>
           <div className={styles.configurador}>
-            <div className={styles.configGrid3}>
+            <div className={styles.configGrid4}>
               <div className={styles.configField}>
                 <label className={styles.configLabel}>Dezenas / Aposta</label>
                 <select className={styles.configSelect} value={p.editDezenas}
@@ -47,12 +47,12 @@ export default function Configurador(p: Props) {
                   title="Total de cotas" placeholder="Ex: 20"
                   value={p.editCotas} onChange={e => p.onEditCotasChange(Math.max(1, Number(e.target.value)))} />
               </div>
-            </div>
-            <div className={styles.configFieldNarrow}>
-              <label className={styles.configLabel}>Taxa de Administração (R$)</label>
-              <input type="number" min={0} step={0.01} className={styles.configInput}
-                title="Taxa admin" placeholder="0,00"
-                value={p.editTaxa} onChange={e => p.onEditTaxaChange(Math.max(0, Number(e.target.value)))} />
+              <div className={styles.configField}>
+                <label className={styles.configLabel}>Taxa de Administração (R$)</label>
+                <input type="number" min={0} step={0.01} className={styles.configInput}
+                  title="Taxa admin" placeholder="0,00"
+                  value={p.editTaxa} onChange={e => p.onEditTaxaChange(Math.max(0, Number(e.target.value)))} />
+              </div>
             </div>
             <div className={styles.configCalc}>
               <div className={styles.calcRow}>
