@@ -224,8 +224,9 @@ export default function IngerirHistorico() {
         </div>
       )}
 
-      {/* ── Estatísticas: Frequência / Atrasos / Top 15 ── */}
-      <div className={styles.ferrSection}>
+      {/* ── Frequência/Atrasos + Combinações lado a lado ── */}
+      <div className={styles.ferrCols}>
+      <div className={styles.ferrColuna}>
         <div className={styles.ferrSectionHeader}>
           <span className={styles.ferrSectionLabel}>
             📊 Frequência
@@ -291,7 +292,7 @@ export default function IngerirHistorico() {
       </div>
 
       {/* ── Combinações & Sequências ── */}
-      <div className={styles.ferrSection}>
+      <div className={styles.ferrColuna}>
         <div className={styles.ferrSectionHeader}>
           <span className={styles.ferrSectionLabel}>🔢 Combinações & Sequências</span>
         </div>
@@ -378,6 +379,7 @@ export default function IngerirHistorico() {
             </div>
           </>
         )}
+      </div>
       </div>
 
       {/* ── Carregar histórico ── */}

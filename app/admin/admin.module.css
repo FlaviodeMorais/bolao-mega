@@ -1529,6 +1529,15 @@
 .ferrSection { margin-bottom: 28px; }
 .ferrSection:last-child { margin-bottom: 0; }
 
+.ferrCols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+  margin-bottom: 28px; align-items: start;
+}
+.ferrColuna { min-width: 0; }
+@media (max-width: 900px) {
+  .ferrCols { grid-template-columns: 1fr; }
+}
+
 .ferrSectionHeader {
   display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
   margin-bottom: 14px;
