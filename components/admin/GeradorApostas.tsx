@@ -6,7 +6,7 @@ import TrevoIcon from '@/components/TrevoIcon'
 
 interface NumStat { numero: number; count: number; pct: number; atraso?: number }
 interface Parceiro { parceiro: number; count: number }
-type Estrategia = 'frequentes' | 'atrasados' | 'equilibrado' | 'aleatoria'
+type Estrategia = 'frequentes' | 'atrasados' | 'equilibrado' | 'aleatoria' | 'fechamento'
 type FonteParceiros = 'geral' | 'consecutiva' | null
 
 // Soma dos counts dos parceiros de cada número — quanto maior, mais "conectado"
@@ -94,6 +94,94 @@ function gerarCombinacoes(
   return apostas
 }
 
+// ── Sistema de Fechamento (Wheeling) ────────────────────────────────────────
+// Teoria de design combinatório (covering design): dado um "pool" de números
+// maior que a aposta, distribui as apostas de forma que, se um trio qualquer
+// do pool sair entre os sorteados, pelo menos uma aposta contenha esse trio
+// inteiro. Não aumenta a chance de ganhar (impossível numa loteria justa) -
+// reduz a variância do bolão, garantindo cobertura combinatória do pool.
+const FECHAMENTO_GARANTIA = 3
+const FECHAMENTO_MAX_CANDIDATOS = 4000
+
+function combinacoesDe<T>(arr: T[], k: number): T[][] {
+  const resultado: T[][] = []
+  const atual: T[] = []
+  function rec(start: number) {
+    if (atual.length === k) { resultado.push([...atual]); return }
+    for (let i = start; i < arr.length; i++) {
+      atual.push(arr[i])
+      rec(i + 1)
+      atual.pop()
+    }
+  }
+  rec(0)
+  return resultado
+}
+
+function contarCombinacoes(n: number, k: number): number {
+  if (k < 0 || k > n) return 0
+  const kk = Math.min(k, n - k)
+  let res = 1
+  for (let i = 0; i < kk; i++) res = (res * (n - i)) / (i + 1)
+  return Math.round(res)
+}
+
+interface ResultadoFechamento { apostas: number[][]; cobertura: number; totalTrios: number }
+
+// Algoritmo guloso de cobertura (greedy set cover) - aproximação clássica e bem
+// documentada (Chvátal) para o problema NP-difícil de cobertura mínima exata.
+function gerarPorFechamento(pool: number[], numApostas: number, dezenas: number): ResultadoFechamento {
+  const garantia = Math.min(FECHAMENTO_GARANTIA, dezenas, pool.length)
+  const trios = combinacoesDe(pool, garantia).map(t => t.join('-'))
+  const trioSet = new Set(trios)
+  if (trioSet.size === 0) return { apostas: [], cobertura: 0, totalTrios: 0 }
+
+  const totalCandidatosPossiveis = contarCombinacoes(pool.length, dezenas)
+  let candidatos: number[][]
+  if (totalCandidatosPossiveis > 0 && totalCandidatosPossiveis <= FECHAMENTO_MAX_CANDIDATOS) {
+    candidatos = combinacoesDe(pool, dezenas)
+  } else {
+    // Pool grande demais pra enumerar exaustivamente - amostra aleatória de
+    // candidatos e aplica o mesmo guloso sobre a amostra (heurística estocástica).
+    candidatos = []
+    const vistos = new Set<string>()
+    let tentativas = 0
+    while (candidatos.length < FECHAMENTO_MAX_CANDIDATOS && tentativas < FECHAMENTO_MAX_CANDIDATOS * 5) {
+      tentativas++
+      const embaralhado = [...pool].sort(() => Math.random() - 0.5).slice(0, dezenas).sort((a, b) => a - b)
+      const chave = embaralhado.join('-')
+      if (!vistos.has(chave)) { vistos.add(chave); candidatos.push(embaralhado) }
+    }
+  }
+
+  // Pré-computa os trios de cada candidato uma única vez (evita recalcular a
+  // cada rodada do guloso, que seria O(candidatos × apostas × C(dezenas,3))).
+  const triosPorCandidato = candidatos.map(c => combinacoesDe(c, garantia).map(t => t.join('-')))
+
+  const cobertos = new Set<string>()
+  const usados = new Set<number>()
+  const apostas: number[][] = []
+
+  while (apostas.length < numApostas && cobertos.size < trioSet.size) {
+    let melhorIdx = -1
+    let melhorGanho = 0
+    let melhorNovos: string[] = []
+
+    for (let i = 0; i < candidatos.length; i++) {
+      if (usados.has(i)) continue
+      const novos = triosPorCandidato[i].filter(t => trioSet.has(t) && !cobertos.has(t))
+      if (novos.length > melhorGanho) { melhorGanho = novos.length; melhorIdx = i; melhorNovos = novos }
+    }
+
+    if (melhorIdx === -1) break
+    usados.add(melhorIdx)
+    apostas.push(candidatos[melhorIdx])
+    melhorNovos.forEach(t => cobertos.add(t))
+  }
+
+  return { apostas, cobertura: cobertos.size / trioSet.size, totalTrios: trioSet.size }
+}
+
 const BALL_GAP = 6
 
 // Calcula o tamanho de bolinha que preenche a largura disponível por completo
@@ -112,6 +200,7 @@ const ESTRATEGIAS: { id: Estrategia; label: string; desc: string }[] = [
   { id: 'frequentes',  label: '🔥 Frequentes',       desc: 'Prioriza os mais sorteados' },
   { id: 'atrasados',   label: '⏳ Atrasados',        desc: 'Prioriza números sem sair há mais tempo' },
   { id: 'aleatoria',   label: '🎲 Aleatória',        desc: 'Seleção puramente aleatória' },
+  { id: 'fechamento',  label: '🎯 Fechamento',       desc: 'Sistema de fechamento (wheeling): distribui um pool de números entre as apostas garantindo cobertura combinatória — reduz a variância do bolão, não aumenta a chance de ganhar' },
 ]
 
 interface Props {
@@ -138,11 +227,21 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
   const [filtroParidade, setFiltroParidade]     = useState(true)
   const [filtroQuadrante, setFiltroQuadrante]   = useState(false)
   const [filtroSequencia, setFiltroSequencia]   = useState(false)
+  const [poolSize, setPoolSize]               = useState(dezenasBolao + 4)
+  const [coberturaInfo, setCoberturaInfo]     = useState<{ pct: number; apostasUsadas: number } | null>(null)
   const [apostasGeradas, setApostasGeradas]   = useState<number[][]>([])
   const [gerando, setGerando]                 = useState(false)
   const [copiado, setCopiado]                 = useState(false)
   const [larguraLinha, setLarguraLinha]        = useState(0)
   const linhaRef = useRef<HTMLDivElement>(null)
+
+  const poolMin = dezenas + 1
+  const poolMax = Math.min(cfg.totalNumeros, dezenas + 10)
+
+  // Mantém o tamanho do pool dentro dos limites válidos quando dezenas muda
+  useEffect(() => {
+    setPoolSize(p => Math.max(poolMin, Math.min(poolMax, p)))
+  }, [poolMin, poolMax])
 
   // Recalcula a largura disponível pra bolinha preencher a linha inteira sempre
   // que o card é redimensionado (resize da janela, colapso de breakpoint, etc).
@@ -180,13 +279,21 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
 
   const gerar = useCallback(() => {
     setGerando(true)
+    setCoberturaInfo(null)
     setTimeout(() => {
+      if (estrategia === 'fechamento') {
+        const pool = freqDados.slice(0, poolSize).map(f => f.numero)
+        const { apostas, cobertura } = gerarPorFechamento(pool, numApostas, dezenas)
+        setCoberturaInfo({ pct: Math.round(cobertura * 1000) / 10, apostasUsadas: apostas.length })
+        setApostasGeradas(apostas); setGerando(false); setCopiado(false)
+        return
+      }
       const parceirosMap = fonteParceiros === 'geral' ? paresPorNumero : fonteParceiros === 'consecutiva' ? paresConsecPorNumero : null
       const parceirosScore = parceirosMap ? partnerScorePorNumero(parceirosMap) : null
       const res = gerarCombinacoes(freqDados, atrasosDados, estrategia, numApostas, dezenas, cfg.totalNumeros, filtroParidade, filtroQuadrante, filtroSequencia, parceirosScore)
       setApostasGeradas(res); setGerando(false); setCopiado(false)
     }, 50)
-  }, [freqDados, atrasosDados, estrategia, fonteParceiros, paresPorNumero, paresConsecPorNumero, numApostas, dezenas, cfg.totalNumeros, filtroParidade, filtroQuadrante, filtroSequencia])
+  }, [freqDados, atrasosDados, estrategia, fonteParceiros, paresPorNumero, paresConsecPorNumero, numApostas, dezenas, poolSize, cfg.totalNumeros, filtroParidade, filtroQuadrante, filtroSequencia])
 
   function copiar() {
     const txt = apostasGeradas.map((a, i) =>
@@ -238,25 +345,41 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
             </div>
           </div>
 
-          <div className={styles.geradorConfigGroup}>
-            <div className={styles.geradorConfigLabel}>Base dos parceiros</div>
-            <div className={styles.geradorEstrategias}>
-              <button type="button" title="Soma peso extra aos números que mais saíram juntos historicamente (estilo Wonder Grid) — clique de novo para desativar"
-                className={`${styles.geradorEstrBtn} ${fonteParceiros === 'geral' ? styles.geradorEstrBtnAtivo : ''}`}
-                style={fonteParceiros === 'geral' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
-                onClick={() => setFonteParceiros(f => f === 'geral' ? null : 'geral')}>
-                🔗 Duplas gerais
-              </button>
-              <button type="button" title="Soma peso extra aos números literalmente consecutivos entre si (ex: 43 → 44) — clique de novo para desativar"
-                className={`${styles.geradorEstrBtn} ${fonteParceiros === 'consecutiva' ? styles.geradorEstrBtnAtivo : ''}`}
-                style={fonteParceiros === 'consecutiva' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
-                onClick={() => setFonteParceiros(f => f === 'consecutiva' ? null : 'consecutiva')}>
-                🔢 Consecutivas
-              </button>
+          {estrategia === 'fechamento' ? (
+            <div className={styles.geradorConfigGroup}>
+              <div className={styles.geradorConfigLabel}>Tamanho do pool ({poolMin}–{poolMax})</div>
+              <div className={styles.geradorStepper}>
+                <button type="button" onClick={() => setPoolSize(n => Math.max(poolMin, n - 1))}>−</button>
+                <span>{poolSize}</span>
+                <button type="button" onClick={() => setPoolSize(n => Math.min(poolMax, n + 1))}>+</button>
+              </div>
+              <div className={styles.geradorFechamentoHint}>
+                Distribui os {poolSize} números mais frequentes entre as apostas, garantindo cobertura
+                combinatória de trios (design de cobertura / wheeling). Reduz a variância do bolão —
+                não aumenta a chance de ganhar.
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className={styles.geradorConfigGroup}>
+              <div className={styles.geradorConfigLabel}>Base dos parceiros</div>
+              <div className={styles.geradorEstrategias}>
+                <button type="button" title="Soma peso extra aos números que mais saíram juntos historicamente (estilo Wonder Grid) — clique de novo para desativar"
+                  className={`${styles.geradorEstrBtn} ${fonteParceiros === 'geral' ? styles.geradorEstrBtnAtivo : ''}`}
+                  style={fonteParceiros === 'geral' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
+                  onClick={() => setFonteParceiros(f => f === 'geral' ? null : 'geral')}>
+                  🔗 Duplas gerais
+                </button>
+                <button type="button" title="Soma peso extra aos números literalmente consecutivos entre si (ex: 43 → 44) — clique de novo para desativar"
+                  className={`${styles.geradorEstrBtn} ${fonteParceiros === 'consecutiva' ? styles.geradorEstrBtnAtivo : ''}`}
+                  style={fonteParceiros === 'consecutiva' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
+                  onClick={() => setFonteParceiros(f => f === 'consecutiva' ? null : 'consecutiva')}>
+                  🔢 Consecutivas
+                </button>
+              </div>
+            </div>
+          )}
 
-          {cfg.totalNumeros >= 20 && (
+          {estrategia !== 'fechamento' && cfg.totalNumeros >= 20 && (
             <div className={styles.geradorFiltros}>
               <label className={styles.geradorCheck}>
                 <input type="checkbox" checked={filtroParidade} onChange={e => setFiltroParidade(e.target.checked)} />
@@ -297,6 +420,12 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
         <div className={styles.geradorSplitCol}>
           {apostasGeradas.length > 0 ? (
             <div className={styles.geradorResultado}>
+              {coberturaInfo && (
+                <div className={styles.geradorCoberturaInfo}>
+                  🎯 Cobertura: <strong>{coberturaInfo.pct}%</strong> dos trios do pool garantidos com {coberturaInfo.apostasUsadas} aposta{coberturaInfo.apostasUsadas !== 1 ? 's' : ''}
+                  {coberturaInfo.pct >= 100 && coberturaInfo.apostasUsadas < numApostas && ' — cobertura completa alcançada antes do orçamento total'}
+                </div>
+              )}
               <div className={styles.geradorApostas}>
                 {apostasGeradas.map((aposta, i) => {
                   // Todas as apostas têm a mesma quantidade de dezenas (definida em
