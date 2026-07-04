@@ -7,10 +7,20 @@ import TrevoIcon from '@/components/TrevoIcon'
 interface NumStat { numero: number; count: number; pct: number; atraso?: number }
 type Estrategia = 'frequentes' | 'atrasados' | 'equilibrado' | 'aleatoria'
 
+// Maior sequência de números consecutivos numa aposta (ex: 12,13,14 → 3)
+function maxSequencia(aposta: number[]): number {
+  let max = 1, atual = 1
+  for (let i = 1; i < aposta.length; i++) {
+    if (aposta[i] === aposta[i - 1] + 1) { atual++; max = Math.max(max, atual) }
+    else atual = 1
+  }
+  return max
+}
+
 function gerarCombinacoes(
   freq: NumStat[], atrasos: NumStat[], estrategia: Estrategia,
   numApostas: number, dezenas: number, totalNums: number,
-  filtroParidade: boolean, filtroQuadrante: boolean,
+  filtroParidade: boolean, filtroQuadrante: boolean, filtroSequencia: boolean,
 ): number[][] {
   const scores: Record<number, number> = {}
   for (let i = 1; i <= totalNums; i++) scores[i] = 0
@@ -53,6 +63,12 @@ function gerarCombinacoes(
       aposta.forEach(n => { const idx = Math.min(faixas - 1, Math.floor((n - 1) / Math.ceil(totalNums / faixas))); q[idx]++ })
       if (q.some(v => v === 0)) continue
     }
+    if (filtroSequencia) {
+      // Limite escala com a densidade dezenas/totalNums (ex: mega/quina toleram só 2 seguidos;
+      // lotofácil, que sorteia 15 de 25, naturalmente tem sequências bem mais longas)
+      const limite = Math.max(2, Math.round((dezenas * dezenas) / totalNums) + 2)
+      if (maxSequencia(aposta) > limite) continue
+    }
     const chave = aposta.join('-')
     if (!apostas.some(a => a.join('-') === chave)) apostas.push(aposta)
   }
@@ -84,8 +100,9 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
   const [estrategia, setEstrategia]           = useState<Estrategia>('equilibrado')
   const [numApostas, setNumApostas]           = useState(6)
   const [dezenas, setDezenas]                 = useState(dezenasBolao)
-  const [filtroParidade, setFiltroParidade]   = useState(true)
-  const [filtroQuadrante, setFiltroQuadrante] = useState(false)
+  const [filtroParidade, setFiltroParidade]     = useState(true)
+  const [filtroQuadrante, setFiltroQuadrante]   = useState(false)
+  const [filtroSequencia, setFiltroSequencia]   = useState(false)
   const [apostasGeradas, setApostasGeradas]   = useState<number[][]>([])
   const [gerando, setGerando]                 = useState(false)
   const [copiado, setCopiado]                 = useState(false)
@@ -112,10 +129,10 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
   const gerar = useCallback(() => {
     setGerando(true)
     setTimeout(() => {
-      const res = gerarCombinacoes(freqDados, atrasosDados, estrategia, numApostas, dezenas, cfg.totalNumeros, filtroParidade, filtroQuadrante)
+      const res = gerarCombinacoes(freqDados, atrasosDados, estrategia, numApostas, dezenas, cfg.totalNumeros, filtroParidade, filtroQuadrante, filtroSequencia)
       setApostasGeradas(res); setGerando(false); setCopiado(false)
     }, 50)
-  }, [freqDados, atrasosDados, estrategia, numApostas, dezenas, cfg.totalNumeros, filtroParidade, filtroQuadrante])
+  }, [freqDados, atrasosDados, estrategia, numApostas, dezenas, cfg.totalNumeros, filtroParidade, filtroQuadrante, filtroSequencia])
 
   function copiar() {
     const txt = apostasGeradas.map((a, i) =>
@@ -185,6 +202,10 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
                 <label className={styles.geradorCheck}>
                   <input type="checkbox" checked={filtroQuadrante} onChange={e => setFiltroQuadrante(e.target.checked)} />
                   <span>Distribuição por faixas</span>
+                </label>
+                <label className={styles.geradorCheck}>
+                  <input type="checkbox" checked={filtroSequencia} onChange={e => setFiltroSequencia(e.target.checked)} />
+                  <span>Evitar sequências longas</span>
                 </label>
               </div>
             )}
