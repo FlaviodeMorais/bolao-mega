@@ -78,10 +78,8 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
   const cfg = getLoteria(loteria)
 
   const [aberto, setAberto]             = useState(false)
-  const [abaEstat, setAbaEstat]         = useState<'freq' | 'atrasos'>('freq')
   const [freqDados, setFreqDados]       = useState<NumStat[]>([])
   const [atrasosDados, setAtrasosDados] = useState<NumStat[]>([])
-  const [infoTotal, setInfoTotal]       = useState<number | null>(null)
   const [loadingEstat, setLoadingEstat] = useState(false)
 
   const [estrategia, setEstrategia]           = useState<Estrategia>('equilibrado')
@@ -95,7 +93,7 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
 
   // Reset ao mudar loteria
   useEffect(() => {
-    setFreqDados([]); setAtrasosDados([]); setInfoTotal(null)
+    setFreqDados([]); setAtrasosDados([])
     setApostasGeradas([]); setDezenas(dezenasBolao)
   }, [loteria, dezenasBolao])
 
@@ -105,11 +103,9 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
     Promise.all([
       fetch(`/api/estatisticas/frequencia?loteria=${loteria}`).then(r => r.json()),
       fetch(`/api/estatisticas/atrasos?loteria=${loteria}`).then(r => r.json()),
-      fetch(`/api/estatisticas/info?loteria=${loteria}`).then(r => r.json()),
-    ]).then(([f, a, info]) => {
+    ]).then(([f, a]) => {
       setFreqDados(f.numeros || [])
       setAtrasosDados(a.numeros || [])
-      setInfoTotal(info?.total ?? null)
       setLoadingEstat(false)
     }).catch(() => setLoadingEstat(false))
   }, [aberto, loteria, freqDados.length])
@@ -136,109 +132,26 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
     onInserirApostas(texto)
   }
 
-  // Preenchimento por rank: top = cor sólida, meio = cor secundária, baixo = glass
-  const corBola = (pos: number, total: number) => {
-    const pct = 1 - pos / total
-    if (pct > 0.66) return cfg.cor
-    if (pct > 0.33) return cfg.corSecundaria
-    return `${cfg.cor}22`  // glass transparente
-  }
-  const corBorda = (pos: number, total: number) => {
-    const pct = 1 - pos / total
-    if (pct > 0.66) return 'transparent'
-    if (pct > 0.33) return 'transparent'
-    return `${cfg.cor}55`  // borda glass para os menos frequentes
-  }
-  const corTexto = (pos: number, total: number) => {
-    const pct = 1 - pos / total
-    return pct > 0.33 ? '#fff' : cfg.cor
-  }
-
-  const dados   = abaEstat === 'freq' ? freqDados : atrasosDados
-  const maxCount = dados.length ? Math.max(...dados.map(d => d.count || d.atraso || 1)) : 1
-
-  // Grade: 10 colunas para mega (60), 5 para lotofacil (25), 10 para quina (80)
-  const gridCols = cfg.totalNumeros <= 25 ? 5 : 10
-
   return (
     <div className={styles.geradorWrap}>
       <button type="button" className={styles.geradorToggle} onClick={() => setAberto(v => !v)}>
-        <span><TrevoIcon loteria={loteria} size={16} /> Gerador de Apostas & Estatísticas — {cfg.label}</span>
+        <span><TrevoIcon loteria={loteria} size={16} /> Gerador de Apostas — {cfg.label}</span>
         <span>{aberto ? '▲' : '▼'}</span>
       </button>
 
       {aberto && (
         <div className={styles.geradorBody}>
 
-          {/* ── Estatísticas ── */}
-          <div className={styles.geradorStat}>
-            <div className={styles.geradorStatHeader}>
-              <span className={styles.geradorSectionLabel}>
-                📊 Frequência
-                {infoTotal ? ` — ${infoTotal.toLocaleString('pt-BR')} concursos` : ''}
-              </span>
-              <div className={styles.geradorAbas}>
-                <button type="button"
-                  className={`${styles.geradorAbaBtn} ${abaEstat === 'freq' ? styles.geradorAbaBtnAtivo : ''}`}
-                  style={abaEstat === 'freq' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
-                  onClick={() => setAbaEstat('freq')}>Frequência</button>
-                <button type="button"
-                  className={`${styles.geradorAbaBtn} ${abaEstat === 'atrasos' ? styles.geradorAbaBtnAtivo : ''}`}
-                  style={abaEstat === 'atrasos' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
-                  onClick={() => setAbaEstat('atrasos')}>Atrasos</button>
-              </div>
-            </div>
-
-            {loadingEstat ? (
-              <div className={styles.geradorLoading}>Carregando estatísticas da {cfg.label}...</div>
-            ) : dados.length === 0 ? (
-              <div className={styles.geradorLoading}>
-                Histórico não carregado — acesse Ferramentas → Ingerir Histórico → <TrevoIcon loteria={loteria} size={12} /> {cfg.label}
-              </div>
-            ) : (
-              <>
-                <div className={styles.geradorBallGrid}
-                  style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
-                  {[...dados].sort((a, b) => a.numero - b.numero).map((d) => {
-                    const rank = dados.findIndex(x => x.numero === d.numero)
-                    return (
-                      <div key={d.numero} className={styles.geradorBallItem}>
-                        <div className={styles.geradorBall} style={{ background: corBola(rank, dados.length), borderColor: corBorda(rank, dados.length), color: corTexto(rank, dados.length) }}>
-                          {String(d.numero).padStart(2, '0')}
-                        </div>
-                        <div className={styles.geradorBallCount}>
-                          {abaEstat === 'freq' ? `${d.count}x` : `${d.atraso}c`}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-                <div className={styles.geradorRankTitle}>🏆 Top 15</div>
-                <div className={styles.geradorRanking}>
-                  {dados.slice(0, 15).map((d, i) => (
-                    <div key={d.numero} className={styles.geradorRankRow}>
-                      <span className={styles.geradorRankPos}>{i + 1}º</span>
-                      <span className={styles.geradorRankBall} style={{ background: corBola(i, 15), borderColor: corBorda(i, 15), color: corTexto(i, 15) }}>
-                        {String(d.numero).padStart(2, '0')}
-                      </span>
-                      <div className={styles.geradorRankBarWrap}>
-                        <div className={styles.geradorRankBar} style={{
-                          width: `${Math.round(((d.count || d.atraso || 0) / maxCount) * 100)}%`,
-                          background: corBola(i, 15),
-                        }} />
-                      </div>
-                      <span className={styles.geradorRankVal}>
-                        {abaEstat === 'freq' ? `${d.count}x` : `${d.atraso}c`}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
           {/* ── Gerador ── */}
           <div className={styles.geradorConfig}>
+            {loadingEstat && (
+              <div className={styles.geradorLoading}>Carregando estatísticas da {cfg.label}...</div>
+            )}
+            {!loadingEstat && freqDados.length === 0 && (
+              <div className={styles.geradorLoading}>
+                Histórico não carregado — acesse 🛠️ Ferramentas → <TrevoIcon loteria={loteria} size={12} /> {cfg.label}
+              </div>
+            )}
             <div className={styles.geradorSectionLabel}>✨ Gerador — {cfg.label}</div>
 
             <div className={styles.geradorConfigGroup}>

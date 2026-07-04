@@ -80,11 +80,6 @@ export default function Configurador(p: Props) {
               <span>R$ {p.valorPorCota.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
             </div>
           </div>
-          {p.configSalva && <div className={styles.configOk}>✅ Configuração salva!</div>}
-          <button type="button" className={styles.btnCreate} onClick={p.onSalvarConfig} disabled={p.salvando}>
-            {p.salvando ? 'Salvando...' : '💾 Salvar Configuração'}
-          </button>
-
           <GeradorApostas
             loteria={(bolao.loteria ?? 'mega') as import('@/lib/loterias').LoteriaId}
             dezenasBolao={p.editDezenas}
@@ -92,6 +87,11 @@ export default function Configurador(p: Props) {
             apostasMsg={p.apostasMsg}
             onInserirApostas={p.onInserirApostasGeradas}
           />
+
+          {p.configSalva && <div className={styles.configOk}>✅ Configuração salva!</div>}
+          <button type="button" className={styles.btnCreate} onClick={p.onSalvarConfig} disabled={p.salvando}>
+            {p.salvando ? 'Salvando...' : '💾 Salvar Configuração'}
+          </button>
         </div>
       )}
     </>

@@ -15,6 +15,7 @@ const CAIXA_URL: Record<LoteriaId, string> = {
 }
 
 interface Linha { concurso: number; dezenas: number[]; data_sorteio: string | null }
+interface NumStat { numero: number; count: number; pct: number; atraso?: number }
 
 export default function IngerirHistorico() {
   const [loteria, setLoteria]       = useState<LoteriaId>('mega')
@@ -25,6 +26,27 @@ export default function IngerirHistorico() {
   const [verificando, setVerif]     = useState(false)
   const [totais, setTotais]         = useState<Record<LoteriaId, number>>(TOTAIS_FALLBACK)
   const abortRef                    = useRef(false)
+
+  // Estatísticas (Frequência / Atrasos / Top 15) da loteria selecionada
+  const [abaEstat, setAbaEstat]         = useState<'freq' | 'atrasos'>('freq')
+  const [freqDados, setFreqDados]       = useState<NumStat[]>([])
+  const [atrasosDados, setAtrasosDados] = useState<NumStat[]>([])
+  const [infoTotal, setInfoTotal]       = useState<number | null>(null)
+  const [loadingEstat, setLoadingEstat] = useState(false)
+
+  useEffect(() => {
+    setLoadingEstat(true)
+    Promise.all([
+      fetch(`/api/estatisticas/frequencia?loteria=${loteria}`).then(r => r.json()),
+      fetch(`/api/estatisticas/atrasos?loteria=${loteria}`).then(r => r.json()),
+      fetch(`/api/estatisticas/info?loteria=${loteria}`).then(r => r.json()),
+    ]).then(([f, a, i]) => {
+      setFreqDados(f.numeros || [])
+      setAtrasosDados(a.numeros || [])
+      setInfoTotal(i?.total ?? null)
+      setLoadingEstat(false)
+    }).catch(() => setLoadingEstat(false))
+  }, [loteria])
 
   useEffect(() => {
     Promise.all(
@@ -117,6 +139,27 @@ export default function IngerirHistorico() {
 
   const cfg = getLoteria(loteria)
 
+  // Preenchimento por rank: top = cor sólida, meio = cor secundária, baixo = glass
+  const corBola = (pos: number, total: number) => {
+    const pct = 1 - pos / total
+    if (pct > 0.66) return cfg.cor
+    if (pct > 0.33) return cfg.corSecundaria
+    return `${cfg.cor}22`
+  }
+  const corBorda = (pos: number, total: number) => {
+    const pct = 1 - pos / total
+    if (pct > 0.66) return 'transparent'
+    if (pct > 0.33) return 'transparent'
+    return `${cfg.cor}55`
+  }
+  const corTexto = (pos: number, total: number) => {
+    const pct = 1 - pos / total
+    return pct > 0.33 ? '#fff' : cfg.cor
+  }
+  const dadosEstat = abaEstat === 'freq' ? freqDados : atrasosDados
+  const maxCount    = dadosEstat.length ? Math.max(...dadosEstat.map(d => d.count || d.atraso || 1)) : 1
+  const gridCols    = cfg.totalNumeros <= 25 ? 5 : 10
+
   return (
     <div className={styles.panel}>
       <div className={styles.panelTitle}>🗄️ Histórico Estatístico</div>
@@ -160,6 +203,72 @@ export default function IngerirHistorico() {
           ))}
         </div>
       )}
+
+      {/* ── Estatísticas: Frequência / Atrasos / Top 15 ── */}
+      <div className={styles.geradorStat}>
+        <div className={styles.geradorStatHeader}>
+          <span className={styles.geradorSectionLabel}>
+            📊 Frequência
+            {infoTotal ? ` — ${infoTotal.toLocaleString('pt-BR')} concursos` : ''}
+          </span>
+          <div className={styles.geradorAbas}>
+            <button type="button"
+              className={`${styles.geradorAbaBtn} ${abaEstat === 'freq' ? styles.geradorAbaBtnAtivo : ''}`}
+              style={abaEstat === 'freq' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
+              onClick={() => setAbaEstat('freq')}>Frequência</button>
+            <button type="button"
+              className={`${styles.geradorAbaBtn} ${abaEstat === 'atrasos' ? styles.geradorAbaBtnAtivo : ''}`}
+              style={abaEstat === 'atrasos' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
+              onClick={() => setAbaEstat('atrasos')}>Atrasos</button>
+          </div>
+        </div>
+
+        {loadingEstat ? (
+          <div className={styles.geradorLoading}>Carregando estatísticas da {cfg.label}...</div>
+        ) : dadosEstat.length === 0 ? (
+          <div className={styles.geradorLoading}>
+            Histórico não carregado — clique em &quot;Carregar histórico&quot; abaixo.
+          </div>
+        ) : (
+          <>
+            <div className={styles.geradorBallGrid} style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
+              {[...dadosEstat].sort((a, b) => a.numero - b.numero).map((d) => {
+                const rank = dadosEstat.findIndex(x => x.numero === d.numero)
+                return (
+                  <div key={d.numero} className={styles.geradorBallItem}>
+                    <div className={styles.geradorBall} style={{ background: corBola(rank, dadosEstat.length), borderColor: corBorda(rank, dadosEstat.length), color: corTexto(rank, dadosEstat.length) }}>
+                      {String(d.numero).padStart(2, '0')}
+                    </div>
+                    <div className={styles.geradorBallCount}>
+                      {abaEstat === 'freq' ? `${d.count}x` : `${d.atraso}c`}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div className={styles.geradorRankTitle}>🏆 Top 15</div>
+            <div className={styles.geradorRanking}>
+              {dadosEstat.slice(0, 15).map((d, i) => (
+                <div key={d.numero} className={styles.geradorRankRow}>
+                  <span className={styles.geradorRankPos}>{i + 1}º</span>
+                  <span className={styles.geradorRankBall} style={{ background: corBola(i, 15), borderColor: corBorda(i, 15), color: corTexto(i, 15) }}>
+                    {String(d.numero).padStart(2, '0')}
+                  </span>
+                  <div className={styles.geradorRankBarWrap}>
+                    <div className={styles.geradorRankBar} style={{
+                      width: `${Math.round(((d.count || d.atraso || 0) / maxCount) * 100)}%`,
+                      background: corBola(i, 15),
+                    }} />
+                  </div>
+                  <span className={styles.geradorRankVal}>
+                    {abaEstat === 'freq' ? `${d.count}x` : `${d.atraso}c`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
 
       {!rodando && (
         <p className={styles.helpText}>
