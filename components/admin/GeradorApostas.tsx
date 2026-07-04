@@ -302,18 +302,22 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
             {apostasGeradas.length > 0 ? (
               <div className={styles.geradorResultado}>
                 <div className={styles.geradorApostas}>
-                  {apostasGeradas.map((aposta, i) => (
-                    <div key={i} className={styles.geradorApostaRow}>
-                      <div className={styles.geradorApostaBalls}>
-                        {aposta.map(n => (
-                          <span key={n} className={styles.geradorApoBall}
-                            style={{ background: `linear-gradient(135deg, ${cfg.corSecundaria} 0%, ${cfg.cor} 100%)` }}>
-                            {String(n).padStart(2, '0')}
-                          </span>
-                        ))}
+                  {apostasGeradas.map((aposta, i) => {
+                    // 6–8 dezenas: tudo numa linha só. Acima de 8: divide em 2 linhas.
+                    const cols = aposta.length <= 8 ? aposta.length : Math.ceil(aposta.length / 2)
+                    return (
+                      <div key={i} className={styles.geradorApostaRow}>
+                        <div className={styles.geradorApostaBalls} style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+                          {aposta.map(n => (
+                            <span key={n} className={styles.geradorApoBall}
+                              style={{ background: `linear-gradient(135deg, ${cfg.corSecundaria} 0%, ${cfg.cor} 100%)` }}>
+                              {String(n).padStart(2, '0')}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
                 <button type="button" className={styles.btnPrimario}
                   style={{ background: cfg.cor, width: '100%', justifyContent: 'center', marginTop: 8 }}

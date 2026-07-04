@@ -1802,24 +1802,23 @@
 /* Grid fluido: cada cartao tem largura minima confortavel e o grid preenche a linha
    inteira com quantas colunas couberem (auto-fill), quebrando pra proxima linha sem
    deixar vao vazio - se adapta tanto a poucas dezenas (6) quanto ao maximo (20). */
+/* Lista simples de linhas (sem cartoes/molduras) - uma aposta por linha, com
+   divisor sutil entre elas. Scroll vertical isolado aqui, sem crescer o card principal. */
 .geradorApostas {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 10px;
+  display: flex; flex-direction: column;
   max-height: 460px;
   overflow-y: auto;
   padding-right: 2px;
 }
 .geradorApostaRow {
-  display: flex; flex-direction: column; gap: 8px; padding: 10px 12px;
-  background: #F8FAFB; border-radius: 10px; border: 1px solid #E2E8F0;
+  padding: 8px 4px;
+  border-bottom: 1px solid #F1F5F9;
 }
+.geradorApostaRow:last-child { border-bottom: none; }
 .geradorApostaIdx { font-size: 11px; font-weight: 700; color: #94A3B8; font-family: 'JetBrains Mono', monospace; }
-/* Grade fixa de 5 colunas dentro do cartao da aposta - organiza bem tanto apostas
-   pequenas (6 dezenas = 1-2 linhas) quanto o maximo permitido (20 dezenas = 4 linhas),
-   sempre mostrando todos os numeros (nunca corta/oculta), sem crescer o card principal
-   (o scroll fica no container .geradorApostas, nao aqui). */
-.geradorApostaBalls { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+/* Colunas definidas por aposta via inline style: 6-8 dezenas cabem numa linha so
+   (cols = dezenas); acima de 8, divide em 2 linhas (cols = ceil(dezenas/2)). */
+.geradorApostaBalls { display: grid; gap: 6px; }
 .geradorApoBall {
   display: inline-flex; align-items: center; justify-content: center;
   width: 27px; height: 27px; border-radius: 50%;
