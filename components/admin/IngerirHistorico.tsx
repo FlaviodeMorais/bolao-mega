@@ -244,6 +244,7 @@ export default function IngerirHistorico() {
         ) : (
           <div className={styles.ferrCols3}>
             <div className={styles.ferrColuna}>
+              <div className={styles.ferrRankTitle}>🔢 Todos os números</div>
               <div className={styles.ferrBallGrid} style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
                 {[...freqDados].sort((a, b) => a.numero - b.numero).map((d) => {
                   const rank = freqDados.findIndex(x => x.numero === d.numero)
