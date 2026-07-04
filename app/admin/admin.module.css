@@ -1196,16 +1196,7 @@
 .crmAcaoBtnComp:disabled { opacity: .5; cursor: default; }
 
 /* ── CONFIGURADOR DE BOLÃO ── */
-.configuradorCols {
-  display: grid;
-  grid-template-columns: 0.7fr 1.3fr;
-  gap: 16px;
-  align-items: start;
-}
 .configColuna { min-width: 0; }
-@media (max-width: 900px) {
-  .configuradorCols { grid-template-columns: 1fr; }
-}
 .configTitulo {
   font-size: 13px; font-weight: 700; color: #334155;
   margin: 14px 0 8px;
@@ -1744,7 +1735,10 @@
 .geradorRankBar { height: 100%; border-radius: 3px; transition: width .4s ease; }
 .geradorRankVal { font-size: 10px; color: #64748B; font-family: 'JetBrains Mono', monospace; width: 32px; text-align: right; flex-shrink: 0; }
 
-.geradorConfig { display: flex; flex-direction: column; gap: 12px; }
+.geradorConfig {
+  display: flex; flex-direction: column; gap: 12px;
+  margin-top: 4px; padding-top: 14px; border-top: 1px solid #E2E8F0;
+}
 /* Coluna de controles (esquerda) tem conteudo fixo/compacto (botoes de estrategia,
    steppers) - cabe confortavelmente em 300-360px. A coluna de resultado (direita)
    precisa do espaco que sobrar: Mega e Lotofacil permitem ate 20 dezenas por aposta

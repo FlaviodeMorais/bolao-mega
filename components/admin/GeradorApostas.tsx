@@ -135,13 +135,15 @@ const ESTRATEGIAS: { id: Estrategia; label: string; desc: string }[] = [
 interface Props {
   loteria: LoteriaId
   dezenasBolao: number
+  numApostas: number
   uploadingApostas: boolean
   apostasMsg?: string
   onInserirApostas: (texto: string) => void
 }
 
-export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas, apostasMsg, onInserirApostas }: Props) {
+export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uploadingApostas, apostasMsg, onInserirApostas }: Props) {
   const cfg = getLoteria(loteria)
+  const dezenas = dezenasBolao
 
   const [freqDados, setFreqDados]       = useState<NumStat[]>([])
   const [atrasosDados, setAtrasosDados] = useState<NumStat[]>([])
@@ -151,8 +153,6 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
 
   const [estrategia, setEstrategia]           = useState<Estrategia>('equilibrado')
   const [fonteParceiros, setFonteParceiros]   = useState<FonteParceiros>('geral')
-  const [numApostas, setNumApostas]           = useState(6)
-  const [dezenas, setDezenas]                 = useState(dezenasBolao)
   const [filtroParidade, setFiltroParidade]     = useState(true)
   const [filtroQuadrante, setFiltroQuadrante]   = useState(false)
   const [filtroSequencia, setFiltroSequencia]   = useState(false)
@@ -163,7 +163,7 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
   // Reset ao mudar loteria
   useEffect(() => {
     setFreqDados([]); setAtrasosDados([]); setParesPorNumero({}); setParesConsecPorNumero({})
-    setApostasGeradas([]); setDezenas(dezenasBolao)
+    setApostasGeradas([])
   }, [loteria, dezenasBolao])
 
   useEffect(() => {
@@ -261,25 +261,6 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
                 </div>
               </div>
             )}
-
-            <div className={styles.geradorParamRow}>
-              <div className={styles.geradorParam}>
-                <div className={styles.geradorConfigLabel}>Apostas</div>
-                <div className={styles.geradorStepper}>
-                  <button type="button" onClick={() => setNumApostas(n => Math.max(1, n - 1))}>−</button>
-                  <span>{numApostas}</span>
-                  <button type="button" onClick={() => setNumApostas(n => Math.min(50, n + 1))}>+</button>
-                </div>
-              </div>
-              <div className={styles.geradorParam}>
-                <div className={styles.geradorConfigLabel}>Dezenas / aposta ({cfg.minDezenas}–{cfg.maxDezenas})</div>
-                <div className={styles.geradorStepper}>
-                  <button type="button" onClick={() => setDezenas(n => Math.max(cfg.minDezenas, n - 1))}>−</button>
-                  <span>{dezenas}</span>
-                  <button type="button" onClick={() => setDezenas(n => Math.min(cfg.maxDezenas, n + 1))}>+</button>
-                </div>
-              </div>
-            </div>
 
             {cfg.totalNumeros >= 20 && estrategia !== 'parceiros' && (
               <div className={styles.geradorFiltros}>

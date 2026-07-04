@@ -23,8 +23,7 @@ export default function Configurador(p: Props) {
   return (
     <>
       <div className={styles.configTitulo}>⚙️ Configurar Bolão</div>
-      <div className={styles.configuradorCols}>
-          <div className={styles.configurador}>
+      <div className={styles.configurador}>
             <div className={styles.configGrid4}>
               <div className={styles.configField}>
                 <label className={styles.configLabel}>Dezenas / Aposta</label>
@@ -48,7 +47,7 @@ export default function Configurador(p: Props) {
                   value={p.editCotas} onChange={e => p.onEditCotasChange(Math.max(1, Number(e.target.value)))} />
               </div>
               <div className={styles.configField}>
-                <label className={styles.configLabel}>Taxa de Administração (R$)</label>
+                <label className={styles.configLabel}>Tx de Admin (R$)</label>
                 <input type="number" min={0} step={0.01} className={styles.configInput}
                   title="Taxa admin" placeholder="0,00"
                   value={p.editTaxa} onChange={e => p.onEditTaxaChange(Math.max(0, Number(e.target.value)))} />
@@ -79,21 +78,19 @@ export default function Configurador(p: Props) {
               </div>
             </div>
 
-            {p.configSalva && <div className={styles.configOk}>✅ Configuração salva!</div>}
-            <button type="button" className={styles.btnCreate} onClick={p.onSalvarConfig} disabled={p.salvando}>
-              {p.salvando ? 'Salvando...' : '💾 Salvar Configuração'}
-            </button>
-          </div>
-
-          <div className={styles.configurador}>
             <GeradorApostas
               loteria={(bolao.loteria ?? 'mega') as import('@/lib/loterias').LoteriaId}
               dezenasBolao={p.editDezenas}
+              numApostas={p.editApostas}
               uploadingApostas={p.uploadingApostas}
               apostasMsg={p.apostasMsg}
               onInserirApostas={p.onInserirApostasGeradas}
             />
-          </div>
+
+            {p.configSalva && <div className={styles.configOk}>✅ Configuração salva!</div>}
+            <button type="button" className={styles.btnCreate} onClick={p.onSalvarConfig} disabled={p.salvando}>
+              {p.salvando ? 'Salvando...' : '💾 Salvar Configuração'}
+            </button>
       </div>
     </>
   )
