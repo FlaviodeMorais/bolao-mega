@@ -20,6 +20,7 @@ export interface AppSettings {
   rodape:      string   // "Dúvidas? Fale com o administrador."
   grupo_nome:  string   // "Bolões BetMais"
   descricao:   string   // "Bolão da Mega-Sena — Grupo Fechado"
+  carrossel_intervalo_seg: number  // segundos entre cada slide dos carrosséis da home
 }
 
 export interface PagamentoSettings {
@@ -104,6 +105,7 @@ export const DEFAULTS: AllSettings = {
     rodape:       'Dúvidas? Fale com o administrador do grupo.',
     grupo_nome:   'Bolões BetMais',
     descricao:    'Bolão da Mega-Sena — Grupo Fechado',
+    carrossel_intervalo_seg: 5,
   },
   pagamento: {
     mp_access_token: process.env.MP_ACCESS_TOKEN || '',

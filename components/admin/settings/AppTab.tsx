@@ -18,6 +18,10 @@ export default function AppTab({ app, updateNs, salvar, saving }: Props) {
       <Field label="Cor Primária"     name="cor_primaria" value={app.cor_primaria ?? '#00A651'} onChange={v => updateNs('app','cor_primaria',v)} type="color" />
       <Field label="Cor de Fundo"     name="cor_fundo"   value={app.cor_fundo   ?? '#0D1B2A'} onChange={v => updateNs('app','cor_fundo',v)}   type="color" />
       <Field label="Rodapé"           name="rodape"      value={app.rodape      ?? ''} onChange={v => updateNs('app','rodape',v)}      placeholder="Dúvidas? Fale com o admin." />
+      <Field label="Intervalo dos carrosséis (segundos)" name="carrossel_intervalo_seg" type="number"
+        value={app.carrossel_intervalo_seg ?? '5'}
+        onChange={v => updateNs('app','carrossel_intervalo_seg', String(Math.max(1, Number(v) || 5)))}
+        placeholder="5" />
       <button type="button" className={styles.settingsSave} onClick={() => salvar('app')} disabled={saving}>
         {saving ? 'Salvando...' : '💾 Salvar App'}
       </button>

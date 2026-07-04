@@ -22,6 +22,7 @@ export async function GET() {
       rodape:      app.rodape,
       grupo_nome:  app.grupo_nome,
       descricao:   app.descricao,
+      carrossel_intervalo_seg: app.carrossel_intervalo_seg,
     },
     home,
     bolao,

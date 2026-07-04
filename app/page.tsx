@@ -165,14 +165,14 @@ function BandeiraJogo({ codigo }: { codigo?: string }) {
   return <span className={`fi fi-${codigo} ${styles.jogoHojeBandeira}`} />
 }
 
-function JogosHojeAlternando({ jogos }: { jogos: JogoHoje[] }) {
+function JogosHojeAlternando({ jogos, intervaloMs }: { jogos: JogoHoje[]; intervaloMs: number }) {
   const [idx, setIdx] = useState(0)
 
   useEffect(() => {
     if (jogos.length <= 1) return
-    const id = setInterval(() => setIdx(i => (i + 1) % jogos.length), 4000)
+    const id = setInterval(() => setIdx(i => (i + 1) % jogos.length), intervaloMs)
     return () => clearInterval(id)
-  }, [jogos.length])
+  }, [jogos.length, intervaloMs])
 
   if (jogos.length === 0) return null
   const jogo = jogos[idx % jogos.length]
@@ -199,7 +199,7 @@ function JogosHojeAlternando({ jogos }: { jogos: JogoHoje[] }) {
   )
 }
 
-function EsporteCardCarrossel({ boloesEsporte }: { boloesEsporte: BolaoEsporte[] }) {
+function EsporteCardCarrossel({ boloesEsporte, intervaloMs }: { boloesEsporte: BolaoEsporte[]; intervaloMs: number }) {
   const corEsporte = '#1D6EA6'
   const featured = boloesEsporte[0]
   const [jogosHoje, setJogosHoje] = useState<JogoHoje[]>([])
@@ -237,7 +237,7 @@ function EsporteCardCarrossel({ boloesEsporte }: { boloesEsporte: BolaoEsporte[]
                   <span className={styles.cardBolaoNome}>{b.nome}</span>
                   {b.competicao && <span className={styles.cardBolaoMeta}>{b.competicao}</span>}
                   {b.slug === featured.slug && jogosHoje.length > 0 && (
-                    <JogosHojeAlternando jogos={jogosHoje} />
+                    <JogosHojeAlternando jogos={jogosHoje} intervaloMs={intervaloMs} />
                   )}
                 </div>
                 <span className={`material-icons-round ${styles.cardBolaoArrow}`}
@@ -255,9 +255,7 @@ function EsporteCardCarrossel({ boloesEsporte }: { boloesEsporte: BolaoEsporte[]
   )
 }
 
-const AUTOPLAY_MS = 5000
-
-function CarrosselSorteios({ sorteios, boloes, boloesEsporte, host, msgSemBolao }: { sorteios: SorteioInfo[]; boloes: Bolao[]; boloesEsporte: BolaoEsporte[]; host: string; msgSemBolao: string }) {
+function CarrosselSorteios({ sorteios, boloes, boloesEsporte, host, msgSemBolao, intervaloMs }: { sorteios: SorteioInfo[]; boloes: Bolao[]; boloesEsporte: BolaoEsporte[]; host: string; msgSemBolao: string; intervaloMs: number }) {
   const totalSlides = sorteios.length + 1 // +1 para esporte
   const [ativo, setAtivo] = useState(0)
   const ref = useRef<HTMLDivElement>(null)
@@ -284,7 +282,7 @@ function CarrosselSorteios({ sorteios, boloes, boloesEsporte, host, msgSemBolao 
         ref.current?.children[next]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
         return next
       })
-    }, AUTOPLAY_MS)
+    }, intervaloMs)
   }
 
   useEffect(() => {
@@ -302,7 +300,8 @@ function CarrosselSorteios({ sorteios, boloes, boloesEsporte, host, msgSemBolao 
       if (timerRef.current) clearInterval(timerRef.current)
       if (pauseRef.current) clearTimeout(pauseRef.current)
     }
-  }, [totalSlides])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalSlides, intervaloMs])
 
   if (sorteios.length === 0) return null
 
@@ -315,7 +314,7 @@ function CarrosselSorteios({ sorteios, boloes, boloesEsporte, host, msgSemBolao 
     <div className={styles.sorteioWrap}>
       <div ref={ref} className={styles.sorteioTrack}>
         {sorteios.map(s => <SorteioCard key={s.id} s={s} boloes={boloes} host={host} msgSemBolao={msgSemBolao} />)}
-        <EsporteCardCarrossel boloesEsporte={boloesEsporte} />
+        <EsporteCardCarrossel boloesEsporte={boloesEsporte} intervaloMs={intervaloMs} />
       </div>
       {totalSlides > 1 && (
         <div className={styles.sorteioDots}>
@@ -344,6 +343,7 @@ export default function Home() {
   const [appNome, setAppNome]             = useState('Bolões')
   const [msgSemBolao, setMsgSemBolao]     = useState('Nenhum bolão disponível no momento')
   const [loginAberto, setLoginAberto]     = useState(false)
+  const [carrosselIntervaloMs, setCarrosselIntervaloMs] = useState(5000)
 
   const carregar = useCallback((inicial = false) => {
     Promise.all([
@@ -363,6 +363,7 @@ export default function Home() {
       if (d?.app?.grupo_nome)     setGrupoNome(d.app.grupo_nome)
       if (d?.app?.nome)           setAppNome(d.app.nome)
       if (d?.home?.msg_sem_bolao) setMsgSemBolao(d.home.msg_sem_bolao)
+      if (d?.app?.carrossel_intervalo_seg) setCarrosselIntervaloMs(Number(d.app.carrossel_intervalo_seg) * 1000)
     }).catch(() => {})
     const id = setInterval(() => carregar(), 60000)
     const onFocus = () => carregar()
@@ -456,7 +457,7 @@ export default function Home() {
       {/* ── Carrossel: um card por loteria com seus bolões e resultados ── */}
       {loading
         ? <div className={styles.sorteioWrap}><div className={styles.empty}>Carregando...</div></div>
-        : <CarrosselSorteios sorteios={sorteios} boloes={boloes} boloesEsporte={boloesEsporte} host={host} msgSemBolao={msgSemBolao} />
+        : <CarrosselSorteios sorteios={sorteios} boloes={boloes} boloesEsporte={boloesEsporte} host={host} msgSemBolao={msgSemBolao} intervaloMs={carrosselIntervaloMs} />
       }
 
       {/* Bolões de loterias fora do carrossel (raro) */}
