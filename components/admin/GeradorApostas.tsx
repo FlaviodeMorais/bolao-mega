@@ -303,8 +303,8 @@ export default function GeradorApostas({ loteria, dezenasBolao, uploadingApostas
               <div className={styles.geradorResultado}>
                 <div className={styles.geradorApostas}>
                   {apostasGeradas.map((aposta, i) => {
-                    // 6–8 dezenas: tudo numa linha só. Acima de 8: divide em 2 linhas.
-                    const cols = aposta.length <= 8 ? aposta.length : Math.ceil(aposta.length / 2)
+                    // 6–10 dezenas: tudo numa linha só. Acima de 10: divide em 2 linhas.
+                    const cols = aposta.length <= 10 ? aposta.length : Math.ceil(aposta.length / 2)
                     return (
                       <div key={i} className={styles.geradorApostaRow}>
                         <div className={styles.geradorApostaBalls} style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
