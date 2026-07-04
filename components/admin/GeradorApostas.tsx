@@ -283,16 +283,16 @@ export default function GeradorApostas({ loteria, dezenasBolao, numApostas, uplo
           )}
 
           <button type="button" className={styles.btnPrimario}
-            style={{ background: cfg.cor, width: 175, justifyContent: 'center', marginTop: 4 }}
+            style={{ background: cfg.cor, width: 175, marginTop: 4 }}
             onClick={gerar} disabled={gerando || freqDados.length === 0}>
-            {gerando ? '⟳ Gerando...' : '✨ Gerar Combinações'}
+            <span className={styles.btnPrimarioLabel}>{gerando ? '⟳ Gerando...' : '✨ Gerar Combinações'}</span>
           </button>
 
           {apostasGeradas.length > 0 && (
             <button type="button" className={styles.btnPrimario}
-              style={{ background: cfg.cor, width: 175, justifyContent: 'center' }}
+              style={{ background: cfg.cor, width: 175 }}
               onClick={handleInserir} disabled={uploadingApostas}>
-              {uploadingApostas ? '⟳ Inserindo...' : '📊 Inserir apostas neste bolão'}
+              <span className={styles.btnPrimarioLabel}>{uploadingApostas ? '⟳ Inserindo...' : '📊 Inserir apostas neste bolão'}</span>
             </button>
           )}
           {apostasMsg && (

@@ -628,6 +628,7 @@
 }
 .btnPrimario:hover:not(:disabled) { background: var(--green-hover); }
 .btnPrimario:disabled { opacity: .35; cursor: not-allowed; }
+.btnPrimarioLabel { display: block; width: 100%; text-align: center; }
 
 /* ghost neutro */
 .btnSecundario {
