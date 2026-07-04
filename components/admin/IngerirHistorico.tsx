@@ -179,102 +179,106 @@ export default function IngerirHistorico() {
       <div className={styles.panelTitle}>🗄️ Histórico Estatístico</div>
 
       {/* Status por loteria */}
-      <div className={`${styles.detStatsRow} ${styles.detStatsRow3}`}>
-        {LOTERIA_LIST.map(l => {
-          const val       = info[l.id]
-          const vazio     = val?.includes('vazio')
-          const carregado = val && !vazio
-          const cor = carregado ? '#007A45' : vazio ? '#D97706' : '#94A3B8'
-          return (
-            <div key={l.id} className={`${styles.detStat} ${vazio ? styles.detStatWarn : ''}`}>
-              <div className={`${styles.detStatVal} ${styles.detStatValSm}`} style={{ color: cor }}>
-                <TrevoIcon loteria={l.id} size={16} /> {l.label}
+      <div className={styles.ferrSection}>
+        <div className={`${styles.detStatsRow} ${styles.detStatsRow3}`}>
+          {LOTERIA_LIST.map(l => {
+            const val       = info[l.id]
+            const vazio     = val?.includes('vazio')
+            const carregado = val && !vazio
+            const cor = carregado ? '#007A45' : vazio ? '#D97706' : '#94A3B8'
+            return (
+              <div key={l.id} className={`${styles.detStat} ${vazio ? styles.detStatWarn : ''}`}>
+                <div className={`${styles.detStatVal} ${styles.detStatValSm}`} style={{ color: cor }}>
+                  <TrevoIcon loteria={l.id} size={16} /> {l.label}
+                </div>
+                <span className={`${styles.detStatLbl} ${styles.detStatLblPlain}`} style={{ color: cor }}>
+                  {val ?? '—'}
+                </span>
               </div>
-              <span className={`${styles.detStatLbl} ${styles.detStatLblPlain}`} style={{ color: cor }}>
-                {val ?? '—'}
-              </span>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
 
-      <div className={styles.btnRow}>
-        <button className={`${styles.btnLoad} ${styles.btnLoadInline}`} onClick={verificar} disabled={verificando}>
-          {verificando ? '⟳' : '🔍'} Verificar banco
-        </button>
+        <div className={styles.btnRow}>
+          <button className={`${styles.btnLoad} ${styles.btnLoadInline}`} onClick={verificar} disabled={verificando}>
+            {verificando ? '⟳' : '🔍'} Verificar banco
+          </button>
+        </div>
       </div>
 
       {/* Seletor de loteria */}
       {!rodando && (
-        <div className={styles.btnRow}>
-          {LOTERIA_LIST.map(l => (
-            <button key={l.id} type="button"
-              className={`${styles.loteriaBotao} ${loteria === l.id ? styles.loteriaBotaoAtivo : ''}`}
-              style={loteria === l.id ? { background: l.cor + '18', borderColor: l.cor, color: l.cor } : {}}
-              onClick={() => { setLoteria(l.id); setResumo('') }}>
-              <TrevoIcon loteria={l.id} size={14} /> {l.label}
-            </button>
-          ))}
+        <div className={styles.ferrSection}>
+          <div className={styles.btnRow}>
+            {LOTERIA_LIST.map(l => (
+              <button key={l.id} type="button"
+                className={`${styles.loteriaBotao} ${loteria === l.id ? styles.loteriaBotaoAtivo : ''}`}
+                style={loteria === l.id ? { background: l.cor + '18', borderColor: l.cor, color: l.cor } : {}}
+                onClick={() => { setLoteria(l.id); setResumo('') }}>
+                <TrevoIcon loteria={l.id} size={14} /> {l.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
       {/* ── Estatísticas: Frequência / Atrasos / Top 15 ── */}
-      <div className={styles.geradorStat}>
-        <div className={styles.geradorStatHeader}>
-          <span className={styles.geradorSectionLabel}>
+      <div className={styles.ferrSection}>
+        <div className={styles.ferrSectionHeader}>
+          <span className={styles.ferrSectionLabel}>
             📊 Frequência
-            {infoTotal ? ` — ${infoTotal.toLocaleString('pt-BR')} concursos` : ''}
+            {infoTotal ? <span className={styles.ferrSectionMeta}>— {infoTotal.toLocaleString('pt-BR')} concursos</span> : ''}
           </span>
-          <div className={styles.geradorAbas}>
+          <div className={styles.ferrAbas}>
             <button type="button"
-              className={`${styles.geradorAbaBtn} ${abaEstat === 'freq' ? styles.geradorAbaBtnAtivo : ''}`}
+              className={`${styles.ferrAbaBtn} ${abaEstat === 'freq' ? styles.ferrAbaBtnAtivo : ''}`}
               style={abaEstat === 'freq' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
               onClick={() => setAbaEstat('freq')}>Frequência</button>
             <button type="button"
-              className={`${styles.geradorAbaBtn} ${abaEstat === 'atrasos' ? styles.geradorAbaBtnAtivo : ''}`}
+              className={`${styles.ferrAbaBtn} ${abaEstat === 'atrasos' ? styles.ferrAbaBtnAtivo : ''}`}
               style={abaEstat === 'atrasos' ? { background: cfg.cor, borderColor: cfg.cor } : {}}
               onClick={() => setAbaEstat('atrasos')}>Atrasos</button>
           </div>
         </div>
 
         {loadingEstat ? (
-          <div className={styles.geradorLoading}>Carregando estatísticas da {cfg.label}...</div>
+          <div className={styles.ferrLoading}>Carregando estatísticas da {cfg.label}...</div>
         ) : dadosEstat.length === 0 ? (
-          <div className={styles.geradorLoading}>
+          <div className={styles.ferrLoading}>
             Histórico não carregado — clique em &quot;Carregar histórico&quot; abaixo.
           </div>
         ) : (
           <>
-            <div className={styles.geradorBallGrid} style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
+            <div className={styles.ferrBallGrid} style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
               {[...dadosEstat].sort((a, b) => a.numero - b.numero).map((d) => {
                 const rank = dadosEstat.findIndex(x => x.numero === d.numero)
                 return (
-                  <div key={d.numero} className={styles.geradorBallItem}>
-                    <div className={styles.geradorBall} style={{ background: corBola(rank, dadosEstat.length), borderColor: corBorda(rank, dadosEstat.length), color: corTexto(rank, dadosEstat.length) }}>
+                  <div key={d.numero} className={styles.ferrBallItem}>
+                    <div className={styles.ferrBall} style={{ background: corBola(rank, dadosEstat.length), borderColor: corBorda(rank, dadosEstat.length), color: corTexto(rank, dadosEstat.length) }}>
                       {String(d.numero).padStart(2, '0')}
                     </div>
-                    <div className={styles.geradorBallCount}>
+                    <div className={styles.ferrBallCount}>
                       {abaEstat === 'freq' ? `${d.count}x` : `${d.atraso}c`}
                     </div>
                   </div>
                 )
               })}
             </div>
-            <div className={styles.geradorRankTitle}>🏆 Top 15</div>
-            <div className={styles.geradorRanking}>
+            <div className={styles.ferrRankTitle}>🏆 Top 15</div>
+            <div className={styles.ferrRanking}>
               {dadosEstat.slice(0, 15).map((d, i) => (
-                <div key={d.numero} className={styles.geradorRankRow}>
-                  <span className={styles.geradorRankPos}>{i + 1}º</span>
-                  <span className={styles.geradorRankBall} style={{ background: corBola(i, 15), borderColor: corBorda(i, 15), color: corTexto(i, 15) }}>
+                <div key={d.numero} className={styles.ferrRankRow}>
+                  <span className={styles.ferrRankPos}>{i + 1}º</span>
+                  <span className={styles.ferrRankBall} style={{ background: corBola(i, 15), borderColor: corBorda(i, 15), color: corTexto(i, 15) }}>
                     {String(d.numero).padStart(2, '0')}
                   </span>
-                  <div className={styles.geradorRankBarWrap}>
-                    <div className={styles.geradorRankBar} style={{
+                  <div className={styles.ferrRankBarWrap}>
+                    <div className={styles.ferrRankBar} style={{
                       width: `${Math.round(((d.count || d.atraso || 0) / maxCount) * 100)}%`,
                       background: corBola(i, 15),
                     }} />
                   </div>
-                  <span className={styles.geradorRankVal}>
+                  <span className={styles.ferrRankVal}>
                     {abaEstat === 'freq' ? `${d.count}x` : `${d.atraso}c`}
                   </span>
                 </div>
@@ -285,66 +289,66 @@ export default function IngerirHistorico() {
       </div>
 
       {/* ── Combinações & Sequências ── */}
-      <div className={styles.geradorStat}>
-        <div className={styles.geradorStatHeader}>
-          <span className={styles.geradorSectionLabel}>🔢 Combinações & Sequências</span>
+      <div className={styles.ferrSection}>
+        <div className={styles.ferrSectionHeader}>
+          <span className={styles.ferrSectionLabel}>🔢 Combinações & Sequências</span>
         </div>
 
         {loadingComb ? (
-          <div className={styles.geradorLoading}>Carregando combinações da {cfg.label}...</div>
+          <div className={styles.ferrLoading}>Carregando combinações da {cfg.label}...</div>
         ) : combDistrib.length === 0 ? (
-          <div className={styles.geradorLoading}>Histórico não carregado.</div>
+          <div className={styles.ferrLoading}>Histórico não carregado.</div>
         ) : (
           <>
-            <div className={styles.geradorRankTitle}>Sequências consecutivas por sorteio</div>
-            <div className={styles.geradorRanking}>
+            <div className={styles.ferrRankTitle}>Sequências consecutivas por sorteio</div>
+            <div className={styles.ferrRanking}>
               {combDistrib.map(d => {
                 const label = d.tamanho === '1' ? 'Sem sequência' : d.tamanho === '5+' ? '5+ seguidos' : `${d.tamanho} seguidos`
                 const maxCountSeq = Math.max(...combDistrib.map(x => x.count), 1)
                 return (
-                  <div key={d.tamanho} className={styles.geradorRankRow}>
-                    <span className={styles.geradorRankPos} style={{ width: 90, textAlign: 'left' }}>{label}</span>
-                    <div className={styles.geradorRankBarWrap}>
-                      <div className={styles.geradorRankBar} style={{ width: `${Math.round((d.count / maxCountSeq) * 100)}%`, background: cfg.cor }} />
+                  <div key={d.tamanho} className={styles.ferrRankRow}>
+                    <span className={styles.ferrRankPos} style={{ width: 110, textAlign: 'left' }}>{label}</span>
+                    <div className={styles.ferrRankBarWrap}>
+                      <div className={styles.ferrRankBar} style={{ width: `${Math.round((d.count / maxCountSeq) * 100)}%`, background: cfg.cor }} />
                     </div>
-                    <span className={styles.geradorRankVal}>{d.pct}%</span>
+                    <span className={styles.ferrRankVal}>{d.pct}%</span>
                   </div>
                 )
               })}
             </div>
 
             {combSoma && (
-              <div className={`${styles.detStatsRow} ${styles.detStatsRow3}`} style={{ marginTop: 4 }}>
-                <div className={styles.detStat}>
-                  <div className={styles.detStatVal}>{combSoma.media}</div>
-                  <span className={styles.detStatLbl}>Soma média</span>
+              <div className={styles.ferrStatsRow}>
+                <div className={styles.ferrStatCard}>
+                  <div className={styles.ferrStatVal}>{combSoma.media}</div>
+                  <span className={styles.ferrStatLbl}>Soma média</span>
                 </div>
-                <div className={styles.detStat}>
-                  <div className={styles.detStatVal}>{combSoma.min}</div>
-                  <span className={styles.detStatLbl}>Menor soma</span>
+                <div className={styles.ferrStatCard}>
+                  <div className={styles.ferrStatVal}>{combSoma.min}</div>
+                  <span className={styles.ferrStatLbl}>Menor soma</span>
                 </div>
-                <div className={styles.detStat}>
-                  <div className={styles.detStatVal}>{combSoma.max}</div>
-                  <span className={styles.detStatLbl}>Maior soma</span>
+                <div className={styles.ferrStatCard}>
+                  <div className={styles.ferrStatVal}>{combSoma.max}</div>
+                  <span className={styles.ferrStatLbl}>Maior soma</span>
                 </div>
               </div>
             )}
 
-            <div className={styles.geradorRankTitle}>🔗 Duplas mais frequentes juntas</div>
-            <div className={styles.geradorRanking}>
+            <div className={styles.ferrRankTitle}>🔗 Duplas mais frequentes juntas</div>
+            <div className={styles.ferrRanking}>
               {combDuplas.map((d, i) => (
-                <div key={d.par.join('-')} className={styles.geradorRankRow}>
-                  <span className={styles.geradorRankPos}>{i + 1}º</span>
-                  <span className={styles.geradorRankBall} style={{ background: cfg.cor, borderColor: cfg.cor, color: '#fff' }}>
+                <div key={d.par.join('-')} className={styles.ferrRankRow}>
+                  <span className={styles.ferrRankPos}>{i + 1}º</span>
+                  <span className={styles.ferrRankBall} style={{ background: cfg.cor, borderColor: cfg.cor, color: '#fff' }}>
                     {String(d.par[0]).padStart(2, '0')}
                   </span>
-                  <span className={styles.geradorRankBall} style={{ background: cfg.corSecundaria, borderColor: cfg.corSecundaria, color: '#fff' }}>
+                  <span className={styles.ferrRankBall} style={{ background: cfg.corSecundaria, borderColor: cfg.corSecundaria, color: '#fff' }}>
                     {String(d.par[1]).padStart(2, '0')}
                   </span>
-                  <div className={styles.geradorRankBarWrap}>
-                    <div className={styles.geradorRankBar} style={{ width: `${Math.round((d.count / (combDuplas[0]?.count || 1)) * 100)}%`, background: cfg.cor }} />
+                  <div className={styles.ferrRankBarWrap}>
+                    <div className={styles.ferrRankBar} style={{ width: `${Math.round((d.count / (combDuplas[0]?.count || 1)) * 100)}%`, background: cfg.cor }} />
                   </div>
-                  <span className={styles.geradorRankVal}>{d.count}x</span>
+                  <span className={styles.ferrRankVal}>{d.count}x</span>
                 </div>
               ))}
             </div>
@@ -352,34 +356,37 @@ export default function IngerirHistorico() {
         )}
       </div>
 
-      {!rodando && (
-        <p className={styles.helpText}>
-          Busca os concursos da <strong style={{ color: cfg.cor }}>{cfg.label}</strong> do seu browser e salva no banco.
-          Aprox. <strong>{totais[loteria].toLocaleString('pt-BR')}</strong> concursos — leva ~15 min. <strong>Não feche esta aba.</strong>
-        </p>
-      )}
+      {/* ── Carregar histórico ── */}
+      <div className={styles.ferrSection}>
+        {!rodando && (
+          <p className={styles.helpText}>
+            Busca os concursos da <strong style={{ color: cfg.cor }}>{cfg.label}</strong> do seu browser e salva no banco.
+            Aprox. <strong>{totais[loteria].toLocaleString('pt-BR')}</strong> concursos — leva ~15 min. <strong>Não feche esta aba.</strong>
+          </p>
+        )}
 
-      {!rodando && (
-        <button className={styles.btnLoad} onClick={iniciar}>
-          ⬇️ Carregar histórico — <TrevoIcon loteria={loteria} size={14} /> {cfg.label} (~{totais[loteria]} concursos)
-        </button>
-      )}
-
-      {rodando && (
-        <>
-          <div className={styles.progressWrap}>
-            <div className={styles.progressFill} style={{ width: `${pct}%`, background: cfg.cor }} />
-          </div>
-          <div className={styles.helpText}>{pct}% — {resumo}</div>
-          <button className={styles.btnPerigoPad} onClick={() => { abortRef.current = true }}>
-            ⏹ Parar
+        {!rodando && (
+          <button className={styles.btnLoad} onClick={iniciar}>
+            ⬇️ Carregar histórico — <TrevoIcon loteria={loteria} size={14} /> {cfg.label} (~{totais[loteria]} concursos)
           </button>
-        </>
-      )}
+        )}
 
-      {!rodando && resumo && (
-        <div className={`${styles.resumoMsg} ${resumo.includes('✅') ? styles.resumoMsgOk : styles.resumoMsgErr}`}>{resumo}</div>
-      )}
+        {rodando && (
+          <>
+            <div className={styles.progressWrap}>
+              <div className={styles.progressFill} style={{ width: `${pct}%`, background: cfg.cor }} />
+            </div>
+            <div className={styles.helpText}>{pct}% — {resumo}</div>
+            <button className={styles.btnPerigoPad} onClick={() => { abortRef.current = true }}>
+              ⏹ Parar
+            </button>
+          </>
+        )}
+
+        {!rodando && resumo && (
+          <div className={`${styles.resumoMsg} ${resumo.includes('✅') ? styles.resumoMsgOk : styles.resumoMsgErr}`}>{resumo}</div>
+        )}
+      </div>
     </div>
   )
 }
