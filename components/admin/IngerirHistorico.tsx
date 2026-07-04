@@ -176,6 +176,9 @@ export default function IngerirHistorico() {
     return pct > 0.33 ? '#fff' : cfg.cor
   }
   const maxFreq   = freqDados.length ? Math.max(...freqDados.map(d => d.count || 1)) : 1
+  // Nº de colunas da grade de números escala com a quantidade de dezenas da loteria,
+  // mirando ~15 linhas pra alinhar com as colunas de Top 15/Atrasos (sempre 15 linhas fixas).
+  const freqGridCols = Math.max(1, Math.round(cfg.totalNumeros / 15))
   const maxAtraso = atrasosDados.length ? Math.max(...atrasosDados.map(d => d.atraso || 1)) : 1
 
   return (
@@ -245,7 +248,7 @@ export default function IngerirHistorico() {
           <div className={styles.ferrCols3}>
             <div className={styles.ferrColuna}>
               <div className={styles.ferrRankTitle}>🔢 Todos os números</div>
-              <div className={styles.ferrBallGrid} style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+              <div className={styles.ferrBallGrid} style={{ gridTemplateColumns: `repeat(${freqGridCols}, 1fr)` }}>
                 {[...freqDados].sort((a, b) => a.numero - b.numero).map((d) => {
                   const rank = freqDados.findIndex(x => x.numero === d.numero)
                   return (
