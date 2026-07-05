@@ -37,6 +37,8 @@ export interface BolaoDetailPanelProps {
   enviandoComp: string | null
   lembreteMsg: string
   compMsg: string
+  exportandoSheets: boolean
+  sheetsMsg: string
 
   // Apostas
   apostasMsg: string
@@ -87,6 +89,7 @@ export interface BolaoDetailPanelProps {
   onConfirmarPagamento: (id: string) => void
   onConfirmarAcrescimo: (id: string) => void
   onExcluir: (id: string, nome: string) => void
+  onExportarSheets: () => void
 
   // Callbacks — apostas
   onOpenApostas: () => void

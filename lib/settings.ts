@@ -90,6 +90,14 @@ export interface CliSettings {
   github_token:         string
 }
 
+// Credenciais de Service Account do Google (Sheets API) — usadas em runtime
+// pela função exportarParaSheets (lib/google-sheets.ts).
+export interface GoogleSettings {
+  client_email:   string
+  private_key:    string
+  spreadsheet_id: string
+}
+
 export interface AllSettings {
   app:              AppSettings
   pagamento:        PagamentoSettings
@@ -99,6 +107,7 @@ export interface AllSettings {
   'paginas.bolao':  Record<string, PaginaBolaoSettings>
   'paginas.esporte': PaginaEsporteSettings
   cli:              CliSettings
+  google:           GoogleSettings
 }
 
 // ─── Defaults (valores quando settings não configurado) ───────────────────────
@@ -200,6 +209,11 @@ export const DEFAULTS: AllSettings = {
     vercel_token:         '',
     github_token:         '',
   },
+  google: {
+    client_email:   '',
+    private_key:    '',
+    spreadsheet_id: '',
+  },
 }
 
 // ─── Cache em memória (5 minutos) ─────────────────────────────────────────────
@@ -232,6 +246,7 @@ export async function getHomeSettings():      Promise<PaginaHomeSettings>  { ret
 export async function getBolaoSettings():     Promise<Record<string, PaginaBolaoSettings>> { return fetchNamespace('paginas.bolao', DEFAULTS['paginas.bolao']) }
 export async function getEsporteSettings():   Promise<PaginaEsporteSettings> { return fetchNamespace('paginas.esporte', DEFAULTS['paginas.esporte']) }
 export async function getCliSettings():       Promise<CliSettings>          { return fetchNamespace('cli',              DEFAULTS.cli) }
+export async function getGoogleSettings():    Promise<GoogleSettings>       { return fetchNamespace('google',           DEFAULTS.google) }
 
 /** Invalida o cache de um namespace (chamar após salvar via admin) */
 export function invalidarCache(namespace?: string) {
@@ -251,7 +266,7 @@ export async function salvarSettings(namespace: string, dados: unknown): Promise
 
 /** Retorna todas as configurações de uma vez (para o painel admin) */
 export async function getAllSettings(): Promise<AllSettings> {
-  const [app, pagamento, whatsapp, email, home, bolao, esporte, cli] = await Promise.all([
+  const [app, pagamento, whatsapp, email, home, bolao, esporte, cli, google] = await Promise.all([
     getAppSettings(),
     getPagamentoSettings(),
     getWhatsappSettings(),
@@ -260,6 +275,7 @@ export async function getAllSettings(): Promise<AllSettings> {
     getBolaoSettings(),
     getEsporteSettings(),
     getCliSettings(),
+    getGoogleSettings(),
   ])
-  return { app, pagamento, whatsapp, email, 'paginas.home': home, 'paginas.bolao': bolao, 'paginas.esporte': esporte, cli }
+  return { app, pagamento, whatsapp, email, 'paginas.home': home, 'paginas.bolao': bolao, 'paginas.esporte': esporte, cli, google }
 }

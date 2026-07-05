@@ -23,9 +23,10 @@ export interface SettingsData {
     msg_sem_bolao?: string
   }
   cli?: Record<string, string>
+  google?: Record<string, string>
 }
 
-export type Aba = 'app' | 'home' | 'pagamento' | 'whatsapp' | 'email' | 'esporte' | 'loteria' | 'cli'
+export type Aba = 'app' | 'home' | 'pagamento' | 'whatsapp' | 'email' | 'esporte' | 'loteria' | 'cli' | 'google'
 
 export const ABAS: { id: Aba; label: string; icon: string }[] = [
   { id: 'app',      label: 'App',       icon: '🏠' },
@@ -36,6 +37,7 @@ export const ABAS: { id: Aba; label: string; icon: string }[] = [
   { id: 'loteria',  label: 'Loteria',   icon: '🍀' },
   { id: 'esporte',  label: 'Esporte',   icon: '⚽' },
   { id: 'cli',      label: 'CLIs',      icon: '⌨️' },
+  { id: 'google',   label: 'Google',    icon: '📊' },
 ]
 
 export const LOTERIAS_LABELS: Record<string, string> = {
@@ -80,6 +82,45 @@ export function Field({ label, name, value, onChange, type = 'text', placeholder
           </button>
         )}
       </div>
+    </div>
+  )
+}
+
+export function Textarea({ label, name, value, onChange, placeholder = '', secreto = false }: {
+  label: string; name: string; value: string
+  onChange: (v: string) => void; placeholder?: string; secreto?: boolean
+}) {
+  const [visivel, setVisivel] = useState(!secreto)
+
+  return (
+    <div className={styles.settingsField} style={{ gridColumn: '1 / -1' }}>
+      <label className={styles.settingsLabel}>
+        {label}
+        {secreto && (
+          <button
+            type="button"
+            onClick={() => setVisivel(v => !v)}
+            style={{
+              marginLeft: 8, background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 13, opacity: 0.6, padding: 2,
+            }}
+          >
+            {visivel ? '🙈 Ocultar' : '👁️ Mostrar'}
+          </button>
+        )}
+      </label>
+      <textarea
+        name={name}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={6}
+        className={styles.settingsInput}
+        style={{
+          fontFamily: 'monospace', fontSize: 12, resize: 'vertical',
+          filter: visivel ? 'none' : 'blur(4px)',
+        }}
+      />
     </div>
   )
 }

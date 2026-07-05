@@ -91,6 +91,7 @@ export default function AdminPage() {
   // BolaoDetailPanel — participantes
   const { loadingParts, confirmandoTodos, selecionados, enviandoComp,
           lembreteMsg, compMsg, apostasMsg,
+          exportandoSheets, sheetsMsg,
           showApostasModal, setShowApostasModal, apostasTexto, setApostasTexto,
           uploadingApostas,
           showEncerrar, setShowEncerrar, encerrando, encerrarOk, setEncerrarOk } = parts
@@ -104,6 +105,7 @@ export default function AdminPage() {
   const confirmarPagamento     = parts.confirmarPagamento
   const confirmarAcrescimo     = parts.confirmarAcrescimo
   const excluir                = parts.excluir
+  const exportarSheets         = parts.exportarSheets
   const salvarApostas  = () => bolaoAtual && parts.salvarApostas(bolaoAtual.id, carregarBoloes)
   const removerApostas = () => bolaoAtual && parts.removerApostas(bolaoAtual.id, carregarBoloes)
   const inserirApostasGeradas = (texto: string) => {
@@ -271,6 +273,8 @@ export default function AdminPage() {
     enviandoComp,
     lembreteMsg,
     compMsg,
+    exportandoSheets,
+    sheetsMsg,
     apostasMsg,
     showApostasModal,
     apostasTexto,
@@ -309,6 +313,7 @@ export default function AdminPage() {
     onConfirmarPagamento: confirmarPagamento,
     onConfirmarAcrescimo: confirmarAcrescimo,
     onExcluir: excluir,
+    onExportarSheets: exportarSheets,
     onOpenApostas: () => setShowApostasModal(true),
     onCloseApostas: () => { setShowApostasModal(false); setApostasTexto('') },
     onApostasTextoChange: setApostasTexto,

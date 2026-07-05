@@ -24,6 +24,10 @@ export function useParticipantes(
   const [enviandoComp, setEnviandoComp] = useState<string | null>(null)
   const [compMsg, setCompMsg]           = useState('')
 
+  // Exportação Google Sheets
+  const [exportandoSheets, setExportandoSheets] = useState(false)
+  const [sheetsMsg, setSheetsMsg]               = useState('')
+
   // Seleção para impressão
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
 
@@ -116,6 +120,18 @@ export function useParticipantes(
     setEnviandoComp(null)
     setCompMsg(res.ok ? '✅ Comprovante enviado!' : '❌ ' + (res.error || 'Erro ao enviar'))
     setTimeout(() => setCompMsg(''), 4000)
+  }
+
+  async function exportarSheets() {
+    if (!bolaoAtual) return
+    setExportandoSheets(true); setSheetsMsg('')
+    const res = await fetch('/api/admin/exportar-sheets', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bolao_slug: bolaoAtual.slug, concurso: concursoAtivo ? parseInt(concursoAtivo) : undefined }),
+    }).then(r => r.json())
+    setExportandoSheets(false)
+    setSheetsMsg(res.ok ? `✅ ${res.total} participante(s) exportado(s)!` : `❌ ${res.error}`)
+    setTimeout(() => setSheetsMsg(''), 5000)
   }
 
   function toggleSelecionado(id: string) {
@@ -212,6 +228,7 @@ export function useParticipantes(
   return {
     partsBolao, loadingParts, confirmandoTodos, lembreteMsg,
     enviandoComp, compMsg,
+    exportandoSheets, sheetsMsg,
     selecionados, setSelecionados,
     uploadingApostas, apostasMsg, showApostasModal, setShowApostasModal, apostasTexto, setApostasTexto,
     showEncerrar, setShowEncerrar, encerrando, encerrarOk, setEncerrarOk,
@@ -221,7 +238,7 @@ export function useParticipantes(
     limparEstado,
     carregarPartsBolao,
     confirmarPagamento, confirmarTodos, excluir, confirmarAcrescimo,
-    enviarLembrete, enviarComprovante,
+    enviarLembrete, enviarComprovante, exportarSheets,
     toggleSelecionado, selecionarTodosPagos, imprimirSelecionados,
     salvarApostas, salvarApostasDirecto, removerApostas,
     encerrarBolao,

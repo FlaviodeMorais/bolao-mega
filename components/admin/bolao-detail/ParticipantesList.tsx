@@ -6,9 +6,10 @@ import type { BolaoDetailPanelProps } from './types'
 type Props = Pick<BolaoDetailPanelProps,
   | 'partsBolao' | 'concursoAtivo' | 'selecionados' | 'loadingParts'
   | 'enviandoComp' | 'formatTel' | 'whatsappUrl'
+  | 'exportandoSheets' | 'sheetsMsg'
   | 'onSelecionarTodosPagos' | 'onImprimirSelecionados' | 'onLimparSelecao'
   | 'onToggleSelecionado' | 'onEnviarComprovante' | 'onConfirmarPagamento'
-  | 'onConfirmarAcrescimo' | 'onExcluir'
+  | 'onConfirmarAcrescimo' | 'onExcluir' | 'onExportarSheets'
 >
 
 /** Lista de participantes do bolão com seleção em lote e ações por participante. */
@@ -19,6 +20,14 @@ export default function ParticipantesList(p: Props) {
         <div className={styles.partSectionTitle}>
           👥 Participantes — {p.partsBolao.length} cadastrado{p.partsBolao.length !== 1 ? 's' : ''}
         </div>
+        {p.partsBolao.length > 0 && (
+          <button type="button" className={styles.btnSelAll}
+            onClick={p.onExportarSheets}
+            disabled={p.exportandoSheets}
+            title="Exportar participantes para Google Sheets">
+            {p.exportandoSheets ? '⟳ Exportando...' : '📊 Exportar Sheets'}
+          </button>
+        )}
         {p.partsBolao.some(pt => pt.status === 'pago') && (
           <button type="button" className={styles.btnSelAll}
             onClick={p.onSelecionarTodosPagos}
@@ -27,6 +36,9 @@ export default function ParticipantesList(p: Props) {
           </button>
         )}
       </div>
+      {p.sheetsMsg && (
+        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>{p.sheetsMsg}</div>
+      )}
 
       {p.selecionados.size > 0 && (
         <div className={styles.selecaoBar}>
