@@ -146,9 +146,9 @@ export default function ParticipantesHistorico({
               <option key={b.slug} value={b.slug}>{b.nome}{b.ativo ? '' : ' (inativo)'}</option>
             ))}
           </select>
-          <label className={styles.crmMsgLabel}>Mensagem de convite personalizada (use {'{nome}'} e {'{link}'} pra personalizar)</label>
+          <label className={styles.crmMsgLabel}>Mensagem de convite personalizada (use {'{nome}'}, {'{bolao}'} e {'{link}'} pra personalizar)</label>
           <textarea className={styles.crmMsgTextarea} rows={2}
-            placeholder="🍀 Olá {nome}! Temos um novo bolão disponível. Participe: {link}"
+            placeholder="🍀 Olá {nome}! Temos o bolão {bolao} disponível. Participe: {link}"
             value={msgConvite} onChange={e => onMsgConviteChange(e.target.value)} />
         </div>
       )}

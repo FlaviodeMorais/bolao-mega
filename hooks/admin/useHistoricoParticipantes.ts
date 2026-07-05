@@ -16,7 +16,7 @@ const TREVO = '\u{1F340}'
 
 /** Card "Participantes" do Histórico — busca/filtro/paginação server-side (view historico_participantes)
  *  + disparo sistemático de convite via Whapi (POST /api/admin/convite-massa), sem depender de wa.me/popups. */
-export function useHistoricoParticipantes(boloes: BolaoOpt[], concursoAtivo: string) {
+export function useHistoricoParticipantes(boloes: BolaoOpt[]) {
   const [participantes, setParticipantes] = useState<HistoricoParticipante[]>([])
   const [total, setTotal]           = useState(0)
   const [page, setPage]             = useState(1)
@@ -61,9 +61,10 @@ export function useHistoricoParticipantes(boloes: BolaoOpt[], concursoAtivo: str
   function montarMensagem(nome: string) {
     const origem = typeof window !== 'undefined' ? window.location.origin : ''
     const link = bolaoConvite ? `${origem}/${bolaoConvite.slug}` : origem
+    const bolaoNome = bolaoConvite?.nome || 'um novo bolão'
     const template = msgConvite ||
-      `${TREVO} Olá {nome}! Temos um novo bolão disponível para o concurso #${concursoAtivo}.\n\nAcesse: ${link}\n\nBoa sorte!`
-    return template.replaceAll('{nome}', nome).replaceAll('{link}', link)
+      `${TREVO} Olá {nome}! Temos o bolão *${bolaoNome}* disponível.\n\nAcesse: {link}\n\nBoa sorte!`
+    return template.replaceAll('{nome}', nome).replaceAll('{link}', link).replaceAll('{bolao}', bolaoNome)
   }
 
   async function dispararConvite(contatos: { telefone: string; nome: string }[]) {

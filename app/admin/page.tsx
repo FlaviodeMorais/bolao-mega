@@ -70,7 +70,7 @@ export default function AdminPage() {
   const parts    = useParticipantes(boloes.bolaoAtual, concurso.concursoAtivo, boloes.carregarBoloes)
   const conf     = useConferencia(boloes.bolaoAtual, concurso.concursoAtivo, boloes.carregarBoloes)
   const histResumo = useHistoricoResumo()
-  const histParts  = useHistoricoParticipantes(boloes.boloes, concurso.concursoAtivo)
+  const histParts  = useHistoricoParticipantes(boloes.boloes)
   const kpis     = useKpis()
 
   // ── Aliases (mantêm JSX sem alteração) ───────────────────────
