@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import LoginModal from '@/components/LoginModal'
 import UserAuthModal from '@/components/UserAuthModal'
+import UserAccountModal from '@/components/UserAccountModal'
 import { useCart } from '@/components/CartContext'
 import styles from './esporte.module.css'
 import { getFlagCode } from '@/lib/bandeiras'
@@ -259,17 +260,12 @@ const TACA_VARIANT: Record<number, 'gold'|'silver'|'bronze'> = { 1: 'gold', 2: '
 const LUGAR_COR:   Record<number, string>                    = { 1: '#FFB81C', 2: '#C0C0C0', 3: '#CD7F32' }
 const PTS_COR:     Record<number, string>                    = { 1: 'gold',   2: 'green',  3: 'blue' }
 
-function maskTelefoneEsporte(digits: string): string {
-  const v = digits.replace(/\D/g, '').slice(0, 11)
-  return v.length <= 2 ? v : v.length <= 7 ? `(${v.slice(0, 2)}) ${v.slice(2)}` : `(${v.slice(0, 2)}) ${v.slice(2, 7)}-${v.slice(7)}`
-}
-
 export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
-  const [step, setStep]         = useState<'form'|'pix'|'ok'>('form')
-  const [cadastrando, setCadastrando] = useState(false)
+  const [step, setStep]         = useState<'form'|'ok'>('form')
   const [loginAberto, setLoginAberto] = useState(false)
-  const [usuario, setUsuario] = useState<{ id: string; nome: string; email: string; telefone: string } | null>(null)
+  const [usuario, setUsuario] = useState<{ id: string; nome: string; email: string; telefone: string; chave_pix?: string } | null>(null)
   const [userAuthAberto, setUserAuthAberto] = useState(false)
+  const [contaAberta, setContaAberta] = useState(false)
   const cart = useCart()
   // premiacao vem do bolão; fallback para settings globais; fallback para default
   const [premiacao, setPremiacao] = useState<PremiacaoItem[]>(bolao.premiacao?.length ? bolao.premiacao : PREMIACAO_DEFAULT)
@@ -281,18 +277,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
       }).catch(() => {})
     }
   }, [bolao.premiacao])
-  const [nome, setNome]         = useState('')
-  const [telefone, setTelefone] = useState('')
-  const [email, setEmail]       = useState('')
-  const [chavePix, setChavePix] = useState('')
   const [palpites, setPalpites] = useState<Record<string, Palpite>>({})
-  const [enviando, setEnviando] = useState(false)
-  const [pixData, setPixData]   = useState<{ pixCode: string; qrCodeBase64: string; paymentId: string } | null>(null)
-  const [payStatus, setPayStatus] = useState<'aguardando'|'pago'>('aguardando')
-  const [payTimer, setPayTimer] = useState('30:00')
-  const [copiado, setCopiado]   = useState(false)
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const pollRef  = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const [agora, setAgora] = useState(() => new Date())
   useEffect(() => {
@@ -301,26 +286,16 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
     return () => clearInterval(t)
   }, [])
 
-  // Autofill: participante logado não precisa redigitar nome/telefone/email.
-  // Chave PIX continua sendo pedida por sessão (não faz parte da conta).
+  // Autofill: usuário logado já tem nome/telefone/email/chave PIX na conta.
   useEffect(() => {
     fetch('/api/usuario/me').then(r => r.json()).then(d => {
       if (!d.usuario) return
       setUsuario(d.usuario)
-      setNome(d.usuario.nome.toUpperCase())
-      setTelefone(maskTelefoneEsporte(d.usuario.telefone))
-      setEmail(d.usuario.email)
     }).catch(() => {})
-    const chave = localStorage.getItem('bolao_esporte_chave_pix')
-    if (chave) setChavePix(chave)
   }, [])
 
-  function onAutenticado(u: { id: string; nome: string; email: string; telefone: string }) {
+  function onAutenticado(u: { id: string; nome: string; email: string; telefone: string; chave_pix?: string }) {
     setUsuario(u)
-    setNome(u.nome.toUpperCase())
-    setTelefone(maskTelefoneEsporte(u.telefone))
-    setEmail(u.email)
-    setCadastrando(true)
   }
 
   // Mostra todos os jogos não encerrados — bloqueio de horário é feito no submit
@@ -344,7 +319,6 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
   const preenchidos      = Object.keys(palpites).filter(id => !jogoIniciado(jogosAbertos.find(j => j.id === id)!)).length
   const jogosDisponiveis = jogosAbertos.filter(j => !jogoIniciado(j))
   const todosPreenchidos = jogosDisponiveis.length === 0 || jogosDisponiveis.every(j => palpites[j.id])
-  const podeContinuar    = nome.trim().length >= 3 && telefone.replace(/\D/g,'').length === 11 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && chavePix.trim().length > 0
 
   function setPalpite(jogo_id: string, campo: 'gol_casa'|'gol_fora', val: string) {
     const n = Math.max(0, Math.min(99, parseInt(val) || 0))
@@ -358,63 +332,9 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
     }))
   }
 
-  async function confirmar() {
-    if (!usuario) { alert('⚠️ Entre ou cadastre-se para participar.'); return }
-    if (!nome.trim() || nome.trim().length < 3) { alert('⚠️ Informe seu nome completo!'); return }
-    if (telefone.replace(/\D/g,'').length < 11)  { alert('⚠️ Informe seu WhatsApp com DDD!'); return }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('⚠️ Informe um e-mail válido!'); return }
-    if (!chavePix.trim()) { alert('⚠️ Informe sua Chave PIX!'); return }
-    if (!todosPreenchidos) { alert('⚠️ Preencha os palpites de todos os jogos!'); return }
-    setEnviando(true)
-    try {
-      const res = await fetch('/api/esporte/participantes', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bolao_slug: bolao.slug,
-          nome: nome.trim().toUpperCase(),
-          telefone: '55' + telefone.replace(/\D/g,''),
-          email: email.trim().toLowerCase(),
-          chave_pix: chavePix.trim(),
-          usuario_id: usuario?.id || null,
-          palpites: Object.values(palpites).filter(p => !jogoIniciado(jogosAbertos.find(j => j.id === p.jogo_id)!)),
-        }),
-      }).then(r => r.json())
-
-      if (res.error) { alert('⚠️ ' + res.error); return }
-      setPixData({ pixCode: res.pixCode, qrCodeBase64: res.qrCodeBase64, paymentId: res.paymentId })
-      setStep('pix')
-
-      let secs = 30 * 60
-      if (timerRef.current) clearInterval(timerRef.current)
-      timerRef.current = setInterval(() => {
-        secs--
-        const m = String(Math.floor(secs/60)).padStart(2,'0')
-        const s = String(secs%60).padStart(2,'0')
-        setPayTimer(`${m}:${s}`)
-        if (secs <= 0) clearInterval(timerRef.current!)
-      }, 1000)
-
-      if (pollRef.current) clearInterval(pollRef.current)
-      pollRef.current = setInterval(async () => {
-        const st = await fetch(`/api/status?paymentId=${res.paymentId}`).then(r => r.json())
-        if (st.status === 'pago' || st.status === 'approved') {
-          setPayStatus('pago')
-          clearInterval(pollRef.current!)
-          clearInterval(timerRef.current!)
-          setTimeout(() => setStep('ok'), 1500)
-        }
-      }, 5000)
-    } finally {
-      setEnviando(false)
-    }
-  }
-
   function adicionarAoCarrinho() {
     if (!usuario) { alert('⚠️ Entre ou cadastre-se para continuar.'); return }
-    if (!nome.trim() || nome.trim().length < 3) { alert('⚠️ Informe seu nome completo!'); return }
-    if (telefone.replace(/\D/g,'').length < 11)  { alert('⚠️ Informe seu WhatsApp com DDD!'); return }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('⚠️ Informe um e-mail válido!'); return }
-    if (!chavePix.trim()) { alert('⚠️ Informe sua Chave PIX!'); return }
+    if (!usuario.chave_pix?.trim()) { alert('⚠️ Sua conta não tem Chave PIX cadastrada.'); return }
     if (!todosPreenchidos) { alert('⚠️ Preencha os palpites de todos os jogos!'); return }
 
     cart.addItem({
@@ -424,23 +344,11 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
       palpites: Object.values(palpites)
         .filter(p => !jogoIniciado(jogosAbertos.find(j => j.id === p.jogo_id)!))
         .map(p => ({ ...p })),
-      chavePix: chavePix.trim(),
+      chavePix: usuario.chave_pix.trim(),
       total: Number(bolao.valor_cota),
     })
-    alert('🛒 Adicionado ao carrinho! Acesse o carrinho (ícone no topo da home) para finalizar o pagamento.')
+    alert('🛒 Adicionado ao carrinho! Acesse o carrinho (ícone no topo) para finalizar o pagamento.')
   }
-
-  function copiarPix() {
-    if (!pixData) return
-    navigator.clipboard.writeText(pixData.pixCode)
-    setCopiado(true)
-    setTimeout(() => setCopiado(false), 2000)
-  }
-
-  useEffect(() => () => {
-    if (timerRef.current) clearInterval(timerRef.current)
-    if (pollRef.current)  clearInterval(pollRef.current)
-  }, [])
 
   if (bolao.encerrado || !bolao.ativo) return (
     <div className={styles.page}>
@@ -457,7 +365,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
       <div className={styles.okBox}>
         <span className={styles.okIcon}>🎉</span>
         <div className={styles.okTitle}>Tudo certo!</div>
-        <div className={styles.okSub}>Seus palpites estão registrados.<br/>Boa sorte, <strong>{nome}</strong>! 🍀</div>
+        <div className={styles.okSub}>Seus palpites estão registrados.<br/>Boa sorte, <strong>{usuario?.nome}</strong>! 🍀</div>
       </div>
     </div>
   )
@@ -474,11 +382,36 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
           ESPORTE
           <span className={styles.topBarSub}>{bolao.nome}</span>
         </div>
+        {usuario ? (
+          <button className={styles.topBarBtn} aria-label="Minha conta" title={usuario.email} onClick={() => setContaAberta(true)}>
+            <span className="material-icons-round" style={{ fontSize: 18 }}>person</span>
+          </button>
+        ) : (
+          <button className={styles.topBarBtn} aria-label="Entrar" onClick={() => setUserAuthAberto(true)}>
+            <span className="material-icons-round" style={{ fontSize: 18 }}>login</span>
+          </button>
+        )}
+        <a className={styles.topBarBtn} aria-label="Carrinho" href="/carrinho" style={{ position: 'relative', textDecoration: 'none' }}>
+          <span className="material-icons-round" style={{ fontSize: 18 }}>shopping_cart</span>
+          {cart.items.length > 0 && (
+            <span style={{
+              position: 'absolute', top: -4, right: -4,
+              background: '#00AB67', color: '#fff', borderRadius: '50%',
+              width: 16, height: 16, fontSize: 10, fontWeight: 800,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>{cart.items.length}</span>
+          )}
+        </a>
         <button className={styles.topBarBtn} aria-label="Admin" onClick={() => setLoginAberto(true)}>
           <span className="material-icons-round" style={{ fontSize: 18 }}>settings</span>
         </button>
       </div>
       {loginAberto && <LoginModal onClose={() => setLoginAberto(false)} />}
+      {contaAberta && usuario && (
+        <UserAccountModal usuario={usuario} onClose={() => setContaAberta(false)}
+          onLogout={() => { setUsuario(null); setContaAberta(false) }}
+          onChavePixAtualizada={chave_pix => setUsuario(u => u ? { ...u, chave_pix } : u)} />
+      )}
 
       {/* ── Header banner ── */}
       <div className={styles.headerWrap}>
@@ -506,16 +439,6 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
           labelPalpites={bolao.label_palpites || '⚽ Seus palpites'}
           labelJogoHoje={bolao.label_jogo_hoje || '🔥 Jogo de hoje!'}
         />
-      )}
-      {step === 'form' && !cadastrando && jogosDisponiveis.length > 0 && (
-        <div className={styles.ctaWrap}>
-          <button type="button" className={styles.btnConfirmar}
-            onClick={() => usuario ? setCadastrando(true) : setUserAuthAberto(true)}>
-            {usuario
-              ? `${bolao.label_cta?.split(' ')[0] || '⚽'} Continuar como ${nome.split(' ')[0]}`
-              : bolao.label_cta || '⚽ Quero Participar'}
-          </button>
-        </div>
       )}
       {userAuthAberto && (
         <UserAuthModal onClose={() => setUserAuthAberto(false)} onAutenticado={onAutenticado} />
@@ -545,40 +468,8 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
 
       <div className={styles.card}>
 
-        {/* ── Dados pessoais ── */}
-        {step === 'form' && cadastrando && (
-          <div className={styles.section}>
-            <div className={styles.sectionTitleRow}>
-              <span className={styles.sectionTitle}>👤 Seus dados</span>
-              {usuario && (
-                <span className={styles.logadoBadge}>✅ {usuario.email}</span>
-              )}
-            </div>
-            <div className={styles.field}>
-              <label className={styles.label}>Nome completo *</label>
-              <input className={styles.input} type="text" value={nome} onChange={e => setNome(e.target.value.toUpperCase())} placeholder="SEU NOME COMPLETO" />
-            </div>
-            <div className={styles.field}>
-              <label className={styles.label}>WhatsApp *</label>
-              <input className={styles.input} type="tel" value={telefone} inputMode="numeric"
-                onChange={e => setTelefone(maskTelefoneEsporte(e.target.value))}
-                placeholder="(19) 99999-9999" />
-            </div>
-            <div className={styles.field}>
-              <label className={styles.label}>E-mail *</label>
-              <input className={styles.input} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" autoComplete="email" />
-            </div>
-            <div className={styles.field}>
-              <label className={styles.label}>Chave PIX *</label>
-              <input className={styles.input} type="text" value={chavePix}
-                onChange={e => { setChavePix(e.target.value); localStorage.setItem('bolao_esporte_chave_pix', e.target.value) }}
-                placeholder="CPF, e-mail, telefone ou chave aleatória" autoComplete="off" />
-            </div>
-          </div>
-        )}
-
         {/* ── Sem jogos ── */}
-        {step === 'form' && jogosAbertos.length === 0 && (
+        {jogosAbertos.length === 0 && (
           <div className={styles.section} style={{ textAlign: 'center', padding: '32px 20px' }}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>⚽</div>
             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, fontWeight: 600 }}>Nenhum jogo disponível no momento</div>
@@ -586,49 +477,27 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
           </div>
         )}
 
-        {/* ── PIX ── */}
-        {step === 'pix' && pixData && (
-          <div className={styles.section}>
-            <div className={styles.sectionTitle}>💳 Pagamento via PIX</div>
-            <div className={styles.pixValor}>R$ {Number(bolao.valor_cota).toFixed(2).replace('.',',')}</div>
-            {pixData.qrCodeBase64 && (
-              <div className={styles.qrWrap}>
-                <img src={`data:image/png;base64,${pixData.qrCodeBase64}`} alt="QR Code PIX" className={styles.qrImg} />
-              </div>
-            )}
-            <div className={styles.pixCodeBox}>
-              <div className={styles.pixCodeLabel}>Copia e cola</div>
-              <div className={styles.pixCode}>{pixData.pixCode}</div>
+        {jogosDisponiveis.length > 0 && (!usuario ? (
+          <div className={styles.section} style={{ textAlign: 'center', padding: '24px 20px' }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>🔒</div>
+            <div style={{ color: '#fff', fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Entre para participar</div>
+            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, marginBottom: 16 }}>
+              Crie uma conta rápida (ou entre na sua) para não precisar redigitar seus dados a cada bolão.
             </div>
-            <button type="button" className={styles.btnCopiar} onClick={copiarPix}>
-              {copiado ? '✅ Copiado!' : '📋 Copiar código PIX'}
+            <button type="button" className={styles.btnConfirmar} onClick={() => setUserAuthAberto(true)}>
+              Entrar ou Cadastrar
             </button>
-            <div className={`${styles.payStatus} ${payStatus === 'pago' ? styles.payStatusPago : ''}`}>
-              {payStatus === 'pago' ? '✅ Pagamento confirmado!' : `⏳ Aguardando pagamento… ${payTimer}`}
-            </div>
           </div>
-        )}
-
-        {/* ── Botão confirmar ── */}
-        {step === 'form' && cadastrando && (<>
+        ) : (
           <button
             type="button"
             className={styles.btnConfirmar}
-            onClick={confirmar}
-            disabled={enviando || !todosPreenchidos || !podeContinuar}
-          >
-            {enviando ? 'Registrando…' : `✅ Confirmar e pagar R$ ${Number(bolao.valor_cota).toFixed(2).replace('.',',')}`}
-          </button>
-          <button
-            type="button"
-            className={styles.btnSair}
-            style={{ marginTop: 8, width: '100%' }}
             onClick={adicionarAoCarrinho}
-            disabled={enviando || !todosPreenchidos || !podeContinuar}
+            disabled={!todosPreenchidos}
           >
             🛒 Adicionar ao Carrinho
           </button>
-        </>)}
+        ))}
 
       </div>
     </div>

@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import TrevoIcon from '@/components/TrevoIcon'
 import LoginModal from '@/components/LoginModal'
 import UserAuthModal from '@/components/UserAuthModal'
+import UserAccountModal from '@/components/UserAccountModal'
 import { useCart } from '@/components/CartContext'
 import { getLoteria } from '@/lib/loterias'
 import styles from './bolao.module.css'
@@ -39,23 +40,8 @@ function mascaraNome(nome: string): string {
   return `${fm} ${lm}`
 }
 
-function maskTelefone(digits: string): string {
-  const v = digits.replace(/\D/g, '').slice(0, 11)
-  return v.length <= 2 ? v : v.length <= 7 ? `(${v.slice(0, 2)}) ${v.slice(2)}` : `(${v.slice(0, 2)}) ${v.slice(2, 7)}-${v.slice(7)}`
-}
-
-const REGRAS_DEFAULT = [
-  { icon: '⚠️', titulo: 'Bolão particular — não oficial', texto: 'Este bolão é organizado de forma particular e independente, sem qualquer vínculo com a Caixa Econômica Federal. A aposta na loteria é realizada pelo administrador em nome do grupo.', destaque: true },
-  { icon: '🎰', titulo: 'Como funciona', texto: 'Cada cota representa uma fração proporcional das apostas realizadas. O prêmio líquido (após dedução da taxa de administração) é dividido proporcionalmente ao número de cotas de cada participante em relação ao total de cotas vendidas.' },
-  { icon: '💳', titulo: 'Pagamento via PIX', texto: 'Após selecionar suas cotas, você receberá um código PIX para pagamento. Sua inscrição só é confirmada após a validação do pagamento pelo administrador. Pagamentos não confirmados até o fechamento do bolão serão cancelados.' },
-  { icon: '🔄', titulo: 'Cotas não vendidas', texto: 'Se o bolão encerrar com cotas não vendidas, o valor arrecadado proporcional a essas cotas será rateado entre os participantes com pagamento confirmado, via PIX complementar.' },
-  { icon: '🏆', titulo: 'Premiação e prazo', texto: 'Em caso de prêmio, o administrador tem até 90 dias após o sorteio para resgatar o valor junto à Caixa Econômica Federal. Após dedução da taxa de administração, o saldo é distribuído proporcionalmente entre os participantes.' },
-  { icon: '❌', titulo: 'Cancelamento e reembolso', texto: 'Não há reembolso após confirmação do pagamento, salvo cancelamento do bolão pelo administrador antes do sorteio. Em caso de cancelamento, o valor integral pago será devolvido via PIX.' },
-]
-
 interface Participante { id: string; nome: string; cotas: string[]; total: number; status: string }
 interface ConcursoAtivo { concurso: string; data: string; premio: string }
-interface PixData { pixCode: string; qrCodeBase64: string; paymentId: string; fonte: string; nome: string; cotas: string[]; total: number }
 interface ResultadoConf {
   status: 'nao_apurado'|'aguardando_apuracao'|'apurando'|'nao_premiada'|'ganhamos'
   data_sorteio?: string
@@ -90,34 +76,21 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
   const [encerrado, setEncerrado]      = useState(encerradoProp)
   const [configOk, setConfigOk]        = useState(false)
 
-  const [nome, setNome]                   = useState('')
-  const [telefone, setTelefone]           = useState('')
-  const [email, setEmail]                 = useState('')
   const [cotasOcupadas, setCotasOcupadas] = useState<string[]>([])
   const [qtdCotas, setQtdCotas]          = useState(1)
   const [participantes, setParticipantes] = useState<Participante[]>([])
   const [concursoAtivo, setConcursoAtivo] = useState<ConcursoAtivo | null>(null)
-  const [pix, setPix]                     = useState<PixData | null>(null)
   const [enviando, setEnviando]           = useState(false)
-  const [showTermos, setShowTermos]       = useState(false)
-  const [aceitouTermos, setAceitouTermos] = useState(false)
-  const [intent, setIntent]               = useState<'pagar' | 'carrinho'>('pagar')
   const cart = useCart()
   const [countdown, setCountdown]         = useState('')
-  const [payTimer, setPayTimer]           = useState('')
-  const [payStep, setPayStep]             = useState(0)
-  const [payStatus, setPayStatus]         = useState<'aguardando'|'pago'|'unknown'>('aguardando')
-  const [payCreated, setPayCreated]       = useState('')
   const pollRef   = useRef<ReturnType<typeof setInterval> | null>(null)
-  const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null)
-  const statusRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const [apostasData, setApostasData] = useState<{ bets: number[][] } | null>(null)
-  const [regras, setRegras] = useState(REGRAS_DEFAULT)
   const [resultadoConf, setResultadoConf] = useState<ResultadoConf | null>(null)
   const [loginAberto, setLoginAberto]     = useState(false)
-  const [usuario, setUsuario]             = useState<{ id: string; nome: string; email: string; telefone: string } | null>(null)
+  const [usuario, setUsuario]             = useState<{ id: string; nome: string; email: string; telefone: string; chave_pix?: string } | null>(null)
   const [userAuthAberto, setUserAuthAberto] = useState(false)
+  const [contaAberta, setContaAberta]     = useState(false)
   const [modalPart, setModalPart]         = useState<Participante | null>(null)
   const [nomeVerif, setNomeVerif]         = useState('')
   const [verfErr, setVerfErr]             = useState('')
@@ -129,33 +102,12 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
     fetch('/api/usuario/me').then(r => r.json()).then(d => {
       if (!d.usuario) return
       setUsuario(d.usuario)
-      setNome(d.usuario.nome.toUpperCase())
-      setTelefone(maskTelefone(d.usuario.telefone))
-      setEmail(d.usuario.email)
     }).catch(() => {})
   }, [])
 
   function onAutenticado(u: { id: string; nome: string; email: string; telefone: string }) {
     setUsuario(u)
-    setNome(u.nome.toUpperCase())
-    setTelefone(maskTelefone(u.telefone))
-    setEmail(u.email)
   }
-
-  useEffect(() => {
-    fetch('/api/config-publica').then(r => r.json()).then(d => {
-      const loteriaKey = (loteria || 'mega').toLowerCase()
-      const r = d?.bolao?.[loteriaKey]?.regras
-      if (Array.isArray(r) && r.length) {
-        setRegras(r.map((txt: string, i: number) => ({
-          icon: REGRAS_DEFAULT[i]?.icon ?? '📌',
-          titulo: REGRAS_DEFAULT[i]?.titulo ?? `Regra ${i + 1}`,
-          texto: txt,
-          destaque: i === 0,
-        })))
-      }
-    }).catch(() => {})
-  }, [loteria])
 
   function verificarIdentidade() {
     if (!modalPart) return
@@ -283,41 +235,6 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [recarregar, concursoAtivo?.concurso])
 
-  async function confirmar() {
-    if (!usuario)                { alert('⚠️ Entre ou cadastre-se para participar.'); return }
-    if (!nome.trim())            { alert('⚠️ Informe seu nome completo!'); return }
-    if (telefone.replace(/\D/g,'').length < 11) { alert('⚠️ Informe seu WhatsApp com DDD (ex: 19 99999-9999)!'); return }
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('⚠️ E-mail inválido.'); return }
-    if (!concurso)               { alert('⚠️ Nenhum concurso ativo.'); return }
-    if (!selecionadas.length)    { alert('⚠️ Selecione ao menos uma cota!'); return }
-    setEnviando(true)
-    try {
-      const total = selecionadas.length * VALOR_COTA
-      const pixRes = await fetch('/api/pix', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ concurso: parseInt(concurso), nome: nome.trim().toUpperCase(), cotas: selecionadas.sort(), total }),
-      }).then(r => r.json())
-      const reg = await fetch('/api/participantes', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ concurso: parseInt(concurso), nome: nome.trim().toUpperCase(), telefone: '55' + telefone.replace(/\D/g,''), email: email.trim().toLowerCase() || null, cotas: selecionadas.sort(), total, mp_payment_id: pixRes.paymentId, pix_code: pixRes.pixCode, bolao_slug: bolaoSlug, usuario_id: usuario?.id || null }),
-      }).then(r => r.json())
-      if (reg.error) { alert('⚠️ ' + reg.error); return }
-      const cotasSalvas = [...selecionadas].sort()
-      setPix({ ...pixRes, nome: nome.trim().toUpperCase(), cotas: cotasSalvas, total: cotasSalvas.length * VALOR_COTA })
-      setNome(''); setTelefone(''); setEmail(''); setQtdCotas(1); recarregar()
-      let secs = 30 * 60
-      if (timerRef.current) clearInterval(timerRef.current)
-      timerRef.current = setInterval(() => { secs--; const m = String(Math.floor(secs/60)).padStart(2,'0'); const s = String(secs%60).padStart(2,'0'); setPayTimer(`${m}:${s}`); if (secs<=0) clearInterval(timerRef.current!) }, 1000)
-      setPayTimer('30:00'); setPayStep(0); setPayStatus('aguardando'); setPayCreated(new Date().toLocaleString('pt-BR'))
-      if (statusRef.current) clearInterval(statusRef.current)
-      const pid = pixRes.paymentId
-      statusRef.current = setInterval(async () => {
-        const r = await fetch(`/api/status?paymentId=${pid}`); const d = await r.json()
-        if (d.status === 'pago') { setPayStatus('pago'); setPayStep(2); clearInterval(statusRef.current!); clearInterval(timerRef.current!); recarregar() }
-      }, 5000)
-    } finally { setEnviando(false) }
-  }
-
   function adicionarAoCarrinho() {
     if (!usuario) { alert('⚠️ Entre ou cadastre-se para continuar.'); return }
     if (!concurso) { alert('⚠️ Nenhum concurso ativo.'); return }
@@ -333,13 +250,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
       total,
     })
     setQtdCotas(1)
-    alert('🛒 Adicionado ao carrinho! Acesse o carrinho (ícone no topo da home) para finalizar o pagamento.')
-  }
-
-  async function copiarPix() {
-    if (!pix) return
-    await navigator.clipboard.writeText(pix.pixCode)
-    alert('✅ Código PIX copiado!')
+    alert('🛒 Adicionado ao carrinho! Acesse o carrinho (ícone no topo) para finalizar o pagamento.')
   }
 
   const todasCotas    = Array.from({ length: TOTAL_COTAS }, (_, i) => String(i + 1).padStart(2, '0'))
@@ -364,6 +275,26 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
             {loteriaLabel.toUpperCase()}
             <span className={styles.headerSub}>{bolaoNome}</span>
           </div>
+          {usuario ? (
+            <button className={styles.headerBtn} aria-label="Minha conta" title={usuario.email} onClick={() => setContaAberta(true)}>
+              <span className="material-icons-round" style={{ fontSize: 18 }}>person</span>
+            </button>
+          ) : (
+            <button className={styles.headerBtn} aria-label="Entrar" onClick={() => setUserAuthAberto(true)}>
+              <span className="material-icons-round" style={{ fontSize: 18 }}>login</span>
+            </button>
+          )}
+          <a className={styles.headerBtn} aria-label="Carrinho" href="/carrinho" style={{ position: 'relative', textDecoration: 'none' }}>
+            <span className="material-icons-round" style={{ fontSize: 18 }}>shopping_cart</span>
+            {cart.items.length > 0 && (
+              <span style={{
+                position: 'absolute', top: -4, right: -4,
+                background: '#00AB67', color: '#fff', borderRadius: '50%',
+                width: 16, height: 16, fontSize: 10, fontWeight: 800,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>{cart.items.length}</span>
+            )}
+          </a>
           <button className={styles.headerBtn} aria-label="Admin" onClick={() => setLoginAberto(true)}>
             <span className="material-icons-round" style={{ fontSize: 18 }}>settings</span>
           </button>
@@ -371,6 +302,11 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
         {loginAberto && <LoginModal onClose={() => setLoginAberto(false)} />}
         {userAuthAberto && (
           <UserAuthModal onClose={() => setUserAuthAberto(false)} onAutenticado={onAutenticado} />
+        )}
+        {contaAberta && usuario && (
+          <UserAccountModal usuario={usuario} onClose={() => setContaAberta(false)}
+            onLogout={() => { setUsuario(null); setContaAberta(false) }}
+            onChavePixAtualizada={chave_pix => setUsuario(u => u ? { ...u, chave_pix } : u)} />
         )}
 
         {/* ── Hero: concurso ── */}
@@ -496,34 +432,6 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
                     </button>
                   </div>
                 ) : (<>
-                  {/* Dados pessoais */}
-                  <div className={styles.field}>
-                    <label className={styles.fieldLabel}>Nome completo *</label>
-                    <input className={`${styles.fieldInput} ${styles.fieldInputUpper}`}
-                      type="text" value={nome}
-                      onChange={e => setNome(e.target.value.toUpperCase())}
-                      placeholder="SEU NOME COMPLETO" />
-                  </div>
-                  <div className={styles.field}>
-                    <label className={styles.fieldLabel}>Celular com DDD (WhatsApp) *</label>
-                    <input className={styles.fieldInput}
-                      type="tel" value={telefone} inputMode="numeric"
-                      onChange={e => {
-                        const v = e.target.value.replace(/\D/g,'').slice(0,11)
-                        const f = v.length <= 2 ? v : v.length <= 7 ? `(${v.slice(0,2)}) ${v.slice(2)}` : `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`
-                        setTelefone(f)
-                      }}
-                      placeholder="(19) 99999-9999" />
-                  </div>
-                  <div className={styles.field}>
-                    <label className={styles.fieldLabel}>E-mail (opcional)</label>
-                    <input className={styles.fieldInput}
-                      type="email" value={email} inputMode="email" autoComplete="email"
-                      onChange={e => setEmail(e.target.value)}
-                      placeholder="seu@email.com" />
-                  </div>
-
-                  <hr className={styles.divider} />
                   <div className={styles.secSubTitle}>🎟️ Selecionar Cotas</div>
 
                   {!configOk && <div className={styles.loadingMsg}>⏳ Carregando configuração...</div>}
@@ -570,12 +478,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
                     </div>
 
                     <button type="button" className={styles.btn}
-                      onClick={() => { if (!selecionadas.length) { alert('⚠️ Selecione ao menos uma cota!'); return } setIntent('pagar'); setAceitouTermos(false); setShowTermos(true) }}
-                      disabled={enviando || !selecionadas.length}>
-                      Ir para Pagamento
-                    </button>
-                    <button type="button" className={styles.btnFechar} style={{ marginTop: 8 }}
-                      onClick={() => { if (!selecionadas.length) { alert('⚠️ Selecione ao menos uma cota!'); return } setIntent('carrinho'); setAceitouTermos(false); setShowTermos(true) }}
+                      onClick={adicionarAoCarrinho}
                       disabled={enviando || !selecionadas.length}>
                       🛒 Adicionar ao Carrinho
                     </button>
@@ -639,147 +542,6 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
         )}
 
       </div>
-
-      {/* ── Modal de Termos ── */}
-      {showTermos && !pix && (
-        <div className={styles.overlay} style={corStyle}>
-          <div className={styles.overlayBox}>
-            <div className={styles.termosHeader}>
-              <div className={styles.termosTitulo}>📋 Termos de Participação</div>
-              <div className={styles.termosBolao}>{bolaoNome}</div>
-            </div>
-            <div className={styles.termosResumo}>
-              <div className={styles.termosLinha}><span className={styles.termosIc}>🎟️</span><span>Cotas: <strong>{selecionadas.sort().join(', ')}</strong></span></div>
-              <div className={styles.termosLinha}><span className={styles.termosIc}>💰</span><span>Total: <strong>R$ {total.toFixed(2).replace('.', ',')}</strong></span></div>
-              <div className={styles.termosLinha}><span className={styles.termosIc}>🎲</span><span>Apostas: <strong>{numApostas}</strong> de <strong>{dezenas}</strong> dezenas</span></div>
-            </div>
-            <div className={styles.termosLista}>
-              {regras.map((r, i) => (
-                <div key={i} className={styles.termosRegra}>
-                  <div className={styles.termosRegraTitulo}>{r.icon} {r.titulo}</div>
-                  <div className={styles.termosRegraDesc}>{r.texto}</div>
-                </div>
-              ))}
-            </div>
-            <label className={styles.termosCheckLabel}>
-              <input type="checkbox" className={styles.termosCheck} checked={aceitouTermos} onChange={e => setAceitouTermos(e.target.checked)} />
-              <span>Li e concordo com as regras de participação deste bolão</span>
-            </label>
-            <button type="button" className={styles.btn}
-              onClick={() => { if (aceitouTermos) { setShowTermos(false); if (intent === 'carrinho') adicionarAoCarrinho(); else confirmar() } }}
-              disabled={!aceitouTermos || enviando}>
-              {intent === 'carrinho' ? '🛒 Confirmar e Adicionar ao Carrinho' : (enviando ? '⏳ Gerando PIX...' : '✅ Confirmar e Gerar PIX')}
-            </button>
-            <button type="button" className={styles.btnFechar} onClick={() => setShowTermos(false)}>Cancelar</button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Modal PIX ── */}
-      {pix && (
-        <div className={styles.overlay} style={corStyle}>
-          <div className={styles.overlayBox}>
-            {/* Stepper */}
-            <div className={styles.stepper}>
-              {['Aguardando\nPagamento', 'Em\nProcessamento', 'Pagamento\nConfirmado'].map((label, i) => (
-                <div key={i} className={styles.stepWrap}>
-                  {i > 0 && <div className={`${styles.stepLine} ${payStep >= i ? styles.stepLineDone : ''}`} />}
-                  <div className={styles.stepItem}>
-                    <div className={`${styles.stepDot} ${payStep >= i ? styles.stepDotActive : ''} ${payStep === i ? styles.stepDotCurrent : ''}`}>
-                      {payStep > i ? '✓' : payStep === i ? '◆' : ''}
-                    </div>
-                    {payStep === i && <div className={styles.stepLabel}>{label.split('\n').map((l,k) => <span key={k}>{l}<br/></span>)}</div>}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Recibo */}
-            <div className={styles.receiptCard}>
-              <div className={styles.receiptPixRow}>
-                <span className={styles.receiptMeio}>Meio de pagamento:</span>
-                <span className={styles.pixLogo}>◈ pix</span>
-              </div>
-              <div className={styles.receiptGrid}>
-                <div><span className={styles.receiptLbl}>Bolão: </span><span className={styles.receiptVal}>{bolaoNome}</span></div>
-                <div><span className={styles.receiptLbl}>ID: </span><span className={styles.receiptVal}>{pix.paymentId.substring(0,16)}</span></div>
-                <div>
-                  <span className={styles.receiptLbl}>Situação: </span>
-                  <span className={`${styles.receiptSituacao} ${payStatus === 'pago' ? styles.receiptSituacaoPago : ''}`}>
-                    {payStatus === 'pago' ? 'Confirmado' : 'Em Processamento'}
-                  </span>
-                </div>
-                <div><span className={styles.receiptLbl}>Data: </span><span className={styles.receiptVal}>{payCreated}</span></div>
-              </div>
-            </div>
-
-            {payStatus !== 'pago' && (<>
-              <div className={styles.scanTitle}>Escaneie o código a seguir</div>
-              <img className={styles.qrCode} src={`data:image/png;base64,${pix.qrCodeBase64}`} alt="QR Code PIX" />
-              <div className={styles.copyTitle}>Ou copie este código</div>
-              <div className={styles.copyInstruction}>No app do seu banco, escolha pagamento via PIX e cole o código abaixo</div>
-              <div className={styles.codeRow}>
-                <div className={styles.codeText}>{pix.pixCode}</div>
-                <button type="button" className={styles.copyBtn} onClick={copiarPix}>📋 Copiar código PIX</button>
-              </div>
-              {payTimer && <div className={styles.payTimer}>⊙ Você tem <strong>{payTimer}</strong> para efetuar o pagamento</div>}
-            </>)}
-
-            {payStatus === 'pago' && (
-              <div className={styles.comprovante}>
-                <div className={styles.compHeader}>
-                  <span className={styles.compCheckIcon}>✅</span>
-                  <div className={styles.compTitulo}>Comprovante de Participação</div>
-                  <div className={styles.compData}>{payCreated}</div>
-                </div>
-                <div className={styles.compValor} style={{ color: loteriaCor }}>
-                  R$ {pix.total.toFixed(2).replace('.', ',')}
-                </div>
-                <div className={styles.compTimeline}>
-                  <div className={styles.compTimelineCol}>
-                    <div className={styles.compDot} />
-                    <div className={styles.compVline} />
-                    <div className={styles.compDot} />
-                  </div>
-                  <div className={styles.compTimelineInfo}>
-                    <div className={styles.compParty}>
-                      <div className={styles.compPartyLabel}>De</div>
-                      <div className={styles.compPartyNome}>{pix.nome}</div>
-                      <div className={styles.compPartyDetalhe}>Cotas adquiridas: {pix.cotas.join(', ')}</div>
-                    </div>
-                    <div className={styles.compParty}>
-                      <div className={styles.compPartyLabel}>Para</div>
-                      <div className={styles.compPartyNome}>{bolaoNome}</div>
-                      <div className={styles.compPartyDetalhe}>Administrador do Bolão</div>
-                      <div className={styles.compPartyDetalhe}>{numApostas} apostas · {dezenas} dezenas</div>
-                    </div>
-                  </div>
-                </div>
-                <div className={styles.compIds}>
-                  <div className={styles.compIdRow}>
-                    <span className={styles.compIdLbl}>ID da transação</span>
-                    <span className={styles.compIdVal}>{pix.paymentId}</span>
-                  </div>
-                </div>
-                <div className={styles.compTermos}>
-                  <div className={styles.compTermosTitulo}>📋 Termos Aceitos</div>
-                  {regras.map((r, i) => (
-                    <div key={i} className={styles.compTermosItem}>
-                      <span>{r.icon}</span>
-                      <span><strong>{r.titulo}:</strong> {r.texto}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <button type="button" className={styles.btnFechar}
-              onClick={() => { setPix(null); if(timerRef.current) clearInterval(timerRef.current); if(statusRef.current) clearInterval(statusRef.current) }}>
-              Fechar
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ── Modal verificação de identidade ── */}
       {modalPart && (

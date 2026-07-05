@@ -3,12 +3,13 @@ import { useState, useEffect } from 'react'
 import TrevoIcon from '@/components/TrevoIcon'
 
 interface Props {
-  usuario: { nome: string; email: string; telefone: string; senha_temporaria?: boolean }
+  usuario: { nome: string; email: string; telefone: string; senha_temporaria?: boolean; chave_pix?: string | null }
   onClose: () => void
   onLogout: () => void
+  onChavePixAtualizada?: (chavePix: string) => void
 }
 
-export default function UserAccountModal({ usuario, onClose, onLogout }: Props) {
+export default function UserAccountModal({ usuario, onClose, onLogout, onChavePixAtualizada }: Props) {
   // Só abre o formulário de troca direto quando a senha ainda é a temporária
   // (primeiro acesso) - depois de trocada, fica escondido atrás de um link.
   const [mostrarTrocarSenha, setMostrarTrocarSenha] = useState(!!usuario.senha_temporaria)
@@ -18,6 +19,26 @@ export default function UserAccountModal({ usuario, onClose, onLogout }: Props) 
   const [erro, setErro] = useState('')
   const [msgOk, setMsgOk] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const [editandoChavePix, setEditandoChavePix] = useState(false)
+  const [chavePix, setChavePix] = useState(usuario.chave_pix || '')
+  const [chavePixMsg, setChavePixMsg] = useState('')
+  const [chavePixLoading, setChavePixLoading] = useState(false)
+
+  async function salvarChavePix() {
+    setChavePixMsg('')
+    if (!chavePix.trim()) { setChavePixMsg('Preencha a Chave PIX'); return }
+    setChavePixLoading(true)
+    const res = await fetch('/api/usuario/atualizar-chave-pix', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chavePix: chavePix.trim() }),
+    }).then(r => r.json()).catch(() => ({ error: 'Erro de conexão' }))
+    setChavePixLoading(false)
+    if (res.error) { setChavePixMsg(res.error); return }
+    onChavePixAtualizada?.(chavePix.trim())
+    setChavePixMsg('✅ Chave PIX salva!')
+    setTimeout(() => { setChavePixMsg(''); setEditandoChavePix(false) }, 1200)
+  }
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
@@ -111,6 +132,55 @@ export default function UserAccountModal({ usuario, onClose, onLogout }: Props) 
         </div>
         <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.4)', marginBottom: 28 }}>
           {usuario.email}
+        </div>
+
+        <div style={{ textAlign: 'left', marginBottom: 20 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 8 }}>
+            Chave PIX (recebimento de prêmios)
+          </div>
+          {editandoChavePix ? (
+            <>
+              <input type="text" placeholder="CPF, e-mail, telefone ou chave aleatória" value={chavePix}
+                onChange={e => setChavePix(e.target.value)} style={inputStyle} autoComplete="off" autoFocus />
+              {chavePixMsg && (
+                <div style={{ fontSize: 12, color: chavePixMsg.startsWith('✅') ? '#00AB67' : '#EF4444', marginBottom: 10, fontWeight: 500 }}>
+                  {chavePixMsg}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={salvarChavePix} disabled={chavePixLoading}
+                  style={{
+                    flex: 1, padding: 12, background: 'linear-gradient(135deg, #00AB67 0%, #009B63 100%)',
+                    color: '#fff', border: 'none', borderRadius: 100, fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    fontSize: 13, fontWeight: 700, cursor: chavePixLoading ? 'not-allowed' : 'pointer', opacity: chavePixLoading ? 0.7 : 1,
+                  }}>
+                  {chavePixLoading ? 'Salvando...' : 'Salvar'}
+                </button>
+                <button onClick={() => { setEditandoChavePix(false); setChavePix(usuario.chave_pix || ''); setChavePixMsg('') }}
+                  style={{
+                    flex: 1, padding: 12, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'rgba(255,255,255,0.6)', borderRadius: 100, fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                  }}>
+                  Cancelar
+                </button>
+              </div>
+            </>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              <span style={{ fontSize: 13.5, fontWeight: 600, color: usuario.chave_pix ? '#fff' : '#D97706' }}>
+                {usuario.chave_pix || '⚠️ Não cadastrada'}
+              </span>
+              <button onClick={() => setEditandoChavePix(true)}
+                style={{
+                  background: 'none', border: 'none', color: '#00AB67',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 12.5, fontWeight: 700,
+                  cursor: 'pointer', textDecoration: 'underline', whiteSpace: 'nowrap',
+                }}>
+                {usuario.chave_pix ? 'Alterar' : 'Cadastrar'}
+              </button>
+            </div>
+          )}
         </div>
 
         {mostrarTrocarSenha && usuario.senha_temporaria && (

@@ -376,7 +376,7 @@ export default function Home() {
   const [loginAberto, setLoginAberto]     = useState(false)
   const [userAuthAberto, setUserAuthAberto] = useState(false)
   const [contaAberta, setContaAberta] = useState(false)
-  const [usuario, setUsuario] = useState<{ nome: string; email: string; telefone: string; senha_temporaria?: boolean } | null>(null)
+  const [usuario, setUsuario] = useState<{ nome: string; email: string; telefone: string; senha_temporaria?: boolean; chave_pix?: string } | null>(null)
   const [carrosselIntervaloMs, setCarrosselIntervaloMs] = useState(5000)
   const [tagline, setTagline]             = useState('Bolões de Loteria & Esportes')
   const [homeTitulo, setHomeTitulo]       = useState('')
@@ -521,7 +521,8 @@ export default function Home() {
       )}
       {contaAberta && usuario && (
         <UserAccountModal usuario={usuario} onClose={() => setContaAberta(false)}
-          onLogout={() => { setUsuario(null); setContaAberta(false) }} />
+          onLogout={() => { setUsuario(null); setContaAberta(false) }}
+          onChavePixAtualizada={chave_pix => setUsuario(u => u ? { ...u, chave_pix } : u)} />
       )}
 
       {homeTitulo && (

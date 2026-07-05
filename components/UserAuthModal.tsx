@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { TERMOS_PARTICIPACAO } from '@/lib/termos'
 
 interface Props {
   onClose: () => void
@@ -17,6 +18,8 @@ export default function UserAuthModal({ onClose, onAutenticado }: Props) {
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
   const [loading, setLoading] = useState(false)
+  const [aceitouTermos, setAceitouTermos] = useState(false)
+  const [showTermos, setShowTermos] = useState(false)
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
@@ -39,12 +42,13 @@ export default function UserAuthModal({ onClose, onAutenticado }: Props) {
       if (telefone.replace(/\D/g, '').length < 10) { setErro('Telefone inválido'); return }
       if (!chavePix.trim()) { setErro('Preencha sua Chave PIX'); return }
       if (senha.length < 6) { setErro('Senha deve ter ao menos 6 caracteres'); return }
+      if (!aceitouTermos) { setErro('É necessário aceitar os Termos de Participação'); return }
     }
 
     setLoading(true)
     try {
       const url = aba === 'entrar' ? '/api/usuario/login' : '/api/usuario/cadastro'
-      const body = aba === 'entrar' ? { email, senha } : { nome, email, telefone, chavePix, senha }
+      const body = aba === 'entrar' ? { email, senha } : { nome, email, telefone, chavePix, senha, aceitouTermos }
       const res = await fetch(url, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -154,6 +158,24 @@ export default function UserAuthModal({ onClose, onAutenticado }: Props) {
           onKeyDown={e => e.key === 'Enter' && submeter()}
           style={inputStyle} />
 
+        {aba === 'cadastrar' && (
+          <label style={{
+            display: 'flex', alignItems: 'flex-start', gap: 8, textAlign: 'left',
+            marginBottom: 14, fontSize: 12.5, color: 'rgba(255,255,255,0.65)', cursor: 'pointer',
+          }}>
+            <input type="checkbox" checked={aceitouTermos}
+              onChange={e => setAceitouTermos(e.target.checked)}
+              style={{ marginTop: 2, flexShrink: 0 }} />
+            <span>
+              Li e concordo com os{' '}
+              <span onClick={e => { e.preventDefault(); setShowTermos(true) }}
+                style={{ color: '#00AB67', textDecoration: 'underline', fontWeight: 600 }}>
+                Termos de Participação
+              </span>
+            </span>
+          </label>
+        )}
+
         {erro && (
           <div style={{ fontSize: 12, color: '#EF4444', marginBottom: 10, fontWeight: 500 }}>
             {erro}
@@ -176,6 +198,46 @@ export default function UserAuthModal({ onClose, onAutenticado }: Props) {
           {loading ? 'Aguarde...' : aba === 'entrar' ? 'Entrar' : 'Criar conta'}
         </button>
       </div>
+
+      {showTermos && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 10000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(6,9,15,0.9)', padding: 24,
+          }}
+          onClick={e => { if (e.target === e.currentTarget) setShowTermos(false) }}
+        >
+          <div style={{
+            background: 'rgba(13,28,46,0.98)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 20, padding: 28, width: '100%', maxWidth: 440,
+            maxHeight: '80vh', overflowY: 'auto',
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+          }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 16 }}>
+              📋 Termos de Participação
+            </div>
+            {TERMOS_PARTICIPACAO.map((r, i) => (
+              <div key={i} style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: '#fff', marginBottom: 3 }}>{r.icon} {r.titulo}</div>
+                <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>{r.texto}</div>
+              </div>
+            ))}
+            <button
+              onClick={() => setShowTermos(false)}
+              style={{
+                width: '100%', padding: 13, marginTop: 6,
+                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                color: '#fff', borderRadius: 100, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+              }}
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

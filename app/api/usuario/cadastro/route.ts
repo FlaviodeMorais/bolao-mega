@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { gerarTokenUsuario, hashSenha } from '@/lib/auth-usuario'
+import { TERMOS_VERSAO } from '@/lib/termos'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export async function POST(req: NextRequest) {
-  const { nome, email, telefone, senha, chavePix } = await req.json()
+  const { nome, email, telefone, senha, chavePix, aceitouTermos } = await req.json()
 
   if (!nome?.trim()) return NextResponse.json({ error: 'Nome obrigatório' }, { status: 400 })
   if (!email || !EMAIL_RE.test(email)) return NextResponse.json({ error: 'E-mail inválido' }, { status: 400 })
@@ -13,6 +14,7 @@ export async function POST(req: NextRequest) {
   if (digitos.length < 10 || digitos.length > 11) return NextResponse.json({ error: 'Telefone inválido' }, { status: 400 })
   if (!senha || senha.length < 6) return NextResponse.json({ error: 'Senha deve ter ao menos 6 caracteres' }, { status: 400 })
   if (!chavePix?.trim()) return NextResponse.json({ error: 'Chave PIX obrigatória' }, { status: 400 })
+  if (!aceitouTermos) return NextResponse.json({ error: 'É necessário aceitar os Termos de Participação' }, { status: 400 })
 
   const emailNorm = String(email).toLowerCase().trim()
 
@@ -22,7 +24,10 @@ export async function POST(req: NextRequest) {
   const senha_hash = await hashSenha(senha)
   const { data, error } = await supabase
     .from('usuarios')
-    .insert({ nome: nome.trim(), email: emailNorm, telefone: digitos, senha_hash, chave_pix: chavePix.trim() })
+    .insert({
+      nome: nome.trim(), email: emailNorm, telefone: digitos, senha_hash, chave_pix: chavePix.trim(),
+      termos_aceitos_em: new Date().toISOString(), termos_versao: TERMOS_VERSAO,
+    })
     .select('id')
     .single()
 
