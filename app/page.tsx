@@ -149,13 +149,8 @@ function SorteioCard({ s, boloes, host, msgSemBolao }: { s: SorteioInfo; boloes:
         {s.dezenas.length > 0 && (
           <div className={styles.sorteioUltimo}>
             <div className={styles.sorteioUltimoLabel}>Último resultado</div>
-            <div className={styles.sorteioBalls} style={{ '--n': s.dezenas.length } as React.CSSProperties}>
-              {s.dezenas.map(n => (
-                <span key={n} className={styles.sorteioBall}
-                  style={{ background: `${s.corA}18`, border: `1.5px solid ${s.corA}55` }}>
-                  {String(n).padStart(2, '0')}
-                </span>
-              ))}
+            <div className={styles.sorteioNumeros} style={{ color: s.corA }}>
+              {s.dezenas.map(n => String(n).padStart(2, '0')).join('  ')}
             </div>
           </div>
         )}

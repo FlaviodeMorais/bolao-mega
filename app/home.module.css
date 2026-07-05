@@ -141,30 +141,14 @@
   font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.3);
   text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;
 }
-.sorteioBalls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-/* tamanho fixo — o espaçamento preenche, não a bolinha */
-.sorteioBall {
-  width: 32px; height: 32px; flex-shrink: 0;
-  border-radius: 50%;
-  font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono', monospace;
-  display: flex; align-items: center; justify-content: center;
-  color: #fff;
+.sorteioNumeros {
+  font-size: 14px; font-weight: 800; font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.5px; line-height: 1.6;
+  word-spacing: 4px;
 }
 
-/* Loterias com muitas dezenas (Lotofácil 15, Lotomania 20) não cabem numa
-   linha só com bolas de tamanho fixo em telas estreitas — sem isso a última
-   bola fica cortada fora da viewport (flex-shrink:0 impede encolher). */
 @media (max-width: 480px) {
-  .sorteioBalls {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    gap: 6px;
-  }
-  .sorteioBall { width: 26px; height: 26px; font-size: 10px; }
+  .sorteioNumeros { font-size: 12px; }
 }
 
 /* ── JOGO DE HOJE (dentro do item de bolão na lista) ── */
