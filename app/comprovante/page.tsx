@@ -66,6 +66,7 @@ interface PalpiteDetalhado {
 interface ParticipanteEsporte {
   id: string; nome: string; telefone?: string; total: number
   status: string; pontos_total: number | null; created_at: string
+  numero: number
   palpites: PalpiteDetalhado[]
 }
 interface BolaoEsporte {
@@ -125,7 +126,7 @@ function ComprovanteEsporte({ bolao, participantes, modoPublico, modoFiltro, loa
         <p className={styles.loading}>Nenhum participante encontrado para este bolão.</p>
       ) : (
         <div className={`${styles.grid} ${participantes.length === 1 ? styles.gridSingle : ''}`}>
-          {participantes.map((p, idx) => {
+          {participantes.map((p) => {
             const emissao = new Date(p.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
             const horario = new Date(p.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
             return (
@@ -200,7 +201,7 @@ function ComprovanteEsporte({ bolao, participantes, modoPublico, modoFiltro, loa
                     Bolão: {typeof window !== 'undefined' ? window.location.host : ''}/esporte/{bolao?.slug}<br />
                     Emissão: {emissao} às {horario}
                   </div>
-                  <div className={styles.cartaoNumero}>Nº {String(idx + 1).padStart(3, '0')}</div>
+                  <div className={styles.cartaoNumero}>Nº {String(p.numero).padStart(3, '0')}</div>
                 </div>
                 <div className={styles.cartaoTermos}>
                   Pontuação premiada conforme regras do bolão. Prêmio dividido proporcionalmente entre os participantes premiados.
@@ -374,7 +375,10 @@ function ComprovanteContent() {
 
         /* ════ COMPROVANTE ════ */
         <div className={`${styles.grid} ${lista.length === 1 ? styles.gridSingle : ''}`}>
-          {lista.map((p, idx) => {
+          {lista.map((p) => {
+            // Posição na lista COMPLETA do bolão (ordem de inscrição), não na
+            // lista filtrada — senão todo link individual mostraria "Nº 001".
+            const idx = participantes.findIndex(x => x.id === p.id)
             const ad = bolao?.apostas_data ?? null
             const emissao = new Date(p.created_at).toLocaleDateString('pt-BR', {
               day: '2-digit', month: '2-digit', year: 'numeric',

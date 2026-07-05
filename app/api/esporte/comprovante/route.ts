@@ -6,21 +6,29 @@ import { supabase } from '@/lib/supabase'
 // GET /api/participantes já faz pro lado loteria.
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get('id')
-  const bolaoSlug = req.nextUrl.searchParams.get('bolao')
+  let bolaoSlug = req.nextUrl.searchParams.get('bolao')
   if (!id && !bolaoSlug) return NextResponse.json({ error: 'id ou bolao obrigatório' }, { status: 400 })
 
-  let query = supabase
+  // Se só veio o id, descobre o bolao_slug antes — o número de controle (nº)
+  // precisa da lista INTEIRA do bolão (ordem de inscrição), não só do
+  // participante filtrado, senão todo link individual mostraria "Nº 001".
+  if (id && !bolaoSlug) {
+    const { data: alvo } = await supabase.from('participantes_esporte').select('bolao_slug').eq('id', id).single()
+    if (!alvo) return NextResponse.json({ participantes: [], bolao: null })
+    bolaoSlug = alvo.bolao_slug
+  }
+
+  const { data: participantes, error } = await supabase
     .from('participantes_esporte')
     .select('id, nome, telefone, email, total, status, pontos_total, created_at, bolao_slug')
+    .eq('bolao_slug', bolaoSlug!)
     .neq('status', 'cancelado')
+    .order('created_at', { ascending: true })
 
-  query = id ? query.eq('id', id) : query.eq('bolao_slug', bolaoSlug!)
-
-  const { data: participantes, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!participantes?.length) return NextResponse.json({ participantes: [], bolao: null })
 
-  const slug = bolaoSlug || participantes[0].bolao_slug
+  const slug = bolaoSlug!
 
   const { data: bolao } = await supabase
     .from('boloes_esporte')
@@ -63,8 +71,9 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  const resultado = participantes.map(p => ({
+  const resultado = participantes.map((p, i) => ({
     ...p,
+    numero: i + 1, // posição de inscrição no bolão — nº de controle do comprovante
     palpites: palpitesPorParticipante[p.id] || [],
   }))
 
