@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { concurso, nome, telefone, email, cotas, total, mp_payment_id, pix_code, bolao_slug } = body
+  const { concurso, nome, telefone, email, cotas, total, mp_payment_id, pix_code, bolao_slug, usuario_id } = body
 
   // Valida configuração e valor da cota contra o banco
   if (bolao_slug) {
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('participantes')
-    .insert({ concurso, nome, telefone, email: email || null, cotas, total, mp_payment_id, pix_code, bolao_slug: bolao_slug || null, status: 'aguardando' })
+    .insert({ concurso, nome, telefone, email: email || null, cotas, total, mp_payment_id, pix_code, bolao_slug: bolao_slug || null, status: 'aguardando', usuario_id: usuario_id || null })
     .select()
     .single()
 

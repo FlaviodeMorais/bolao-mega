@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import TrevoIcon from '@/components/TrevoIcon'
 import LoginModal from '@/components/LoginModal'
+import UserAuthModal from '@/components/UserAuthModal'
 import { getLoteria } from '@/lib/loterias'
 import styles from './bolao.module.css'
 
@@ -35,6 +36,11 @@ function mascaraNome(nome: string): string {
   const fm = maskWord(words[0], 'first')
   const lm = maskWord(words[words.length - 1], 'last')
   return `${fm} ${lm}`
+}
+
+function maskTelefone(digits: string): string {
+  const v = digits.replace(/\D/g, '').slice(0, 11)
+  return v.length <= 2 ? v : v.length <= 7 ? `(${v.slice(0, 2)}) ${v.slice(2)}` : `(${v.slice(0, 2)}) ${v.slice(2, 7)}-${v.slice(7)}`
 }
 
 const REGRAS_DEFAULT = [
@@ -107,11 +113,31 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
   const [regras, setRegras] = useState(REGRAS_DEFAULT)
   const [resultadoConf, setResultadoConf] = useState<ResultadoConf | null>(null)
   const [loginAberto, setLoginAberto]     = useState(false)
+  const [usuario, setUsuario]             = useState<{ id: string; nome: string; email: string; telefone: string } | null>(null)
+  const [userAuthAberto, setUserAuthAberto] = useState(false)
   const [modalPart, setModalPart]         = useState<Participante | null>(null)
   const [nomeVerif, setNomeVerif]         = useState('')
   const [verfErr, setVerfErr]             = useState('')
 
   const concurso = concursoAtivo?.concurso
+
+  // Autofill: participante logado não precisa redigitar nome/telefone/email
+  useEffect(() => {
+    fetch('/api/usuario/me').then(r => r.json()).then(d => {
+      if (!d.usuario) return
+      setUsuario(d.usuario)
+      setNome(d.usuario.nome.toUpperCase())
+      setTelefone(maskTelefone(d.usuario.telefone))
+      setEmail(d.usuario.email)
+    }).catch(() => {})
+  }, [])
+
+  function onAutenticado(u: { id: string; nome: string; email: string; telefone: string }) {
+    setUsuario(u)
+    setNome(u.nome.toUpperCase())
+    setTelefone(maskTelefone(u.telefone))
+    setEmail(u.email)
+  }
 
   useEffect(() => {
     fetch('/api/config-publica').then(r => r.json()).then(d => {
@@ -255,6 +281,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
   }, [recarregar, concursoAtivo?.concurso])
 
   async function confirmar() {
+    if (!usuario)                { alert('⚠️ Entre ou cadastre-se para participar.'); return }
     if (!nome.trim())            { alert('⚠️ Informe seu nome completo!'); return }
     if (telefone.replace(/\D/g,'').length < 11) { alert('⚠️ Informe seu WhatsApp com DDD (ex: 19 99999-9999)!'); return }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('⚠️ E-mail inválido.'); return }
@@ -269,7 +296,7 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
       }).then(r => r.json())
       const reg = await fetch('/api/participantes', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ concurso: parseInt(concurso), nome: nome.trim().toUpperCase(), telefone: '55' + telefone.replace(/\D/g,''), email: email.trim().toLowerCase() || null, cotas: selecionadas.sort(), total, mp_payment_id: pixRes.paymentId, pix_code: pixRes.pixCode, bolao_slug: bolaoSlug }),
+        body: JSON.stringify({ concurso: parseInt(concurso), nome: nome.trim().toUpperCase(), telefone: '55' + telefone.replace(/\D/g,''), email: email.trim().toLowerCase() || null, cotas: selecionadas.sort(), total, mp_payment_id: pixRes.paymentId, pix_code: pixRes.pixCode, bolao_slug: bolaoSlug, usuario_id: usuario?.id || null }),
       }).then(r => r.json())
       if (reg.error) { alert('⚠️ ' + reg.error); return }
       const cotasSalvas = [...selecionadas].sort()
@@ -321,6 +348,9 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
           </button>
         </div>
         {loginAberto && <LoginModal onClose={() => setLoginAberto(false)} />}
+        {userAuthAberto && (
+          <UserAuthModal onClose={() => setUserAuthAberto(false)} onAutenticado={onAutenticado} />
+        )}
 
         {/* ── Hero: concurso ── */}
         {concursoAtivo?.concurso && (
@@ -432,84 +462,98 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
             <div className={styles.secCard}>
               <div className={styles.secBody}>
 
-                {/* Dados pessoais */}
-                <div className={styles.field}>
-                  <label className={styles.fieldLabel}>Nome completo *</label>
-                  <input className={`${styles.fieldInput} ${styles.fieldInputUpper}`}
-                    type="text" value={nome}
-                    onChange={e => setNome(e.target.value.toUpperCase())}
-                    placeholder="SEU NOME COMPLETO" />
-                </div>
-                <div className={styles.field}>
-                  <label className={styles.fieldLabel}>Celular com DDD (WhatsApp) *</label>
-                  <input className={styles.fieldInput}
-                    type="tel" value={telefone} inputMode="numeric"
-                    onChange={e => {
-                      const v = e.target.value.replace(/\D/g,'').slice(0,11)
-                      const f = v.length <= 2 ? v : v.length <= 7 ? `(${v.slice(0,2)}) ${v.slice(2)}` : `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`
-                      setTelefone(f)
-                    }}
-                    placeholder="(19) 99999-9999" />
-                </div>
-                <div className={styles.field}>
-                  <label className={styles.fieldLabel}>E-mail (opcional)</label>
-                  <input className={styles.fieldInput}
-                    type="email" value={email} inputMode="email" autoComplete="email"
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="seu@email.com" />
-                </div>
-
-                <hr className={styles.divider} />
-                <div className={styles.secSubTitle}>🎟️ Selecionar Cotas</div>
-
-                {!configOk && <div className={styles.loadingMsg}>⏳ Carregando configuração...</div>}
-                {configOk && VALOR_COTA === 0 && (
-                  <div className={styles.loadingMsg}>⚠️ Bolão aguardando configuração do administrador.</div>
-                )}
-
-                {configOk && VALOR_COTA > 0 && (<>
-                  <div className={styles.cotasProgress}>
-                    <div className={styles.cotasProgressInfo}>
-                      <span className={styles.cotasProgressLabel}>Cotas vendidas</span>
-                      <span className={styles.cotasProgressNums}><strong>{cotasOcupadas.length}</strong>/{TOTAL_COTAS}</span>
+                {!usuario ? (
+                  /* ── Gate de login: participar exige conta ── */
+                  <div className={styles.loginGate}>
+                    <div className={styles.loginGateIcon}>🔒</div>
+                    <div className={styles.loginGateTitulo}>Entre para participar</div>
+                    <div className={styles.loginGateTexto}>
+                      Crie uma conta rápida (ou entre na sua) para não precisar redigitar seus dados a cada bolão.
                     </div>
-                    <div className={styles.cotasProgressBar}>
-                      <div className={styles.cotasProgressFill}
-                        style={{ width: `${Math.round((cotasOcupadas.length / TOTAL_COTAS) * 100)}%` }} />
-                    </div>
-                    {disp <= 2 && disp > 0 && (
-                      <div className={styles.cotasUrgente}>⚡ Últimas {disp} cota{disp !== 1 ? 's' : ''}!</div>
-                    )}
+                    <button type="button" className={styles.btn} onClick={() => setUserAuthAberto(true)}>
+                      Entrar ou Cadastrar
+                    </button>
+                  </div>
+                ) : (<>
+                  {/* Dados pessoais */}
+                  <div className={styles.field}>
+                    <label className={styles.fieldLabel}>Nome completo *</label>
+                    <input className={`${styles.fieldInput} ${styles.fieldInputUpper}`}
+                      type="text" value={nome}
+                      onChange={e => setNome(e.target.value.toUpperCase())}
+                      placeholder="SEU NOME COMPLETO" />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.fieldLabel}>Celular com DDD (WhatsApp) *</label>
+                    <input className={styles.fieldInput}
+                      type="tel" value={telefone} inputMode="numeric"
+                      onChange={e => {
+                        const v = e.target.value.replace(/\D/g,'').slice(0,11)
+                        const f = v.length <= 2 ? v : v.length <= 7 ? `(${v.slice(0,2)}) ${v.slice(2)}` : `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`
+                        setTelefone(f)
+                      }}
+                      placeholder="(19) 99999-9999" />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.fieldLabel}>E-mail (opcional)</label>
+                    <input className={styles.fieldInput}
+                      type="email" value={email} inputMode="email" autoComplete="email"
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="seu@email.com" />
                   </div>
 
-                  <div className={styles.qtdWrap}>
-                    <div className={styles.qtdInfo}>
-                      <div className={styles.qtdLabel}>Quantidade de cotas</div>
-                      <div className={styles.qtdPreco}>R$ {VALOR_COTA.toFixed(2).replace('.', ',')} / cota</div>
-                    </div>
-                    <div className={styles.qtdRow}>
-                      <button type="button" className={styles.qtdBtn} onClick={() => setQtdCotas(q => Math.max(1, q - 1))}>−</button>
-                      <input className={styles.qtdInput} type="number" min={1} max={disp} value={qtdCotas}
-                        onChange={e => setQtdCotas(Math.min(disp, Math.max(1, parseInt(e.target.value) || 1)))} />
-                      <button type="button" className={styles.qtdBtn} onClick={() => setQtdCotas(q => Math.min(disp, q + 1))}>+</button>
-                    </div>
-                  </div>
+                  <hr className={styles.divider} />
+                  <div className={styles.secSubTitle}>🎟️ Selecionar Cotas</div>
 
-                  <div className={styles.totalBar}>
-                    <div>
-                      <div className={styles.totalLabel}>Total a pagar</div>
-                      <div className={styles.totalCotas}>{selecionadas.length} cota{selecionadas.length !== 1 ? 's' : ''}</div>
-                    </div>
-                    <div className={styles.totalVal} style={{ color: loteriaCor }}>
-                      R$ {total.toFixed(2).replace('.', ',')}
-                    </div>
-                  </div>
+                  {!configOk && <div className={styles.loadingMsg}>⏳ Carregando configuração...</div>}
+                  {configOk && VALOR_COTA === 0 && (
+                    <div className={styles.loadingMsg}>⚠️ Bolão aguardando configuração do administrador.</div>
+                  )}
 
-                  <button type="button" className={styles.btn}
-                    onClick={() => { if (!selecionadas.length) { alert('⚠️ Selecione ao menos uma cota!'); return } setAceitouTermos(false); setShowTermos(true) }}
-                    disabled={enviando || !selecionadas.length}>
-                    Ir para Pagamento
-                  </button>
+                  {configOk && VALOR_COTA > 0 && (<>
+                    <div className={styles.cotasProgress}>
+                      <div className={styles.cotasProgressInfo}>
+                        <span className={styles.cotasProgressLabel}>Cotas vendidas</span>
+                        <span className={styles.cotasProgressNums}><strong>{cotasOcupadas.length}</strong>/{TOTAL_COTAS}</span>
+                      </div>
+                      <div className={styles.cotasProgressBar}>
+                        <div className={styles.cotasProgressFill}
+                          style={{ width: `${Math.round((cotasOcupadas.length / TOTAL_COTAS) * 100)}%` }} />
+                      </div>
+                      {disp <= 2 && disp > 0 && (
+                        <div className={styles.cotasUrgente}>⚡ Últimas {disp} cota{disp !== 1 ? 's' : ''}!</div>
+                      )}
+                    </div>
+
+                    <div className={styles.qtdWrap}>
+                      <div className={styles.qtdInfo}>
+                        <div className={styles.qtdLabel}>Quantidade de cotas</div>
+                        <div className={styles.qtdPreco}>R$ {VALOR_COTA.toFixed(2).replace('.', ',')} / cota</div>
+                      </div>
+                      <div className={styles.qtdRow}>
+                        <button type="button" className={styles.qtdBtn} onClick={() => setQtdCotas(q => Math.max(1, q - 1))}>−</button>
+                        <input className={styles.qtdInput} type="number" min={1} max={disp} value={qtdCotas}
+                          onChange={e => setQtdCotas(Math.min(disp, Math.max(1, parseInt(e.target.value) || 1)))} />
+                        <button type="button" className={styles.qtdBtn} onClick={() => setQtdCotas(q => Math.min(disp, q + 1))}>+</button>
+                      </div>
+                    </div>
+
+                    <div className={styles.totalBar}>
+                      <div>
+                        <div className={styles.totalLabel}>Total a pagar</div>
+                        <div className={styles.totalCotas}>{selecionadas.length} cota{selecionadas.length !== 1 ? 's' : ''}</div>
+                      </div>
+                      <div className={styles.totalVal} style={{ color: loteriaCor }}>
+                        R$ {total.toFixed(2).replace('.', ',')}
+                      </div>
+                    </div>
+
+                    <button type="button" className={styles.btn}
+                      onClick={() => { if (!selecionadas.length) { alert('⚠️ Selecione ao menos uma cota!'); return } setAceitouTermos(false); setShowTermos(true) }}
+                      disabled={enviando || !selecionadas.length}>
+                      Ir para Pagamento
+                    </button>
+                  </>)}
                 </>)}
 
                 {/* Participantes */}

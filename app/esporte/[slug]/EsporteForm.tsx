@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import LoginModal from '@/components/LoginModal'
+import UserAuthModal from '@/components/UserAuthModal'
 import styles from './esporte.module.css'
 import { getFlagCode } from '@/lib/bandeiras'
 
@@ -257,11 +258,17 @@ const TACA_VARIANT: Record<number, 'gold'|'silver'|'bronze'> = { 1: 'gold', 2: '
 const LUGAR_COR:   Record<number, string>                    = { 1: '#FFB81C', 2: '#C0C0C0', 3: '#CD7F32' }
 const PTS_COR:     Record<number, string>                    = { 1: 'gold',   2: 'green',  3: 'blue' }
 
+function maskTelefoneEsporte(digits: string): string {
+  const v = digits.replace(/\D/g, '').slice(0, 11)
+  return v.length <= 2 ? v : v.length <= 7 ? `(${v.slice(0, 2)}) ${v.slice(2)}` : `(${v.slice(0, 2)}) ${v.slice(2, 7)}-${v.slice(7)}`
+}
+
 export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
   const [step, setStep]         = useState<'form'|'pix'|'ok'>('form')
   const [cadastrando, setCadastrando] = useState(false)
   const [loginAberto, setLoginAberto] = useState(false)
-  const [logado, setLogado]     = useState(false)
+  const [usuario, setUsuario] = useState<{ id: string; nome: string; email: string; telefone: string } | null>(null)
+  const [userAuthAberto, setUserAuthAberto] = useState(false)
   // premiacao vem do bolão; fallback para settings globais; fallback para default
   const [premiacao, setPremiacao] = useState<PremiacaoItem[]>(bolao.premiacao?.length ? bolao.premiacao : PREMIACAO_DEFAULT)
 
@@ -292,40 +299,26 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
     return () => clearInterval(t)
   }, [])
 
-  // Carrega cadastro salvo
+  // Autofill: participante logado não precisa redigitar nome/telefone/email.
+  // Chave PIX continua sendo pedida por sessão (não faz parte da conta).
   useEffect(() => {
-    const salvo = localStorage.getItem('bolao_participante')
-    if (salvo) {
-      try {
-        const { nome: n, telefone: t, email: e, chavePix: p } = JSON.parse(salvo)
-        if (n) setNome(n)
-        if (t) setTelefone(t)
-        if (e) setEmail(e)
-        if (p) setChavePix(p)
-        setLogado(true)
-        setCadastrando(true)
-      } catch {}
-    }
+    fetch('/api/usuario/me').then(r => r.json()).then(d => {
+      if (!d.usuario) return
+      setUsuario(d.usuario)
+      setNome(d.usuario.nome.toUpperCase())
+      setTelefone(maskTelefoneEsporte(d.usuario.telefone))
+      setEmail(d.usuario.email)
+    }).catch(() => {})
+    const chave = localStorage.getItem('bolao_esporte_chave_pix')
+    if (chave) setChavePix(chave)
   }, [])
 
-  function salvarCadastro() {
-    if (!nome.trim() || telefone.replace(/\D/g,'').length < 11 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !chavePix.trim()) {
-      alert('⚠️ Preencha nome, WhatsApp, e-mail e Chave PIX corretamente para salvar.')
-      return
-    }
-    localStorage.setItem('bolao_participante', JSON.stringify({ nome: nome.trim().toUpperCase(), telefone, email: email.trim().toLowerCase(), chavePix: chavePix.trim() }))
-    setLogado(true)
-    alert('✅ Cadastro salvo! Seus dados serão lembrados neste dispositivo.')
-  }
-
-  function sairCadastro() {
-    localStorage.removeItem('bolao_participante')
-    setLogado(false)
-    setNome('')
-    setTelefone('')
-    setEmail('')
-    setChavePix('')
-    setCadastrando(false)
+  function onAutenticado(u: { id: string; nome: string; email: string; telefone: string }) {
+    setUsuario(u)
+    setNome(u.nome.toUpperCase())
+    setTelefone(maskTelefoneEsporte(u.telefone))
+    setEmail(u.email)
+    setCadastrando(true)
   }
 
   // Mostra todos os jogos não encerrados — bloqueio de horário é feito no submit
@@ -364,6 +357,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
   }
 
   async function confirmar() {
+    if (!usuario) { alert('⚠️ Entre ou cadastre-se para participar.'); return }
     if (!nome.trim() || nome.trim().length < 3) { alert('⚠️ Informe seu nome completo!'); return }
     if (telefone.replace(/\D/g,'').length < 11)  { alert('⚠️ Informe seu WhatsApp com DDD!'); return }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('⚠️ Informe um e-mail válido!'); return }
@@ -379,6 +373,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
           telefone: '55' + telefone.replace(/\D/g,''),
           email: email.trim().toLowerCase(),
           chave_pix: chavePix.trim(),
+          usuario_id: usuario?.id || null,
           palpites: Object.values(palpites).filter(p => !jogoIniciado(jogosAbertos.find(j => j.id === p.jogo_id)!)),
         }),
       }).then(r => r.json())
@@ -491,12 +486,16 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
       )}
       {step === 'form' && !cadastrando && jogosDisponiveis.length > 0 && (
         <div className={styles.ctaWrap}>
-          <button type="button" className={styles.btnConfirmar} onClick={() => setCadastrando(true)}>
-            {logado
+          <button type="button" className={styles.btnConfirmar}
+            onClick={() => usuario ? setCadastrando(true) : setUserAuthAberto(true)}>
+            {usuario
               ? `${bolao.label_cta?.split(' ')[0] || '⚽'} Continuar como ${nome.split(' ')[0]}`
               : bolao.label_cta || '⚽ Quero Participar'}
           </button>
         </div>
+      )}
+      {userAuthAberto && (
+        <UserAuthModal onClose={() => setUserAuthAberto(false)} onAutenticado={onAutenticado} />
       )}
 
       {/* ── Notícias / Momentos ── */}
@@ -528,42 +527,29 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
           <div className={styles.section}>
             <div className={styles.sectionTitleRow}>
               <span className={styles.sectionTitle}>👤 Seus dados</span>
-              {logado && (
-                <span className={styles.logadoBadge}>✅ Salvo</span>
+              {usuario && (
+                <span className={styles.logadoBadge}>✅ {usuario.email}</span>
               )}
             </div>
             <div className={styles.field}>
               <label className={styles.label}>Nome completo *</label>
-              <input className={styles.input} type="text" value={nome} onChange={e => { setNome(e.target.value.toUpperCase()); setLogado(false) }} placeholder="SEU NOME COMPLETO" />
+              <input className={styles.input} type="text" value={nome} onChange={e => setNome(e.target.value.toUpperCase())} placeholder="SEU NOME COMPLETO" />
             </div>
             <div className={styles.field}>
               <label className={styles.label}>WhatsApp *</label>
               <input className={styles.input} type="tel" value={telefone} inputMode="numeric"
-                onChange={e => {
-                  const v = e.target.value.replace(/\D/g,'').slice(0,11)
-                  const f = v.length <= 2 ? v : v.length <= 7 ? `(${v.slice(0,2)}) ${v.slice(2)}` : `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`
-                  setTelefone(f)
-                  setLogado(false)
-                }}
+                onChange={e => setTelefone(maskTelefoneEsporte(e.target.value))}
                 placeholder="(19) 99999-9999" />
             </div>
             <div className={styles.field}>
               <label className={styles.label}>E-mail *</label>
-              <input className={styles.input} type="email" value={email} onChange={e => { setEmail(e.target.value); setLogado(false) }} placeholder="seu@email.com" autoComplete="email" />
+              <input className={styles.input} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" autoComplete="email" />
             </div>
             <div className={styles.field}>
               <label className={styles.label}>Chave PIX *</label>
-              <input className={styles.input} type="text" value={chavePix} onChange={e => { setChavePix(e.target.value); setLogado(false) }} placeholder="CPF, e-mail, telefone ou chave aleatória" autoComplete="off" />
-            </div>
-            <div className={styles.cadastroBtns}>
-              <button type="button" className={styles.btnSalvar} onClick={salvarCadastro}>
-                💾 Salvar cadastro
-              </button>
-              {logado && (
-                <button type="button" className={styles.btnSair} onClick={sairCadastro}>
-                  Sair
-                </button>
-              )}
+              <input className={styles.input} type="text" value={chavePix}
+                onChange={e => { setChavePix(e.target.value); localStorage.setItem('bolao_esporte_chave_pix', e.target.value) }}
+                placeholder="CPF, e-mail, telefone ou chave aleatória" autoComplete="off" />
             </div>
           </div>
         )}

@@ -190,6 +190,12 @@
 .encSub { font-size: 14px; color: rgba(255,255,255,0.4); line-height: 1.6; }
 .encSub strong { color: rgba(255,255,255,0.7); }
 
+/* ── GATE DE LOGIN (participar exige conta) ── */
+.loginGate { padding: 28px 20px; text-align: center; }
+.loginGateIcon { font-size: 34px; margin-bottom: 10px; }
+.loginGateTitulo { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+.loginGateTexto { font-size: 13px; color: rgba(255,255,255,0.45); line-height: 1.6; margin-bottom: 20px; }
+
 /* ── FORMULÁRIO ── */
 .field { margin-bottom: 14px; }
 .fieldLabel {

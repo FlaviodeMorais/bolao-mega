@@ -4,7 +4,7 @@ import TrevoIcon from '@/components/TrevoIcon'
 
 interface Props {
   onClose: () => void
-  onAutenticado: (usuario: { nome: string; email: string; telefone: string }) => void
+  onAutenticado: (usuario: { id: string; nome: string; email: string; telefone: string }) => void
   appNome?: string
 }
 

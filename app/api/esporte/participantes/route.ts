@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { bolao_slug, nome, telefone, email, palpites } = body
+  const { bolao_slug, nome, telefone, email, palpites, usuario_id } = body
 
   if (!bolao_slug || !nome) return NextResponse.json({ error: 'Nome obrigatório' }, { status: 400 })
 
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
   // Insere participante
   const { data: part, error } = await supabase
     .from('participantes_esporte')
-    .insert({ bolao_slug, nome, telefone, email: email || null, total, status: 'aguardando', mp_payment_id: paymentId, pix_code: pixCode })
+    .insert({ bolao_slug, nome, telefone, email: email || null, total, status: 'aguardando', mp_payment_id: paymentId, pix_code: pixCode, usuario_id: usuario_id || null })
     .select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
