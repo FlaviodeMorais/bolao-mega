@@ -187,7 +187,7 @@ function ComprovanteContent() {
       ) : (
 
         /* ════ COMPROVANTE ════ */
-        <div className={styles.grid}>
+        <div className={`${styles.grid} ${lista.length === 1 ? styles.gridSingle : ''}`}>
           {lista.map((p, idx) => {
             const ad = bolao?.apostas_data ?? null
             const emissao = new Date(p.created_at).toLocaleDateString('pt-BR', {
@@ -326,7 +326,7 @@ function ComprovanteContent() {
                         <div className={styles.resultadoLabel}>
                           Resultado — Concurso #{concurso}
                         </div>
-                        {rc.dezenas_sorteadas && rc.dezenas_sorteadas.length === 6 && (
+                        {rc.dezenas_sorteadas && rc.dezenas_sorteadas.length > 0 && (
                           <div className={styles.resultadoDezenasGrid}>
                             {rc.dezenas_sorteadas.map(n => (
                               <span key={n} className={styles.resultadoDezBall}>

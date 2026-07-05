@@ -96,6 +96,15 @@
   .grid { grid-template-columns: 1fr; }
 }
 
+/* Comprovante individual (link do participante) — sem isso o card ocupa
+   100% da largura da janela em qualquer tela abaixo de 900px, ficando
+   esticado demais em vez de ler como um recibo. */
+.gridSingle {
+  grid-template-columns: 1fr;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
 /* ── Cartão ── */
 .cartao {
   background: #161b22;
@@ -431,8 +440,9 @@
 
 .apostaBet {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 4px 6px;
   padding: 3px 6px;
   border-radius: 4px;
   background: rgba(255,255,255,0.02);
@@ -626,9 +636,10 @@
     padding: 2mm 0;
   }
 
-  /* Cada aposta ocupa uma linha inteira */
+  /* Cada aposta ocupa uma linha inteira (quebra se não couber, ex: Lotofácil 15 dezenas) */
   .apostaBet {
     display: flex !important;
+    flex-wrap: wrap;
     align-items: center;
     width: 100% !important;
     background: transparent !important;
