@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import TrevoIcon from '@/components/TrevoIcon'
 import LoginModal from '@/components/LoginModal'
 import UserAuthModal from '@/components/UserAuthModal'
+import { useCart } from '@/components/CartContext'
 import { getLoteria } from '@/lib/loterias'
 import styles from './bolao.module.css'
 
@@ -100,6 +101,8 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
   const [enviando, setEnviando]           = useState(false)
   const [showTermos, setShowTermos]       = useState(false)
   const [aceitouTermos, setAceitouTermos] = useState(false)
+  const [intent, setIntent]               = useState<'pagar' | 'carrinho'>('pagar')
+  const cart = useCart()
   const [countdown, setCountdown]         = useState('')
   const [payTimer, setPayTimer]           = useState('')
   const [payStep, setPayStep]             = useState(0)
@@ -313,6 +316,24 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
         if (d.status === 'pago') { setPayStatus('pago'); setPayStep(2); clearInterval(statusRef.current!); clearInterval(timerRef.current!); recarregar() }
       }, 5000)
     } finally { setEnviando(false) }
+  }
+
+  function adicionarAoCarrinho() {
+    if (!usuario) { alert('⚠️ Entre ou cadastre-se para continuar.'); return }
+    if (!concurso) { alert('⚠️ Nenhum concurso ativo.'); return }
+    if (!selecionadas.length) { alert('⚠️ Selecione ao menos uma cota!'); return }
+    cart.addItem({
+      tipo: 'loteria',
+      bolaoSlug,
+      bolaoNome,
+      loteria: loteria || 'mega',
+      concurso: parseInt(concurso),
+      cotas: [...selecionadas].sort(),
+      valorCota: VALOR_COTA,
+      total,
+    })
+    setQtdCotas(1)
+    alert('🛒 Adicionado ao carrinho! Acesse o carrinho (ícone no topo da home) para finalizar o pagamento.')
   }
 
   async function copiarPix() {
@@ -549,9 +570,14 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
                     </div>
 
                     <button type="button" className={styles.btn}
-                      onClick={() => { if (!selecionadas.length) { alert('⚠️ Selecione ao menos uma cota!'); return } setAceitouTermos(false); setShowTermos(true) }}
+                      onClick={() => { if (!selecionadas.length) { alert('⚠️ Selecione ao menos uma cota!'); return } setIntent('pagar'); setAceitouTermos(false); setShowTermos(true) }}
                       disabled={enviando || !selecionadas.length}>
                       Ir para Pagamento
+                    </button>
+                    <button type="button" className={styles.btnFechar} style={{ marginTop: 8 }}
+                      onClick={() => { if (!selecionadas.length) { alert('⚠️ Selecione ao menos uma cota!'); return } setIntent('carrinho'); setAceitouTermos(false); setShowTermos(true) }}
+                      disabled={enviando || !selecionadas.length}>
+                      🛒 Adicionar ao Carrinho
                     </button>
                   </>)}
                 </>)}
@@ -640,9 +666,9 @@ export default function BolaoForm({ bolaoNome: bolaoNomeProp, bolaoSlug, loteria
               <span>Li e concordo com as regras de participação deste bolão</span>
             </label>
             <button type="button" className={styles.btn}
-              onClick={() => { if (aceitouTermos) { setShowTermos(false); confirmar() } }}
+              onClick={() => { if (aceitouTermos) { setShowTermos(false); if (intent === 'carrinho') adicionarAoCarrinho(); else confirmar() } }}
               disabled={!aceitouTermos || enviando}>
-              {enviando ? '⏳ Gerando PIX...' : '✅ Confirmar e Gerar PIX'}
+              {intent === 'carrinho' ? '🛒 Confirmar e Adicionar ao Carrinho' : (enviando ? '⏳ Gerando PIX...' : '✅ Confirmar e Gerar PIX')}
             </button>
             <button type="button" className={styles.btnFechar} onClick={() => setShowTermos(false)}>Cancelar</button>
           </div>

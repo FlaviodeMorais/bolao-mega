@@ -13,42 +13,48 @@ export async function POST(req: NextRequest) {
     const pagamento = await buscarPagamentoMP(paymentId)
 
     if (pagamento?.status === 'approved') {
-      // Pagamento principal
-      const { data: part } = await supabase
+      // Pagamento principal — pode cobrir 1 participante (fluxo antigo, direto)
+      // ou N participantes de bolões diferentes compartilhando o mesmo
+      // mp_payment_id (checkout consolidado do carrinho, Fase 3). Por isso não
+      // usa .single() aqui: precisa iterar todas as linhas pra notificar cada uma.
+      const { data: partes } = await supabase
         .from('participantes')
         .select('id, nome, cotas, total, concurso, telefone, email, bolao_slug')
         .eq('mp_payment_id', paymentId)
-        .single()
 
-      if (part) {
+      if (partes && partes.length > 0) {
         await supabase.from('participantes').update({ status: 'pago' }).eq('mp_payment_id', paymentId)
-        notificarPagamento(part.nome, part.cotas, part.concurso, Number(part.total), part.telefone, part.id).catch(() => {})
+        await supabase.from('pedidos').update({ status: 'pago' }).eq('mp_payment_id', paymentId)
 
-        if (part.email) {
-          const { data: bolaoInfo } = await supabase
-            .from('boloes').select('nome, num_apostas, dezenas').eq('slug', part.bolao_slug || '').single()
-          enviarConfirmacaoPagamento(
-            part.email, part.nome, part.cotas, Number(part.total),
-            part.concurso, bolaoInfo?.nome || 'Bolão Mega-Sena',
-            bolaoInfo?.num_apostas || 1, bolaoInfo?.dezenas || 6
-          ).catch(() => {})
+        for (const part of partes) {
+          notificarPagamento(part.nome, part.cotas, part.concurso, Number(part.total), part.telefone, part.id).catch(() => {})
+
+          if (part.email) {
+            const { data: bolaoInfo } = await supabase
+              .from('boloes').select('nome, num_apostas, dezenas').eq('slug', part.bolao_slug || '').single()
+            enviarConfirmacaoPagamento(
+              part.email, part.nome, part.cotas, Number(part.total),
+              part.concurso, bolaoInfo?.nome || 'Bolão Mega-Sena',
+              bolaoInfo?.num_apostas || 1, bolaoInfo?.dezenas || 6
+            ).catch(() => {})
+          }
         }
       } else {
-        const { data: partEsp } = await supabase
+        const { data: partesEsp } = await supabase
           .from('participantes_esporte')
           .select('id')
           .eq('mp_payment_id', paymentId)
-          .single()
 
-        if (partEsp) {
+        if (partesEsp && partesEsp.length > 0) {
           await supabase
             .from('participantes_esporte')
             .update({ status: 'pago' })
             .eq('mp_payment_id', paymentId)
+          await supabase.from('pedidos').update({ status: 'pago' }).eq('mp_payment_id', paymentId)
           return NextResponse.json({ ok: true })
         }
 
-        // Pagamento de acréscimo
+        // Pagamento de acréscimo (sempre individual, não faz parte do carrinho)
         const { data: partAcr } = await supabase
           .from('participantes')
           .select('nome, cotas, acrescimo, concurso, telefone, email')

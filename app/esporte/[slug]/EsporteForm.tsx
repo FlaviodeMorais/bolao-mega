@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import LoginModal from '@/components/LoginModal'
 import UserAuthModal from '@/components/UserAuthModal'
+import { useCart } from '@/components/CartContext'
 import styles from './esporte.module.css'
 import { getFlagCode } from '@/lib/bandeiras'
 
@@ -269,6 +270,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
   const [loginAberto, setLoginAberto] = useState(false)
   const [usuario, setUsuario] = useState<{ id: string; nome: string; email: string; telefone: string } | null>(null)
   const [userAuthAberto, setUserAuthAberto] = useState(false)
+  const cart = useCart()
   // premiacao vem do bolão; fallback para settings globais; fallback para default
   const [premiacao, setPremiacao] = useState<PremiacaoItem[]>(bolao.premiacao?.length ? bolao.premiacao : PREMIACAO_DEFAULT)
 
@@ -405,6 +407,27 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
     } finally {
       setEnviando(false)
     }
+  }
+
+  function adicionarAoCarrinho() {
+    if (!usuario) { alert('⚠️ Entre ou cadastre-se para continuar.'); return }
+    if (!nome.trim() || nome.trim().length < 3) { alert('⚠️ Informe seu nome completo!'); return }
+    if (telefone.replace(/\D/g,'').length < 11)  { alert('⚠️ Informe seu WhatsApp com DDD!'); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('⚠️ Informe um e-mail válido!'); return }
+    if (!chavePix.trim()) { alert('⚠️ Informe sua Chave PIX!'); return }
+    if (!todosPreenchidos) { alert('⚠️ Preencha os palpites de todos os jogos!'); return }
+
+    cart.addItem({
+      tipo: 'esporte',
+      bolaoSlug: bolao.slug,
+      bolaoNome: bolao.nome,
+      palpites: Object.values(palpites)
+        .filter(p => !jogoIniciado(jogosAbertos.find(j => j.id === p.jogo_id)!))
+        .map(p => ({ ...p })),
+      chavePix: chavePix.trim(),
+      total: Number(bolao.valor_cota),
+    })
+    alert('🛒 Adicionado ao carrinho! Acesse o carrinho (ícone no topo da home) para finalizar o pagamento.')
   }
 
   function copiarPix() {
@@ -587,7 +610,7 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
         )}
 
         {/* ── Botão confirmar ── */}
-        {step === 'form' && cadastrando && (
+        {step === 'form' && cadastrando && (<>
           <button
             type="button"
             className={styles.btnConfirmar}
@@ -596,7 +619,16 @@ export default function EsporteForm({ bolao, jogos, totalPagos }: Props) {
           >
             {enviando ? 'Registrando…' : `✅ Confirmar e pagar R$ ${Number(bolao.valor_cota).toFixed(2).replace('.',',')}`}
           </button>
-        )}
+          <button
+            type="button"
+            className={styles.btnSair}
+            style={{ marginTop: 8, width: '100%' }}
+            onClick={adicionarAoCarrinho}
+            disabled={enviando || !todosPreenchidos || !podeContinuar}
+          >
+            🛒 Adicionar ao Carrinho
+          </button>
+        </>)}
 
       </div>
     </div>

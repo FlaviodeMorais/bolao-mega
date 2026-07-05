@@ -4,6 +4,7 @@ import TrevoIcon from '@/components/TrevoIcon'
 import LoginModal from '@/components/LoginModal'
 import UserAuthModal from '@/components/UserAuthModal'
 import UserAccountModal from '@/components/UserAccountModal'
+import { useCart } from '@/components/CartContext'
 import styles from './home.module.css'
 
 interface Bolao { id: string; nome: string; slug: string; ativo: boolean; dezenas: number; num_apostas: number; loteria?: string }
@@ -363,6 +364,7 @@ function CarrosselSorteios({ sorteios, boloes, boloesEsporte, host, msgSemBolao,
 }
 
 export default function Home() {
+  const cart = useCart()
   const [boloes, setBoloes]               = useState<Bolao[]>([])
   const [boloesEsporte, setBoloesEsporte] = useState<BolaoEsporte[]>([])
   const [loading, setLoading]             = useState(true)
@@ -496,6 +498,17 @@ export default function Home() {
             <span className="material-icons-round" style={{ fontSize: 18 }}>login</span>
           </button>
         )}
+        <a className={styles.headerBtn} aria-label="Carrinho" href="/carrinho" style={{ position: 'relative', textDecoration: 'none' }}>
+          <span className="material-icons-round" style={{ fontSize: 18 }}>shopping_cart</span>
+          {cart.items.length > 0 && (
+            <span style={{
+              position: 'absolute', top: -4, right: -4,
+              background: '#00AB67', color: '#fff', borderRadius: '50%',
+              width: 16, height: 16, fontSize: 10, fontWeight: 800,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>{cart.items.length}</span>
+          )}
+        </a>
         <button className={styles.headerBtn} aria-label="Admin" onClick={() => setLoginAberto(true)}>
           <span className="material-icons-round" style={{ fontSize: 18 }}>settings</span>
         </button>

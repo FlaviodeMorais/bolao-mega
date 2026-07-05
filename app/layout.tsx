@@ -3,6 +3,7 @@ import './globals.css'
 import 'flag-icons/css/flag-icons.min.css'
 import { getAppSettings } from '@/lib/settings'
 import SwRegistrar from '@/components/SwRegistrar'
+import { CartProvider } from '@/components/CartContext'
 
 export async function generateMetadata(): Promise<Metadata> {
   const app = await getAppSettings()
@@ -44,7 +45,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <style dangerouslySetInnerHTML={{ __html: `:root{--green:${app.cor_primaria};--green-hover:${app.cor_primaria};--navy:${app.cor_fundo};}` }} />
       </head>
       <body>
-        {children}
+        <CartProvider>
+          {children}
+        </CartProvider>
         <SwRegistrar />
       </body>
     </html>
