@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import TrevoIcon from '@/components/TrevoIcon'
 import LoginModal from '@/components/LoginModal'
 import UserAuthModal from '@/components/UserAuthModal'
+import UserAccountModal from '@/components/UserAccountModal'
 import styles from './home.module.css'
 
 interface Bolao { id: string; nome: string; slug: string; ativo: boolean; dezenas: number; num_apostas: number; loteria?: string }
@@ -372,6 +373,7 @@ export default function Home() {
   const [msgSemBolao, setMsgSemBolao]     = useState('Nenhum bolão disponível no momento')
   const [loginAberto, setLoginAberto]     = useState(false)
   const [userAuthAberto, setUserAuthAberto] = useState(false)
+  const [contaAberta, setContaAberta] = useState(false)
   const [usuario, setUsuario] = useState<{ nome: string; email: string; telefone: string } | null>(null)
   const [carrosselIntervaloMs, setCarrosselIntervaloMs] = useState(5000)
   const [tagline, setTagline]             = useState('Bolões de Loteria & Esportes')
@@ -486,13 +488,7 @@ export default function Home() {
         </div>
         {usuario ? (
           <button className={styles.headerBtn} aria-label="Minha conta"
-            title={usuario.email}
-            onClick={async () => {
-              if (confirm(`Sair da conta de ${usuario.nome}?`)) {
-                await fetch('/api/usuario/logout', { method: 'POST' })
-                setUsuario(null)
-              }
-            }}>
+            title={usuario.email} onClick={() => setContaAberta(true)}>
             <span className="material-icons-round" style={{ fontSize: 18 }}>person</span>
           </button>
         ) : (
@@ -509,6 +505,10 @@ export default function Home() {
       {userAuthAberto && (
         <UserAuthModal onClose={() => setUserAuthAberto(false)} appNome={appNome}
           onAutenticado={u => setUsuario(u)} />
+      )}
+      {contaAberta && usuario && (
+        <UserAccountModal usuario={usuario} onClose={() => setContaAberta(false)}
+          onLogout={() => { setUsuario(null); setContaAberta(false) }} />
       )}
 
       {homeTitulo && (
