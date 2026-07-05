@@ -1141,6 +1141,17 @@
 .histSegBtn:hover { color: #334155; }
 .histSegAtivo   { background: #FFFFFF; color: #0D1B2A; border: none; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 8px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
 
+/* Badge de tipo (loteria/esporte) na lista unificada */
+.histTipoBadge         { font-size: 9px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; padding: 2px 7px; border-radius: 6px; }
+.histTipoLoteria        { background: #E6F7EE; color: #007A45; }
+.histTipoEsporte         { background: #FFF4E5; color: #C2680A; }
+
+/* Paginação */
+.histPaginacao   { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 16px; }
+.histPagBtn      { background: #F1F5F9; border: none; color: #334155; font-size: 12px; font-weight: 700; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+.histPagBtn:disabled { opacity: .4; cursor: not-allowed; }
+.histPagInfo     { font-size: 12px; color: #64748B; }
+
 /* Filtros */
 .crmFiltros     { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
 .crmBuscaWrap   { flex: 2; min-width: 180px; display: flex; align-items: center; gap: 8px; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 9px; padding: 0 12px; color: #94A3B8; }

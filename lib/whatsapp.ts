@@ -40,6 +40,11 @@ async function toNumber(telefone: string, text: string): Promise<{ ok: boolean; 
   return send('messages/text', { to, body: text })
 }
 
+/** Envio avulso (convite/mensagem livre) — usado pelo disparo em massa do Histórico. */
+export async function enviarConviteWhatsapp(telefone: string, mensagem: string): Promise<{ ok: boolean; erro?: string }> {
+  return toNumber(telefone, mensagem)
+}
+
 export async function verificarNumeroWhatsApp(telefone: string): Promise<boolean> {
   const cfg = await getWhatsappSettings()
   if (!cfg.ativo || !cfg.token) return true

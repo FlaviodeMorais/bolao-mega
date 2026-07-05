@@ -1,7 +1,8 @@
 ﻿'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useKpis } from '@/hooks/admin/useKpis'
-import { useHistorico } from '@/hooks/admin/useHistorico'
+import { useHistoricoResumo } from '@/hooks/admin/useHistoricoResumo'
+import { useHistoricoParticipantes } from '@/hooks/admin/useHistoricoParticipantes'
 import { useConferencia } from '@/hooks/admin/useConferencia'
 import { useBoloes } from '@/hooks/admin/useBoloes'
 import { useConcurso } from '@/hooks/admin/useConcurso'
@@ -68,7 +69,8 @@ export default function AdminPage() {
   const concurso = useConcurso()
   const parts    = useParticipantes(boloes.bolaoAtual, concurso.concursoAtivo, boloes.carregarBoloes)
   const conf     = useConferencia(boloes.bolaoAtual, concurso.concursoAtivo, boloes.carregarBoloes)
-  const hist     = useHistorico(boloes.boloes, concurso.concursoAtivo)
+  const histResumo = useHistoricoResumo()
+  const histParts  = useHistoricoParticipantes(boloes.boloes, concurso.concursoAtivo)
   const kpis     = useKpis()
 
   // ── Aliases (mantêm JSX sem alteração) ───────────────────────
@@ -154,13 +156,6 @@ export default function AdminPage() {
           editTaxa, setEditTaxa, salvando, configSalva,
           precoCaixa, custoApostas, totalBolao, valorPorCota } = boloes
   const salvarConfig = () => bolaoAtual && boloes.salvarConfig(bolaoAtual.id)
-
-  // HistoricoPanel
-  const { historico, showHistorico, modoHistorico, setModoHistorico,
-          histParticipantes, histFiltroConc, setHistFiltroConc,
-          histFiltroSlug, setHistFiltroSlug, histBusca, setHistBusca,
-          loadingHist, msgConvite, setMsgConvite,
-          carregarHistorico, carregarHistParticipantes, enviarConviteNovoBolao } = hist
 
   // KpiDashboard
   const { showKpi, loadingKpi, kpiGeral, kpiConcursos, kpiFreq,
@@ -470,24 +465,9 @@ export default function AdminPage() {
 
             {/* ── HISTÓRICO ── */}
             <HistoricoPanel
-              modo={modoHistorico}
-              loadingHist={loadingHist}
-              showHistorico={showHistorico}
-              historico={historico}
-              histParticipantes={histParticipantes}
-              histBusca={histBusca}
-              histFiltroSlug={histFiltroSlug}
-              histFiltroConc={histFiltroConc}
-              msgConvite={msgConvite}
+              resumo={histResumo}
+              parts={histParts}
               boloes={boloes.boloes}
-              onModoChange={setModoHistorico}
-              onCarregarResumo={carregarHistorico}
-              onCarregarParticipantes={carregarHistParticipantes}
-              onBuscaChange={setHistBusca}
-              onFiltroSlugChange={setHistFiltroSlug}
-              onFiltroConcChange={setHistFiltroConc}
-              onMsgConviteChange={setMsgConvite}
-              onEnviarConvite={enviarConviteNovoBolao}
               formatTel={formatTel}
               whatsappUrl={whatsappUrl}
             />
