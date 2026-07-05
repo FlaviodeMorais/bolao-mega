@@ -406,3 +406,25 @@ export async function notificarAdminInscricao(
   `
   return send(cfg.admin_email, `✅ Nova inscrição — ${nome}`, layout('Nova Inscrição', corpo))
 }
+
+// ── Senha temporária (migração de conta / redefinição) ─────────────────────────
+export async function enviarSenhaTemporaria(email: string, nome: string, senhaTemporaria: string) {
+  const corpo = `
+    <p style="color:#475569;font-size:15px;margin:0 0 24px;">
+      Olá <strong style="color:#0D1B2A;">${nome}</strong>! Criamos uma conta pra você poder entrar
+      nos bolões sem precisar preencher seus dados toda vez.
+    </p>
+    <div style="background:#F0FDF4;border:1.5px solid #00AB67;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
+      <div style="color:#64748B;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Sua senha temporária</div>
+      <div style="color:#00AB67;font-size:24px;font-weight:800;letter-spacing:2px;font-family:monospace;">${senhaTemporaria}</div>
+    </div>
+    ${statCard([{ label: 'E-mail de acesso', valor: email }])}
+    <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:14px;">
+      <div style="color:#D97706;font-size:13px;font-weight:600;">⚠️ Recomendação</div>
+      <div style="color:#78716C;font-size:13px;margin-top:6px;line-height:1.5;">
+        Por segurança, troque essa senha assim que possível no seu perfil.
+      </div>
+    </div>
+  `
+  return send(email, '🔐 Sua conta foi criada — senha temporária', layout('Bem-vindo(a)!', corpo))
+}
