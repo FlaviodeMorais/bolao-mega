@@ -3,27 +3,34 @@
 import styles from '@/app/admin/admin.module.css'
 import type { HistoricoParticipante } from '@/hooks/admin/useHistoricoParticipantes'
 
-interface BolaoOpt { slug: string; nome: string }
+interface BolaoOpt { slug: string; nome: string; ativo: boolean }
 
 interface Props {
   participantes: HistoricoParticipante[]
   total: number; page: number; totalPages: number
   busca: string; filtroSlug: string; filtroConc: string; filtroTipo: 'todos' | 'loteria' | 'esporte'
+  bolaoConviteSlug: string
   loadingHist: boolean
   msgConvite: string
   enviandoId: string | null
   enviandoMassa: boolean
   resultadoConvite: string
+  selecionados: Map<string, { nome: string; telefone: string }>
   boloes: BolaoOpt[]
   onBuscaChange: (v: string) => void
   onFiltroSlugChange: (v: string) => void
   onFiltroConcChange: (v: string) => void
   onFiltroTipoChange: (v: 'todos' | 'loteria' | 'esporte') => void
+  onBolaoConviteChange: (v: string) => void
   onMsgConviteChange: (v: string) => void
   onFiltrar: () => void
   onPagina: (p: number) => void
+  onToggleSelecionado: (p: HistoricoParticipante) => void
+  onSelecionarVisiveis: () => void
+  onLimparSelecao: () => void
   onEnviarIndividual: (tel: string, nome: string, id: string) => void
   onEnviarTodos: () => void
+  onEnviarSelecionados: () => void
   formatTel: (tel?: string) => string
   whatsappUrl: (tel?: string) => string
 }
@@ -36,13 +43,15 @@ interface Props {
  */
 export default function ParticipantesHistorico({
   participantes, total, page, totalPages,
-  busca, filtroSlug, filtroConc, filtroTipo,
+  busca, filtroSlug, filtroConc, filtroTipo, bolaoConviteSlug,
   loadingHist, msgConvite,
   enviandoId, enviandoMassa, resultadoConvite,
+  selecionados,
   boloes,
-  onBuscaChange, onFiltroSlugChange, onFiltroConcChange, onFiltroTipoChange,
+  onBuscaChange, onFiltroSlugChange, onFiltroConcChange, onFiltroTipoChange, onBolaoConviteChange,
   onMsgConviteChange, onFiltrar, onPagina,
-  onEnviarIndividual, onEnviarTodos,
+  onToggleSelecionado, onSelecionarVisiveis, onLimparSelecao,
+  onEnviarIndividual, onEnviarTodos, onEnviarSelecionados,
   formatTel, whatsappUrl,
 }: Props) {
   const comTel = participantes.filter(p => p.telefone).length
@@ -102,13 +111,42 @@ export default function ParticipantesHistorico({
         </div>
       )}
 
+      {!loadingHist && participantes.length > 0 && (
+        <div className={styles.selecaoBar} style={selecionados.size === 0 ? { background: 'transparent', border: 'none', padding: '0 0 8px' } : undefined}>
+          {selecionados.size > 0 && (
+            <span className={styles.selecaoCount}>{selecionados.size} selecionado{selecionados.size !== 1 ? 's' : ''}</span>
+          )}
+          <button type="button" className={styles.btnLimparSel} onClick={onSelecionarVisiveis}>
+            ☑ Selecionar visíveis
+          </button>
+          {selecionados.size > 0 && (
+            <>
+              <button type="button" className={styles.btnImprimirSel} disabled={enviandoMassa} onClick={onEnviarSelecionados}>
+                {enviandoMassa ? '⟳ Enviando...' : `Enviar para selecionados (${selecionados.size})`}
+              </button>
+              <button type="button" className={styles.btnLimparSel} onClick={onLimparSelecao}>
+                ✕ Limpar seleção
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       {resultadoConvite && (
         <div style={{ fontSize: 12, fontWeight: 600, margin: '4px 0 10px' }}>{resultadoConvite}</div>
       )}
 
       {!loadingHist && participantes.length > 0 && (
         <div className={styles.crmMsgArea}>
-          <label className={styles.crmMsgLabel}>Mensagem de convite personalizada (use {'{nome}'} pra personalizar)</label>
+          <label className={styles.crmMsgLabel}>Bolão a divulgar (define o link usado em {'{link}'})</label>
+          <select className={styles.crmSelect} style={{ width: '100%', marginBottom: 10 }}
+            value={bolaoConviteSlug} onChange={e => onBolaoConviteChange(e.target.value)}>
+            <option value="">Automático (primeiro bolão ativo)</option>
+            {boloes.map(b => (
+              <option key={b.slug} value={b.slug}>{b.nome}{b.ativo ? '' : ' (inativo)'}</option>
+            ))}
+          </select>
+          <label className={styles.crmMsgLabel}>Mensagem de convite personalizada (use {'{nome}'} e {'{link}'} pra personalizar)</label>
           <textarea className={styles.crmMsgTextarea} rows={2}
             placeholder="🍀 Olá {nome}! Temos um novo bolão disponível. Participe: {link}"
             value={msgConvite} onChange={e => onMsgConviteChange(e.target.value)} />
@@ -122,6 +160,12 @@ export default function ParticipantesHistorico({
           : <div className={styles.crmLista}>
               {participantes.map(p => (
                 <div key={p.id} className={styles.crmCard}>
+                  {p.telefone && (
+                    <input type="checkbox" className={styles.partCardCheck}
+                      checked={selecionados.has(p.id)}
+                      onChange={() => onToggleSelecionado(p)}
+                      title="Selecionar para convite" />
+                  )}
                   <div className={`${styles.crmCardBar} ${p.status === 'pago' ? styles.crmBarPago : p.status === 'cancelado' ? styles.crmBarCancel : styles.crmBarPend}`} />
                   <div className={styles.crmCardBody}>
                     <div className={styles.crmCardTop}>

@@ -1,0 +1,48 @@
+version: '3.8'
+
+# Evolution API self-hosted — fixado em 2.3.7 (antes da exigência de licença
+# introduzida na v2.4.0). Não expõe Postgres/Redis pra fora, só a API na 8080.
+
+services:
+  postgres:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: evolution
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: evolution_db
+    volumes:
+      - evolution_postgres:/var/lib/postgresql/data
+    networks: [evolution-net]
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - evolution_redis:/data
+    networks: [evolution-net]
+
+  evolution-api:
+    image: evoapicloud/evolution-api:2.3.7
+    restart: always
+    ports:
+      - '8080:8080'
+    environment:
+      SERVER_URL: ${SERVER_URL}
+      AUTHENTICATION_API_KEY: ${AUTHENTICATION_API_KEY}
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://evolution:${POSTGRES_PASSWORD}@postgres:5432/evolution_db?schema=evolution_api
+      DATABASE_SAVE_DATA_INSTANCE: 'true'
+      CACHE_REDIS_ENABLED: 'true'
+      CACHE_REDIS_URI: redis://redis:6379/6
+      CACHE_LOCAL_ENABLED: 'false'
+    depends_on: [postgres, redis]
+    networks: [evolution-net]
+
+volumes:
+  evolution_postgres:
+  evolution_redis:
+
+networks:
+  evolution-net:

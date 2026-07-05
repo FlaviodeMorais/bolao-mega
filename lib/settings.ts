@@ -34,10 +34,17 @@ export interface PagamentoSettings {
 }
 
 export interface WhatsappSettings {
-  token:         string
-  group_id:      string
+  provider:      'whapi' | 'evolution' | 'zapster'
+                                        // 'whapi'    = gate.whapi.cloud (SaaS)
+                                        // 'evolution' = Evolution API self-hosted (gratuito, precisa de servidor próprio)
+                                        // 'zapster'  = api.zapsterapi.com (SaaS, plano Essential R$47/mês)
+  token:         string   // whapi: token do canal · evolution: apikey da instância · zapster: Bearer token da conta
+  group_id:      string   // JID do grupo (ex: 1203...@g.us) — whapi/evolution; zapster usa "group:<numero>" (convertido em runtime)
   ativo:         boolean
   prazo_horario: string  // "12:00"
+  evolution_url:      string  // ex: https://evolution.seudominio.com (sem barra no final)
+  evolution_instance: string  // nome da instância criada no Evolution API
+  zapster_instance_id: string  // instance_id da instância criada no painel da Zapster
 }
 
 export interface EmailSettings {
@@ -135,10 +142,14 @@ export const DEFAULTS: AllSettings = {
     pix_email_payer: process.env.PIX_EMAIL_PAYER  || 'pagador@bolao.com',
   },
   whatsapp: {
+    provider:      'whapi',
     token:         process.env.WHAPI_TOKEN    || '',
     group_id:      process.env.WHAPI_GROUP_ID || '',
     ativo:         false,
     prazo_horario: '12:00',
+    evolution_url:      '',
+    evolution_instance: '',
+    zapster_instance_id: '',
   },
   email: {
     provider:    'gmail',

@@ -1,19 +1,86 @@
 import { getWhatsappSettings, getAppSettings } from './settings'
 
 const WHAPI_URL = 'https://gate.whapi.cloud'
+const ZAPSTER_URL = 'https://api.zapsterapi.com/v1'
 
-async function send(endpoint: string, body: object): Promise<{ ok: boolean; erro?: string }> {
+/**
+ * Três provedores suportados, mesma interface pública (send/toGroup/toNumber):
+ * - 'whapi'     → gate.whapi.cloud (SaaS)
+ * - 'evolution' → Evolution API self-hosted (grátis, mas exige servidor 24/7 próprio)
+ * - 'zapster'   → api.zapsterapi.com (SaaS, plano Essential R$47/mês)
+ * Toda a lógica de negócio (notificarInscricao, notificarPagamento etc.) fica igual —
+ * só send()/toGroup()/toNumber()/verificarNumeroWhatsApp()/enviarQRCodePIX()/buscarGrupos()
+ * sabem a diferença entre eles.
+ */
+
+function normalizarNumero(telefone: string): string {
+  const digits = telefone.replace(/\D/g, '')
+  return digits.startsWith('55') ? digits : `55${digits}`
+}
+
+async function send(
+  destino: string, texto: string,
+  media?: { base64: string; caption?: string; fileName?: string }
+): Promise<{ ok: boolean; erro?: string }> {
   const cfg = await getWhatsappSettings()
   if (!cfg.ativo) return { ok: false, erro: 'WhatsApp desativado nas configurações' }
+
+  if (cfg.provider === 'zapster') {
+    if (!cfg.token || !cfg.zapster_instance_id) {
+      return { ok: false, erro: 'Zapster API não configurado (token/instance_id)' }
+    }
+    try {
+      const body: Record<string, unknown> = { recipient: destino, instance_id: cfg.zapster_instance_id }
+      if (media) body.media = { base64: media.base64, caption: media.caption, fileName: media.fileName }
+      else body.text = texto
+      const res = await fetch(`${ZAPSTER_URL}/wa/messages`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${cfg.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const txt = await res.text().catch(() => res.status.toString())
+        console.error(`[WhatsApp/Zapster] Erro ${res.status}:`, txt)
+        return { ok: false, erro: `Zapster ${res.status}: ${txt.substring(0, 100)}` }
+      }
+      return { ok: true }
+    } catch (err) {
+      console.error('[WhatsApp/Zapster] Erro de rede:', err)
+      return { ok: false, erro: String(err) }
+    }
+  }
+
+  if (cfg.provider === 'evolution') {
+    if (!cfg.evolution_url || !cfg.evolution_instance || !cfg.token) {
+      return { ok: false, erro: 'Evolution API não configurado (URL/instância/apikey)' }
+    }
+    try {
+      const res = await fetch(`${cfg.evolution_url}/message/sendText/${cfg.evolution_instance}`, {
+        method: 'POST',
+        headers: { 'apikey': cfg.token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ number: destino, text: texto }),
+      })
+      if (!res.ok) {
+        const txt = await res.text().catch(() => res.status.toString())
+        console.error(`[WhatsApp/Evolution] Erro ${res.status}:`, txt)
+        return { ok: false, erro: `Evolution ${res.status}: ${txt.substring(0, 100)}` }
+      }
+      return { ok: true }
+    } catch (err) {
+      console.error('[WhatsApp/Evolution] Erro de rede:', err)
+      return { ok: false, erro: String(err) }
+    }
+  }
+
   if (!cfg.token) return { ok: false, erro: 'WHAPI_TOKEN não configurado' }
   try {
-    const res = await fetch(`${WHAPI_URL}/${endpoint}`, {
+    const res = await fetch(`${WHAPI_URL}/messages/text`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${cfg.token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ to: destino, body: texto }),
     })
     if (!res.ok) {
       const txt = await res.text().catch(() => res.status.toString())
@@ -30,14 +97,20 @@ async function send(endpoint: string, body: object): Promise<{ ok: boolean; erro
 async function toGroup(text: string) {
   const cfg = await getWhatsappSettings()
   if (!cfg.group_id) return
-  return send('messages/text', { to: cfg.group_id, body: text })
+  // Whapi/Evolution usam o JID puro (12036...@g.us); Zapster usa "group:<numero>" sem o sufixo
+  const destino = cfg.provider === 'zapster'
+    ? `group:${cfg.group_id.replace('@g.us', '')}`
+    : cfg.group_id
+  return send(destino, text)
 }
 
 async function toNumber(telefone: string, text: string): Promise<{ ok: boolean; erro?: string }> {
   if (!telefone) return { ok: false, erro: 'Telefone não informado' }
-  const number = telefone.replace(/\D/g, '')
-  const to = number.startsWith('55') ? `${number}@s.whatsapp.net` : `55${number}@s.whatsapp.net`
-  return send('messages/text', { to, body: text })
+  const cfg = await getWhatsappSettings()
+  const numero = normalizarNumero(telefone)
+  // Whapi espera o JID completo; Evolution/Zapster resolvem a partir do número puro
+  const destino = cfg.provider === 'whapi' ? `${numero}@s.whatsapp.net` : numero
+  return send(destino, text)
 }
 
 /** Envio avulso (convite/mensagem livre) — usado pelo disparo em massa do Histórico. */
@@ -48,9 +121,25 @@ export async function enviarConviteWhatsapp(telefone: string, mensagem: string):
 export async function verificarNumeroWhatsApp(telefone: string): Promise<boolean> {
   const cfg = await getWhatsappSettings()
   if (!cfg.ativo || !cfg.token) return true
+  const full = normalizarNumero(telefone)
   try {
-    const number = telefone.replace(/\D/g, '')
-    const full   = number.startsWith('55') ? number : `55${number}`
+    // Zapster não documenta endpoint de verificação de número — assume que existe
+    // (mesmo comportamento seguro de fallback usado nos erros dos outros provedores)
+    if (cfg.provider === 'zapster') return true
+
+    if (cfg.provider === 'evolution') {
+      if (!cfg.evolution_url || !cfg.evolution_instance) return true
+      const res = await fetch(`${cfg.evolution_url}/chat/whatsappNumbers/${cfg.evolution_instance}`, {
+        method: 'POST',
+        headers: { 'apikey': cfg.token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ numbers: [full] }),
+      })
+      if (!res.ok) return true
+      const data = await res.json()
+      const contato = Array.isArray(data) ? data[0] : null
+      return contato?.exists !== false
+    }
+
     const res = await fetch(`${WHAPI_URL}/contacts`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${cfg.token}`, 'Content-Type': 'application/json' },
@@ -75,31 +164,41 @@ export async function enviarQRCodePIX(
 ) {
   const cfg = await getWhatsappSettings()
   if (!cfg.ativo || !cfg.token || !telefone) return
-  const number = telefone.replace(/\D/g, '')
-  const to     = number.startsWith('55') ? `${number}@s.whatsapp.net` : `55${number}@s.whatsapp.net`
+  const numero = normalizarNumero(telefone)
   const valorStr = valor.toFixed(2).replace('.', ',')
+  const legenda =
+    `📲 *PIX para pagamento*\n` +
+    `🎰 ${bolaoNome}\n\n` +
+    `💰 *R$ ${valorStr}*\n\n` +
+    `_Escaneie o QR Code ou use o código abaixo._`
 
-  await fetch(`${WHAPI_URL}/messages/image`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${cfg.token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      to,
-      image: `data:image/png;base64,${qrBase64}`,
-      caption:
-        `📲 *PIX para pagamento*\n` +
-        `🎰 ${bolaoNome}\n\n` +
-        `💰 *R$ ${valorStr}*\n\n` +
-        `_Escaneie o QR Code ou use o código abaixo._`,
-    }),
-  }).catch(() => {})
+  if (cfg.provider === 'zapster') {
+    await send(numero, '', { base64: qrBase64, caption: legenda, fileName: 'pix.png' }).catch(() => ({ ok: false }))
+  } else if (cfg.provider === 'evolution') {
+    if (cfg.evolution_url && cfg.evolution_instance) {
+      await fetch(`${cfg.evolution_url}/message/sendMedia/${cfg.evolution_instance}`, {
+        method: 'POST',
+        headers: { 'apikey': cfg.token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          number: numero, mediatype: 'image', mimetype: 'image/png',
+          media: qrBase64, fileName: 'pix.png', caption: legenda,
+        }),
+      }).catch(() => {})
+    }
+  } else {
+    const to = `${numero}@s.whatsapp.net`
+    await fetch(`${WHAPI_URL}/messages/image`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${cfg.token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to, image: `data:image/png;base64,${qrBase64}`, caption: legenda }),
+    }).catch(() => {})
+  }
 
-  await send('messages/text', {
-    to,
-    body:
-      `📋 *Código PIX — Copia e Cola:*\n\n` +
-      `${pixCode}\n\n` +
-      `_Abra seu banco, escolha PIX, cole o código e pague._`,
-  })
+  await toNumber(telefone,
+    `📋 *Código PIX — Copia e Cola:*\n\n` +
+    `${pixCode}\n\n` +
+    `_Abra seu banco, escolha PIX, cole o código e pague._`
+  )
 }
 
 export async function notificarInscricao(nome: string, cotas: string[], concurso: number, total: number) {
@@ -310,6 +409,21 @@ export async function buscarGrupos(): Promise<{ id: string; name: string }[]> {
   const cfg = await getWhatsappSettings()
   if (!cfg.token) return []
   try {
+    // Zapster não documenta endpoint de listagem de grupos — ID do grupo é colado manualmente
+    if (cfg.provider === 'zapster') return []
+
+    if (cfg.provider === 'evolution') {
+      if (!cfg.evolution_url || !cfg.evolution_instance) return []
+      const res = await fetch(`${cfg.evolution_url}/group/fetchAllGroups/${cfg.evolution_instance}?getParticipants=false`, {
+        headers: { 'apikey': cfg.token },
+      })
+      const data = await res.json()
+      return (Array.isArray(data) ? data : []).map((g: { id: string; subject: string }) => ({
+        id:   g.id,
+        name: g.subject,
+      }))
+    }
+
     const res = await fetch(`${WHAPI_URL}/groups?count=20`, {
       headers: { 'Authorization': `Bearer ${cfg.token}` },
     })

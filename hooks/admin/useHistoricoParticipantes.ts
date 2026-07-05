@@ -10,7 +10,7 @@ export interface HistoricoParticipante {
   acrescimo?: number | null; acrescimo_pago?: boolean
   created_at: string
 }
-interface BolaoOpt { slug: string; ativo: boolean }
+interface BolaoOpt { slug: string; nome: string; ativo: boolean }
 
 const TREVO = '\u{1F340}'
 
@@ -27,11 +27,19 @@ export function useHistoricoParticipantes(boloes: BolaoOpt[], concursoAtivo: str
   const [filtroConc, setFiltroConc]   = useState('')
   const [filtroTipo, setFiltroTipo]   = useState<'todos' | 'loteria' | 'esporte'>('todos')
 
+  // Bolão cujo link vai na mensagem de convite ({link}) — escolhido explicitamente
+  // pelo admin; se não escolher, cai no primeiro bolão ativo (comportamento anterior).
+  const [bolaoConviteSlug, setBolaoConviteSlug] = useState('')
+
   const [loadingHist, setLoadingHist] = useState(false)
   const [msgConvite, setMsgConvite]   = useState('')
   const [enviandoId, setEnviandoId]   = useState<string | null>(null)
   const [enviandoMassa, setEnviandoMassa] = useState(false)
   const [resultadoConvite, setResultadoConvite] = useState('')
+
+  // Seleção manual (sobrevive entre páginas — guarda nome/telefone, não só o id,
+  // pra poder disparar o convite sem depender do que está carregado na hora do envio)
+  const [selecionados, setSelecionados] = useState<Map<string, { nome: string; telefone: string }>>(new Map())
 
   const carregarHistParticipantes = useCallback(async (novaPagina = 1) => {
     setLoadingHist(true)
@@ -48,13 +56,14 @@ export function useHistoricoParticipantes(boloes: BolaoOpt[], concursoAtivo: str
     setLoadingHist(false)
   }, [busca, filtroSlug, filtroConc, filtroTipo])
 
+  const bolaoConvite = boloes.find(b => b.slug === bolaoConviteSlug) || boloes.find(b => b.ativo) || null
+
   function montarMensagem(nome: string) {
-    const bolaoAtivo = boloes.find(b => b.ativo)
     const origem = typeof window !== 'undefined' ? window.location.origin : ''
-    const link = bolaoAtivo ? `${origem}/${bolaoAtivo.slug}` : origem
+    const link = bolaoConvite ? `${origem}/${bolaoConvite.slug}` : origem
     const template = msgConvite ||
       `${TREVO} Olá {nome}! Temos um novo bolão disponível para o concurso #${concursoAtivo}.\n\nAcesse: ${link}\n\nBoa sorte!`
-    return template.replaceAll('{nome}', nome)
+    return template.replaceAll('{nome}', nome).replaceAll('{link}', link)
   }
 
   async function dispararConvite(contatos: { telefone: string; nome: string }[]) {
@@ -72,6 +81,43 @@ export function useHistoricoParticipantes(boloes: BolaoOpt[], concursoAtivo: str
     if (res.error) { setResultadoConvite(`❌ ${res.error}`); return }
     setResultadoConvite(res.enviados ? `✅ Convite enviado para ${nome}!` : `❌ Falha ao enviar: ${res.falhas?.[0]?.erro || 'erro desconhecido'}`)
     setTimeout(() => setResultadoConvite(''), 5000)
+  }
+
+  function toggleSelecionado(p: HistoricoParticipante) {
+    if (!p.telefone) return
+    setSelecionados(prev => {
+      const next = new Map(prev)
+      if (next.has(p.id)) next.delete(p.id)
+      else next.set(p.id, { nome: p.nome, telefone: p.telefone! })
+      return next
+    })
+  }
+
+  function selecionarVisiveis() {
+    setSelecionados(prev => {
+      const next = new Map(prev)
+      for (const p of participantes) if (p.telefone) next.set(p.id, { nome: p.nome, telefone: p.telefone })
+      return next
+    })
+  }
+
+  function limparSelecao() {
+    setSelecionados(new Map())
+  }
+
+  async function enviarConviteSelecionados() {
+    const contatos = Array.from(selecionados.values())
+    if (!contatos.length) return
+    if (!confirm(`Enviar convite para ${contatos.length} selecionado(s)?`)) return
+
+    setEnviandoMassa(true); setResultadoConvite('')
+    const res = await dispararConvite(contatos)
+    setEnviandoMassa(false)
+    if (res.error) { setResultadoConvite(`❌ ${res.error}`); return }
+    const falhas = res.falhas?.length || 0
+    setResultadoConvite(`✅ ${res.enviados} enviado(s)${falhas ? ` · ❌ ${falhas} falha(s)` : ''}`)
+    limparSelecao()
+    setTimeout(() => setResultadoConvite(''), 8000)
   }
 
   async function enviarConviteTodos() {
@@ -97,9 +143,11 @@ export function useHistoricoParticipantes(boloes: BolaoOpt[], concursoAtivo: str
   return {
     participantes, total, page, totalPages,
     busca, setBusca, filtroSlug, setFiltroSlug, filtroConc, setFiltroConc, filtroTipo, setFiltroTipo,
+    bolaoConviteSlug, setBolaoConviteSlug, bolaoConvite,
     loadingHist, msgConvite, setMsgConvite,
     enviandoId, enviandoMassa, resultadoConvite,
+    selecionados, toggleSelecionado, selecionarVisiveis, limparSelecao,
     carregarHistParticipantes,
-    enviarConviteIndividual, enviarConviteTodos,
+    enviarConviteIndividual, enviarConviteTodos, enviarConviteSelecionados,
   }
 }

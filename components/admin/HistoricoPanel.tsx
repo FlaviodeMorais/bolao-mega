@@ -7,7 +7,7 @@ import ParticipantesHistorico from './historico/ParticipantesHistorico'
 import type { useHistoricoResumo } from '@/hooks/admin/useHistoricoResumo'
 import type { useHistoricoParticipantes } from '@/hooks/admin/useHistoricoParticipantes'
 
-interface BolaoOpt { slug: string; nome: string }
+interface BolaoOpt { slug: string; nome: string; ativo: boolean }
 
 interface Props {
   resumo: ReturnType<typeof useHistoricoResumo>
@@ -65,21 +65,28 @@ export default function HistoricoPanel({ resumo, parts, boloes, formatTel, whats
           filtroSlug={parts.filtroSlug}
           filtroConc={parts.filtroConc}
           filtroTipo={parts.filtroTipo}
+          bolaoConviteSlug={parts.bolaoConviteSlug}
           loadingHist={parts.loadingHist}
           msgConvite={parts.msgConvite}
           enviandoId={parts.enviandoId}
           enviandoMassa={parts.enviandoMassa}
           resultadoConvite={parts.resultadoConvite}
+          selecionados={parts.selecionados}
           boloes={boloes}
           onBuscaChange={parts.setBusca}
           onFiltroSlugChange={parts.setFiltroSlug}
           onFiltroConcChange={parts.setFiltroConc}
           onFiltroTipoChange={parts.setFiltroTipo}
+          onBolaoConviteChange={parts.setBolaoConviteSlug}
           onMsgConviteChange={parts.setMsgConvite}
           onFiltrar={() => parts.carregarHistParticipantes(1)}
           onPagina={p => parts.carregarHistParticipantes(p)}
+          onToggleSelecionado={parts.toggleSelecionado}
+          onSelecionarVisiveis={parts.selecionarVisiveis}
+          onLimparSelecao={parts.limparSelecao}
           onEnviarIndividual={parts.enviarConviteIndividual}
           onEnviarTodos={parts.enviarConviteTodos}
+          onEnviarSelecionados={parts.enviarConviteSelecionados}
           formatTel={formatTel}
           whatsappUrl={whatsappUrl}
         />
