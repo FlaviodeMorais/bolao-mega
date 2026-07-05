@@ -26,6 +26,21 @@ export default function IngerirHistorico() {
   const [verificando, setVerif]     = useState(false)
   const [totais, setTotais]         = useState<Record<LoteriaId, number>>(TOTAIS_FALLBACK)
   const abortRef                    = useRef(false)
+  const [migrando, setMigrando]     = useState(false)
+  const [migResultado, setMigResultado] = useState('')
+
+  async function migrarUsuarios() {
+    if (!confirm('Isso cria conta pra todo participante do histórico com e-mail e envia senha temporária de verdade por e-mail. Continuar?')) return
+    setMigrando(true); setMigResultado('')
+    const res = await fetch('/api/admin/migrar-usuarios', { method: 'POST' }).then(r => r.json()).catch(e => ({ error: String(e) }))
+    setMigrando(false)
+    if (res.error) { setMigResultado('❌ ' + res.error); return }
+    setMigResultado(
+      `✅ ${res.criados.length} conta(s) criada(s): ${res.criados.join(', ') || '—'}\n` +
+      `↩️ ${res.ignorados.length} já existia(m): ${res.ignorados.join(', ') || '—'}` +
+      (res.erros.length ? `\n⚠️ ${res.erros.length} erro(s): ${res.erros.join('; ')}` : '')
+    )
+  }
 
   // Estatísticas (Frequência / Atrasos / Top 15) da loteria selecionada
   const [freqDados, setFreqDados]       = useState<NumStat[]>([])
@@ -184,6 +199,18 @@ export default function IngerirHistorico() {
   return (
     <div className={styles.panel}>
       <div className={styles.panelTitle}>🗄️ Histórico Estatístico</div>
+
+      {/* Migração única: cria conta (login/cadastro) para participantes já
+          cadastrados no histórico que têm e-mail, envia senha temporária. */}
+      <div className={styles.ferrSection}>
+        <div className={styles.detStatsRow}>
+          <button className={`${styles.btnLoad} ${styles.btnLoadInline}`}
+            onClick={migrarUsuarios} disabled={migrando}>
+            {migrando ? '⟳ Migrando...' : '🔐 Migrar usuários (criar contas + enviar senha temporária)'}
+          </button>
+        </div>
+        {migResultado && <p className={styles.helpText} style={{ marginTop: 10, whiteSpace: 'pre-wrap' }}>{migResultado}</p>}
+      </div>
 
       {/* Status por loteria */}
       <div className={styles.ferrSection}>
