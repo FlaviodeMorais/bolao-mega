@@ -48,6 +48,30 @@ interface Participante {
   created_at: string
 }
 
+// ── Bolão esportivo ──
+interface PalpiteDetalhado {
+  jogo_id: string
+  time_casa: string
+  time_fora: string
+  gol_casa_real: number | null
+  gol_fora_real: number | null
+  palpite_casa: number
+  palpite_fora: number
+  pontos: number | null
+  encerrado: boolean
+  fase: string
+  data_jogo: string | null
+  hora_jogo: string | null
+}
+interface ParticipanteEsporte {
+  id: string; nome: string; telefone?: string; total: number
+  status: string; pontos_total: number | null; created_at: string
+  palpites: PalpiteDetalhado[]
+}
+interface BolaoEsporte {
+  nome: string; slug: string; competicao?: string; valor_cota: number; encerrado: boolean
+}
+
 function formatTel(tel: string | undefined) {
   if (!tel) return '—'
   const n = tel.replace(/\D/g, '').replace(/^55/, '')
@@ -64,6 +88,130 @@ function whatsappShare(tel: string | undefined, nome: string, participanteId: st
   const link = `${origin}/comprovante?id=${participanteId}&pub=1&bolao=${slug}&concurso=${concurso}`
   const msg = encodeURIComponent(`🍀 Olá ${nome}! Segue seu comprovante de participação no Bolão Mega-Sena:\n${link}`)
   return `https://wa.me/${num}?text=${msg}`
+}
+
+/** Comprovante do bolão esportivo — palpite (jogo a jogo) em vez de cotas/dezenas. */
+function ComprovanteEsporte({ bolao, participantes, modoPublico, modoFiltro, loading, grupoNome, router }: {
+  bolao: BolaoEsporte | null
+  participantes: ParticipanteEsporte[]
+  modoPublico: boolean
+  modoFiltro: boolean
+  loading: boolean
+  grupoNome: string
+  router: { push: (href: string) => void }
+}) {
+  return (
+    <div className={styles.page}>
+      <div className={styles.controls}>
+        <div className={styles.controlsLeft}>
+          <h1 className={styles.pageTitle}>Comprovante de Participação</h1>
+          <p className={styles.pageSubtitle}>{participantes.length} participante(s) · {bolao?.nome}</p>
+        </div>
+        <div className={styles.controlsRight}>
+          {!modoPublico && (
+            <button type="button" className={styles.btnBack} onClick={() => router.push('/admin')}>
+              ← Voltar ao Admin
+            </button>
+          )}
+          <button type="button" className={styles.btnPrint} onClick={() => window.print()}>
+            {modoFiltro ? '🖨️ Imprimir / PDF' : '🖨️ Imprimir Todos'}
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <p className={styles.loading}>Carregando participantes…</p>
+      ) : participantes.length === 0 ? (
+        <p className={styles.loading}>Nenhum participante encontrado para este bolão.</p>
+      ) : (
+        <div className={`${styles.grid} ${participantes.length === 1 ? styles.gridSingle : ''}`}>
+          {participantes.map((p, idx) => {
+            const emissao = new Date(p.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+            const horario = new Date(p.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+            return (
+              <div key={p.id} className={`${styles.cartao} ${p.status === 'pago' ? styles.pago : styles.pendente}`}>
+                <div className={styles.cartaoHeader}>
+                  <div className={styles.cartaoHeaderLeft}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/bm-circle.png" alt="BetMais" width={32} height={32} style={{ borderRadius: '50%' }} />
+                    <div>
+                      <div className={styles.cartaoGrupo}>{grupoNome}</div>
+                      <div className={styles.cartaoBolao}>{bolao?.nome}</div>
+                    </div>
+                  </div>
+                  <span className={p.status === 'pago' ? styles.statusBadgePago : styles.statusBadgePendente}>
+                    {p.status === 'pago' ? '✅ PAGO' : '⏳ AGUARDANDO'}
+                  </span>
+                </div>
+
+                <div className={styles.comprovanteLabel}>Comprovante de Participação</div>
+                <div className={styles.divider} />
+
+                <div className={styles.cartaoNomeRow}>
+                  <span className={styles.cartaoLabel}>Participante</span>
+                  <span className={styles.cartaoNome}>{p.nome}</span>
+                </div>
+                <div className={styles.cartaoRow}>
+                  <span className={styles.cartaoLabel}>Telefone</span>
+                  <span className={styles.cartaoValor}>{formatTel(p.telefone)}</span>
+                </div>
+                {p.pontos_total != null && (
+                  <div className={styles.cartaoRow}>
+                    <span className={styles.cartaoLabel}>Pontuação</span>
+                    <span className={styles.cartaoConcurso}>{p.pontos_total} pts</span>
+                  </div>
+                )}
+
+                <div className={styles.divider} />
+                <div className={styles.cartaoRow}>
+                  <span className={styles.cartaoLabel}>Valor pago</span>
+                  <span className={styles.cartaoTotal}>R$ {Number(p.total).toFixed(2).replace('.', ',')}</span>
+                </div>
+
+                {p.palpites.length > 0 && (
+                  <>
+                    <div className={styles.divider} />
+                    <div className={styles.apostasHeader}>
+                      <span className={styles.cartaoLabel}>Palpites registrados — {p.palpites.length} jogos</span>
+                    </div>
+                    <div className={styles.apostasBets}>
+                      {p.palpites.map(pl => (
+                        <div key={pl.jogo_id} className={styles.apostaBet}>
+                          <span className={styles.apostaBetNum} style={{ minWidth: 140 }}>
+                            {pl.time_casa} × {pl.time_fora}
+                          </span>
+                          <span className={styles.apostaBetDezena}>
+                            {pl.palpite_casa} – {pl.palpite_fora}
+                          </span>
+                          {pl.encerrado && pl.gol_casa_real != null && (
+                            <span className={styles.apostaBetDezenaAcerto} style={{ borderRadius: 6, width: 'auto', padding: '2px 8px' }}>
+                              real: {pl.gol_casa_real}–{pl.gol_fora_real} · {pl.pontos ?? 0}pt
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                <div className={styles.divider} />
+                <div className={styles.cartaoFooter}>
+                  <div className={styles.cartaoFooterInfo}>
+                    Bolão: {typeof window !== 'undefined' ? window.location.host : ''}/esporte/{bolao?.slug}<br />
+                    Emissão: {emissao} às {horario}
+                  </div>
+                  <div className={styles.cartaoNumero}>Nº {String(idx + 1).padStart(3, '0')}</div>
+                </div>
+                <div className={styles.cartaoTermos}>
+                  Pontuação premiada conforme regras do bolão. Prêmio dividido proporcionalmente entre os participantes premiados.
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function ComprovanteContent() {
@@ -84,6 +232,11 @@ function ComprovanteContent() {
   const [dataSorteio, setDataSorteio]     = useState('')
   const [loading, setLoading]             = useState(true)
   const [grupoNome, setGrupoNome]         = useState('Bolões BetMais')
+
+  // Bolão esportivo não tem concurso/dezenas — detectado à parte antes do fluxo de loteria
+  const [tipo, setTipo]                             = useState<'loteria' | 'esporte' | null>(null)
+  const [esporteBolao, setEsporteBolao]             = useState<BolaoEsporte | null>(null)
+  const [esporteParticipantes, setEsporteParticipantes] = useState<ParticipanteEsporte[]>([])
 
   useEffect(() => {
     fetch('/api/config-publica').then(r => r.json()).then(d => {
@@ -110,8 +263,27 @@ function ComprovanteContent() {
       .catch(() => router.replace('/admin'))
   }, [router, modoPublico, filtroId, filtroIds, paramBolao])
 
+  // Detecta se o bolão referenciado é esportivo antes de seguir o fluxo de loteria
+  // (concurso/dezenas não existem pro lado esporte — tentar tratar como loteria
+  // simplesmente não encontra nada e a página fica em branco).
   useEffect(() => {
     if (!autorizado) return
+    if (!filtroId && !paramBolao) { setTipo('loteria'); return }
+    const qs = filtroId ? `id=${filtroId}` : `bolao=${paramBolao}`
+    fetch(`/api/esporte/comprovante?${qs}`).then(r => r.json()).then(d => {
+      if (d.bolao) {
+        setTipo('esporte')
+        setEsporteBolao(d.bolao)
+        setEsporteParticipantes(d.participantes || [])
+        setLoading(false)
+      } else {
+        setTipo('loteria')
+      }
+    }).catch(() => setTipo('loteria'))
+  }, [autorizado, filtroId, paramBolao])
+
+  useEffect(() => {
+    if (!autorizado || tipo === 'esporte') return
     Promise.all([
       fetch('/api/boloes').then(r => r.json()),
       paramConc
@@ -125,26 +297,40 @@ function ComprovanteContent() {
       const alvo = paramBolao ? lista.find(b => b.slug === paramBolao) : lista[0]
       setBolao(alvo ?? lista[0] ?? null)
     })
-  }, [autorizado, paramBolao, paramConc])
+  }, [autorizado, tipo, paramBolao, paramConc])
 
   useEffect(() => {
     // Sem concurso fixado via link, deriva do proprio slug do bolao (ex: "3725" -> 3725,
     // "3026g2" -> 3026) em vez de manter o concurso ativo global — senao trocar de bolao
     // no seletor mantem o concurso errado para boloes antigos.
-    if (paramConc || !bolao) return
+    if (tipo === 'esporte' || paramConc || !bolao) return
     const concursoDoSlug = bolao.slug.match(/^\d+/)?.[0]
     if (concursoDoSlug) setConcurso(concursoDoSlug)
-  }, [bolao, paramConc])
+  }, [tipo, bolao, paramConc])
 
   useEffect(() => {
-    if (!bolao || !concurso) return
+    if (tipo === 'esporte' || !bolao || !concurso) return
     setLoading(true)
     fetch(`/api/participantes?concurso=${concurso}&bolao=${bolao.slug}`)
       .then(r => r.json())
       .then(d => { setParticipantes(d.participantes || []); setLoading(false) })
-  }, [bolao, concurso])
+  }, [tipo, bolao, concurso])
 
   if (!autorizado) return null
+
+  if (tipo === 'esporte') {
+    return (
+      <ComprovanteEsporte
+        bolao={esporteBolao}
+        participantes={filtroId ? esporteParticipantes.filter(p => p.id === filtroId) : esporteParticipantes}
+        modoPublico={modoPublico}
+        modoFiltro={modoFiltro}
+        loading={loading}
+        grupoNome={grupoNome}
+        router={router}
+      />
+    )
+  }
 
   return (
     <div className={styles.page}>
