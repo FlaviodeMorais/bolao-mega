@@ -5,9 +5,16 @@ import { getAppSettings } from '@/lib/settings'
 import SwRegistrar from '@/components/SwRegistrar'
 import { CartProvider } from '@/components/CartContext'
 
+// Necessário pra imagens de Open Graph com URL relativa (ex: '/opengraph-image')
+// resolverem pra uma URL absoluta real — sem isso o WhatsApp/redes sociais não
+// conseguem buscar a imagem em rotas que não sejam a home.
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL
+  || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+
 export async function generateMetadata(): Promise<Metadata> {
   const app = await getAppSettings()
   return {
+    metadataBase: new URL(APP_URL),
     title:       `${app.grupo_nome} – ${app.nome}`,
     description: app.descricao,
     appleWebApp: {

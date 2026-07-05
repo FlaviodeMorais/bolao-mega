@@ -34,32 +34,31 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // Notifica participante ao confirmar pagamento manualmente
-  if (part && fields.status === 'pago' && part.status !== 'pago') {
-    await notificarPagamento(
-      part.nome, part.cotas, part.concurso,
-      Number(part.total), part.telefone, params.id
-    )
-    if (part.email && part.bolao_slug) {
-      const { data: bolaoInfo } = await supabase
-        .from('boloes')
-        .select('nome, num_apostas, dezenas')
-        .eq('slug', part.bolao_slug)
-        .single()
-      if (bolaoInfo) {
+  if (part && (fields.status === 'pago' || fields.acrescimo_pago === true)) {
+    const { data: bolaoInfo } = part.bolao_slug
+      ? await supabase.from('boloes').select('nome, num_apostas, dezenas, loteria').eq('slug', part.bolao_slug).single()
+      : { data: null }
+
+    if (fields.status === 'pago' && part.status !== 'pago') {
+      await notificarPagamento(
+        part.nome, part.cotas, part.concurso,
+        Number(part.total), part.telefone, params.id, bolaoInfo?.loteria
+      )
+      if (part.email && bolaoInfo) {
         await enviarConfirmacaoPagamento(
           part.email, part.nome, part.cotas, Number(part.total),
           part.concurso, bolaoInfo.nome, bolaoInfo.num_apostas, bolaoInfo.dezenas
         ).catch(() => {})
       }
     }
-  }
 
-  // Notifica ao confirmar acréscimo manualmente
-  if (part && fields.acrescimo_pago === true && !part.acrescimo_pago && part.acrescimo) {
-    await notificarPagamento(
-      part.nome, part.cotas, part.concurso,
-      Number(part.acrescimo), part.telefone
-    )
+    // Notifica ao confirmar acréscimo manualmente
+    if (fields.acrescimo_pago === true && !part.acrescimo_pago && part.acrescimo) {
+      await notificarPagamento(
+        part.nome, part.cotas, part.concurso,
+        Number(part.acrescimo), part.telefone, undefined, bolaoInfo?.loteria
+      )
+    }
   }
 
   return NextResponse.json({ ok: true })

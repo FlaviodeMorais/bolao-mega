@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const { contatos, mensagem } = await req.json() as { contatos: Contato[]; mensagem: string }
+  const { contatos, mensagem, loteria } = await req.json() as { contatos: Contato[]; mensagem: string; loteria?: string }
   if (!Array.isArray(contatos) || contatos.length === 0) {
     return NextResponse.json({ error: 'Nenhum contato informado' }, { status: 400 })
   }
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
   for (const c of contatos) {
     const texto = mensagem.replaceAll('{nome}', c.nome || '')
-    const res = await enviarConviteWhatsapp(c.telefone, texto)
+    const res = await enviarConviteWhatsapp(c.telefone, texto, loteria)
     if (res.ok) enviados++
     else falhas.push({ telefone: c.telefone, nome: c.nome, erro: res.erro || 'Erro desconhecido' })
     // Intervalo entre envios pra não estourar rate limit do Whapi

@@ -55,10 +55,16 @@ async function send(
       return { ok: false, erro: 'Evolution API não configurado (URL/instância/apikey)' }
     }
     try {
-      const res = await fetch(`${cfg.evolution_url}/message/sendText/${cfg.evolution_instance}`, {
+      const url = media
+        ? `${cfg.evolution_url}/message/sendMedia/${cfg.evolution_instance}`
+        : `${cfg.evolution_url}/message/sendText/${cfg.evolution_instance}`
+      const body = media
+        ? { number: destino, mediatype: 'image', mimetype: 'image/png', media: media.base64, fileName: media.fileName || 'imagem.png', caption: media.caption }
+        : { number: destino, text: texto }
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'apikey': cfg.token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ number: destino, text: texto }),
+        body: JSON.stringify(body),
       })
       if (!res.ok) {
         const txt = await res.text().catch(() => res.status.toString())
@@ -74,13 +80,17 @@ async function send(
 
   if (!cfg.token) return { ok: false, erro: 'WHAPI_TOKEN não configurado' }
   try {
-    const res = await fetch(`${WHAPI_URL}/messages/text`, {
+    const url  = media ? `${WHAPI_URL}/messages/image` : `${WHAPI_URL}/messages/text`
+    const body = media
+      ? { to: destino, image: `data:image/png;base64,${media.base64}`, caption: media.caption }
+      : { to: destino, body: texto }
+    const res = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${cfg.token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ to: destino, body: texto }),
+      body: JSON.stringify(body),
     })
     if (!res.ok) {
       const txt = await res.text().catch(() => res.status.toString())
@@ -94,7 +104,11 @@ async function send(
   }
 }
 
-async function toGroup(text: string) {
+// Mensagens vão como texto puro (não imagem+legenda): o link já embutido no
+// texto vira automaticamente um card de preview rico no WhatsApp, usando o
+// favicon/OG image do próprio site (BetMais) — sem precisar anexar mídia.
+// O parâmetro `loteria` fica pronto pra uso futuro (ex: emoji/tom por loteria).
+async function toGroup(text: string, _loteria?: string) {
   const cfg = await getWhatsappSettings()
   if (!cfg.group_id) return
   // Whapi/Evolution usam o JID puro (12036...@g.us); Zapster usa "group:<numero>" sem o sufixo
@@ -104,7 +118,7 @@ async function toGroup(text: string) {
   return send(destino, text)
 }
 
-async function toNumber(telefone: string, text: string): Promise<{ ok: boolean; erro?: string }> {
+async function toNumber(telefone: string, text: string, _loteria?: string): Promise<{ ok: boolean; erro?: string }> {
   if (!telefone) return { ok: false, erro: 'Telefone não informado' }
   const cfg = await getWhatsappSettings()
   const numero = normalizarNumero(telefone)
@@ -114,8 +128,8 @@ async function toNumber(telefone: string, text: string): Promise<{ ok: boolean; 
 }
 
 /** Envio avulso (convite/mensagem livre) — usado pelo disparo em massa do Histórico. */
-export async function enviarConviteWhatsapp(telefone: string, mensagem: string): Promise<{ ok: boolean; erro?: string }> {
-  return toNumber(telefone, mensagem)
+export async function enviarConviteWhatsapp(telefone: string, mensagem: string, loteria?: string): Promise<{ ok: boolean; erro?: string }> {
+  return toNumber(telefone, mensagem, loteria)
 }
 
 export async function verificarNumeroWhatsApp(telefone: string): Promise<boolean> {
@@ -201,14 +215,15 @@ export async function enviarQRCodePIX(
   )
 }
 
-export async function notificarInscricao(nome: string, cotas: string[], concurso: number, total: number) {
+export async function notificarInscricao(nome: string, cotas: string[], concurso: number, total: number, loteria?: string) {
   await toGroup(
     `✅ *NOVA INSCRIÇÃO*\n\n` +
     `👤 *${nome}*\n` +
     `🎟️ Cotas: ${cotas.join(', ')}\n` +
     `💰 Total: R$ ${total.toFixed(2).replace('.', ',')}\n` +
     `🎯 Concurso: #${concurso}\n\n` +
-    `_Aguardando pagamento via PIX_`
+    `_Aguardando pagamento via PIX_`,
+    loteria
   )
 }
 
@@ -222,7 +237,8 @@ export async function enviarComprovante(
   numApostas: number,
   dezenas: number,
   paymentId?: string,
-  dataHora?: string
+  dataHora?: string,
+  loteria?: string
 ) {
   const valor   = total.toFixed(2).replace('.', ',')
   const horario = dataHora || new Date().toLocaleString('pt-BR')
@@ -248,13 +264,14 @@ export async function enviarComprovante(
     `💳 Pagamento confirmado pelo administrador.\n` +
     `⚠️ Se sobrar cotas, o saldo é rateado entre os participantes.\n` +
     `🏆 Prêmio dividido proporcionalmente ao número de cotas.\n\n` +
-    `_Guarde este comprovante. Boa sorte! 🍀_`
+    `_Guarde este comprovante. Boa sorte! 🍀_`,
+    loteria
   )
 }
 
 export async function notificarPagamento(
   nome: string, cotas: string[], concurso: number, total: number,
-  telefone?: string, participanteId?: string
+  telefone?: string, participanteId?: string, loteria?: string
 ) {
   const app = await getAppSettings()
   const linkComprovante = participanteId ? `\n🔗 Comprovante: ${app.url}/p/${participanteId}` : ''
@@ -266,7 +283,7 @@ export async function notificarPagamento(
     `🎯 Concurso: #${concurso}\n\n` +
     `_Boa sorte! 🍀_`
 
-  await toGroup(msg)
+  await toGroup(msg, loteria)
 
   if (telefone) {
     await toNumber(telefone,
@@ -275,34 +292,37 @@ export async function notificarPagamento(
       `💰 R$ ${total.toFixed(2).replace('.', ',')}\n` +
       `🎯 Concurso: #${concurso}` +
       linkComprovante + `\n\n` +
-      `Boa sorte! 🍀`
+      `Boa sorte! 🍀`,
+      loteria
     )
   }
 }
 
-export async function notificarResultado(concurso: number, numeros: string[], premio: string, loteriaLabel = 'MEGA-SENA') {
+export async function notificarResultado(concurso: number, numeros: string[], premio: string, loteriaLabel = 'MEGA-SENA', loteria?: string) {
   await toGroup(
     `🍀 *RESULTADO ${loteriaLabel.toUpperCase()} #${concurso}*\n\n` +
     `🔢 *${numeros.join(' · ')}*\n\n` +
     `🏆 Prêmio estimado próximo: ${premio}\n\n` +
-    `_Confira seus números! Acesse o painel para ver os resultados._`
+    `_Confira seus números! Acesse o painel para ver os resultados._`,
+    loteria
   )
 }
 
-export async function notificarLembrete(concurso: number, pendentes: number) {
+export async function notificarLembrete(concurso: number, pendentes: number, loteria?: string) {
   const cfg = await getWhatsappSettings()
   await toGroup(
     `⏰ *LEMBRETE DE PAGAMENTO*\n\n` +
     `🎯 Concurso: #${concurso}\n` +
     `⚠️ ${pendentes} pagamento(s) ainda pendente(s)\n\n` +
     `💳 Prazo: *${cfg.prazo_horario} do dia do sorteio*\n` +
-    `_Fale com o administrador para informações de pagamento._`
+    `_Fale com o administrador para informações de pagamento._`,
+    loteria
   )
 }
 
 export async function notificarPremioIndividual(
   telefone: string, nome: string, cotas: string[],
-  valorPremio: number, bolaoNome: string, concurso: number
+  valorPremio: number, bolaoNome: string, concurso: number, loteria?: string
 ) {
   const valor = valorPremio.toFixed(2).replace('.', ',')
   await toNumber(telefone,
@@ -310,7 +330,8 @@ export async function notificarPremioIndividual(
     `*${nome}*, o bolão *${bolaoNome}* ganhou no concurso #${concurso}!\n\n` +
     `🎟️ Suas cotas: ${cotas.join(', ')}\n` +
     `💰 *Seu prêmio: R$ ${valor}*\n\n` +
-    `_O administrador entrará em contato para efetuar o pagamento. Parabéns! 🍀🎉_`
+    `_O administrador entrará em contato para efetuar o pagamento. Parabéns! 🍀🎉_`,
+    loteria
   )
 }
 
@@ -337,7 +358,7 @@ export async function notificarResultadoGrupo(
 
 export async function notificarAcrescimo(
   telefone: string, nome: string, cotas: string[],
-  acrescimo: number, pixCode: string, bolaoNome: string
+  acrescimo: number, pixCode: string, bolaoNome: string, loteria?: string
 ) {
   const valor = acrescimo.toFixed(2).replace('.', ',')
   await toNumber(telefone,
@@ -348,23 +369,26 @@ export async function notificarAcrescimo(
     `💰 *Seu complemento: R$ ${valor}*\n` +
     `🎟️ Suas cotas: ${cotas.join(', ')}\n\n` +
     `📋 *Código PIX para pagamento:*\n${pixCode}\n\n` +
-    `_Copie e pague no seu banco ou app. Boa sorte! 🍀_`
+    `_Copie e pague no seu banco ou app. Boa sorte! 🍀_`,
+    loteria
   )
   await toGroup(
     `🔔 *ENCERRAMENTO — ${bolaoNome}*\n\n` +
     `Acréscimo de *R$ ${valor}* enviado para *${nome}* via WhatsApp.\n` +
-    `🎟️ Cotas: ${cotas.join(', ')}`
+    `🎟️ Cotas: ${cotas.join(', ')}`,
+    loteria
   )
 }
 
-export async function notificarQuaseLotado(bolaoNome: string, cotasVendidas: number, totalCotas: number) {
+export async function notificarQuaseLotado(bolaoNome: string, cotasVendidas: number, totalCotas: number, loteria?: string) {
   const pct = Math.round((cotasVendidas / totalCotas) * 100)
   await toGroup(
     `🔥 *BOLÃO QUASE LOTADO!*\n\n` +
     `*${bolaoNome}* está com *${pct}%* das cotas preenchidas.\n\n` +
     `🎟️ ${cotasVendidas} de ${totalCotas} cotas vendidas\n` +
     `⚠️ *Restam apenas ${totalCotas - cotasVendidas} cotas disponíveis!*\n\n` +
-    `_Corra para garantir a sua! 🍀_`
+    `_Corra para garantir a sua! 🍀_`,
+    loteria
   )
 }
 
@@ -375,7 +399,8 @@ export async function notificarAcertosIndividual(
   concurso: number,
   dezenasSorteadas: number[],
   apostas: number[][],
-  cotas: string[]
+  cotas: string[],
+  loteria?: string
 ) {
   if (!telefone) return
 
@@ -401,7 +426,8 @@ export async function notificarAcertosIndividual(
     `📊 *Seus jogos:*\n${linhasApostas}\n` +
     (maxAcertos >= 4
       ? `🏆 *Parabéns! Você acertou ${maxAcertos} dezenas!*\n\n_O administrador entrará em contato com detalhes do prêmio._`
-      : `_Não foi dessa vez — mas a sorte está chegando! 💪🍀_`)
+      : `_Não foi dessa vez — mas a sorte está chegando! 💪🍀_`),
+    loteria
   )
 }
 

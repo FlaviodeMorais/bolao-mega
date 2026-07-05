@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   // 1. Dados do bolão
   const { data: bolao } = await supabase
     .from('boloes')
-    .select('nome, valor_cota, total_cotas, encerrado')
+    .select('nome, valor_cota, total_cotas, encerrado, loteria')
     .eq('id', bolao_id)
     .single()
 
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
       if (acrescimo > 0 && part.telefone) {
         await notificarAcrescimo(
           part.telefone, part.nome, part.cotas as string[],
-          acrescimo, pixCode, bolao.nome
+          acrescimo, pixCode, bolao.nome, bolao.loteria
         ).catch(() => {})
       }
       if (acrescimo > 0 && part.email) {

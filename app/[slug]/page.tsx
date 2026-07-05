@@ -12,7 +12,11 @@ interface Props { params: { slug: string } }
 export async function generateMetadata({ params }: Props) {
   const { data } = await supabase.from('boloes').select('nome, loteria').eq('slug', params.slug).single()
   const label = getLoteria(data?.loteria).label
-  return { title: data ? `${data.nome} — Bolão ${label}` : 'Bolão Loterias' }
+  const title = data ? `${data.nome} — Bolão ${label}` : 'Bolão Loterias'
+  return {
+    title,
+    openGraph: { title, images: ['/opengraph-image'] },
+  }
 }
 
 export default async function BolaoPage({ params }: Props) {

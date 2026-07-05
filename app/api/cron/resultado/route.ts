@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
         continue
       }
 
-      await notificarResultado(concurso, numeros, premio, loteria.label)
+      await notificarResultado(concurso, numeros, premio, loteria.label, loteria.id)
 
       await supabase.from('config').upsert([
         { key: notificadoKey, value: String(concurso), updated_at: new Date().toISOString() },

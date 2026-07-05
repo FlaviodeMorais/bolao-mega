@@ -41,8 +41,11 @@ export default async function EsportePage({ params }: Props) {
 
 export async function generateMetadata({ params }: Props) {
   const { data: bolao } = await supabase.from('boloes_esporte').select('nome, descricao').eq('slug', params.slug).single()
+  const title = bolao?.nome || 'Bolão Esportivo'
+  const description = bolao?.descricao || 'Palpite nos jogos e concorra a prêmios!'
   return {
-    title: bolao?.nome || 'Bolão Esportivo',
-    description: bolao?.descricao || 'Palpite nos jogos e concorra a prêmios!',
+    title,
+    description,
+    openGraph: { title, description, images: ['/opengraph-image'] },
   }
 }

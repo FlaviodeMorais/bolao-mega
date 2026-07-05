@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
       continue
     }
 
-    await notificarLembrete(concurso, pendentes.length)
+    await notificarLembrete(concurso, pendentes.length, loteria.id)
 
     const { data: boloesInfo } = await supabase.from('boloes').select('slug, nome').in('slug', slugs)
     const nomesPorSlug = new Map((boloesInfo || []).map(b => [b.slug, b.nome]))

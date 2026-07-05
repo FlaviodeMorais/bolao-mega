@@ -10,7 +10,7 @@ export interface HistoricoParticipante {
   acrescimo?: number | null; acrescimo_pago?: boolean
   created_at: string
 }
-interface BolaoOpt { slug: string; nome: string; ativo: boolean }
+interface BolaoOpt { slug: string; nome: string; ativo: boolean; loteria?: string }
 
 const TREVO = '\u{1F340}'
 
@@ -70,7 +70,7 @@ export function useHistoricoParticipantes(boloes: BolaoOpt[]) {
   async function dispararConvite(contatos: { telefone: string; nome: string }[]) {
     const res = await fetch('/api/admin/convite-massa', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contatos: contatos.map(c => ({ ...c })), mensagem: montarMensagem('{nome}') }),
+      body: JSON.stringify({ contatos: contatos.map(c => ({ ...c })), mensagem: montarMensagem('{nome}'), loteria: bolaoConvite?.loteria }),
     }).then(r => r.json())
     return res as { ok?: boolean; enviados?: number; falhas?: { telefone: string; nome: string; erro: string }[]; error?: string }
   }

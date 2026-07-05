@@ -27,11 +27,12 @@ export async function POST(req: NextRequest) {
         await supabase.from('pedidos').update({ status: 'pago' }).eq('mp_payment_id', paymentId)
 
         for (const part of partes) {
-          notificarPagamento(part.nome, part.cotas, part.concurso, Number(part.total), part.telefone, part.id).catch(() => {})
+          const { data: bolaoInfo } = await supabase
+            .from('boloes').select('nome, num_apostas, dezenas, loteria').eq('slug', part.bolao_slug || '').single()
+
+          notificarPagamento(part.nome, part.cotas, part.concurso, Number(part.total), part.telefone, part.id, bolaoInfo?.loteria).catch(() => {})
 
           if (part.email) {
-            const { data: bolaoInfo } = await supabase
-              .from('boloes').select('nome, num_apostas, dezenas').eq('slug', part.bolao_slug || '').single()
             enviarConfirmacaoPagamento(
               part.email, part.nome, part.cotas, Number(part.total),
               part.concurso, bolaoInfo?.nome || 'Bolão Mega-Sena',

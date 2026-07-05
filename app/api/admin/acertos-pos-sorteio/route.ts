@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
 
       if (canal === 'wa') {
         if (p.telefone) {
-          notificarAcertosIndividual(p.telefone, p.nome, bolao.nome, parseInt(concurso), rc.dezenas_sorteadas!, apostas, p.cotas as string[]).catch(() => {})
+          notificarAcertosIndividual(p.telefone, p.nome, bolao.nome, parseInt(concurso), rc.dezenas_sorteadas!, apostas, p.cotas as string[], bolao.loteria).catch(() => {})
         }
         if (p.email) {
           try {

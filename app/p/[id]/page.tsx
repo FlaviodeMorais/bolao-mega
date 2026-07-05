@@ -35,6 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `🍀 ${p.nome} está no ${bolaoNome}!`,
       description: `Concurso #${p.concurso} · ${p.cotas?.length} cota${p.cotas?.length !== 1 ? 's' : ''} · R$ ${Number(p.total).toFixed(2).replace('.', ',')}`,
       siteName: app.nome,
+      images: ['/opengraph-image'],
     },
   }
 }
