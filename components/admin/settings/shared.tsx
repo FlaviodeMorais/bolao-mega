@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import styles from '@/app/admin/admin.module.css'
 
 export interface SettingsData {
@@ -21,9 +22,10 @@ export interface SettingsData {
     rodape?: string
     msg_sem_bolao?: string
   }
+  cli?: Record<string, string>
 }
 
-export type Aba = 'app' | 'home' | 'pagamento' | 'whatsapp' | 'email' | 'esporte' | 'loteria'
+export type Aba = 'app' | 'home' | 'pagamento' | 'whatsapp' | 'email' | 'esporte' | 'loteria' | 'cli'
 
 export const ABAS: { id: Aba; label: string; icon: string }[] = [
   { id: 'app',      label: 'App',       icon: '🏠' },
@@ -33,6 +35,7 @@ export const ABAS: { id: Aba; label: string; icon: string }[] = [
   { id: 'email',    label: 'E-mail',    icon: '📧' },
   { id: 'loteria',  label: 'Loteria',   icon: '🍀' },
   { id: 'esporte',  label: 'Esporte',   icon: '⚽' },
+  { id: 'cli',      label: 'CLIs',      icon: '⌨️' },
 ]
 
 export const LOTERIAS_LABELS: Record<string, string> = {
@@ -45,17 +48,38 @@ export function Field({ label, name, value, onChange, type = 'text', placeholder
   label: string; name: string; value: string
   onChange: (v: string) => void; type?: string; placeholder?: string
 }) {
+  const [visivel, setVisivel] = useState(false)
+  const isSecreto = type === 'password'
+
   return (
     <div className={styles.settingsField}>
       <label className={styles.settingsLabel}>{label}</label>
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={styles.settingsInput}
-      />
+      <div style={isSecreto ? { position: 'relative' } : undefined}>
+        <input
+          type={isSecreto && !visivel ? 'password' : 'text'}
+          name={name}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          autoComplete="off"
+          className={styles.settingsInput}
+          style={isSecreto ? { paddingRight: 36 } : undefined}
+        />
+        {isSecreto && (
+          <button
+            type="button"
+            onClick={() => setVisivel(v => !v)}
+            title={visivel ? 'Ocultar' : 'Mostrar'}
+            style={{
+              position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)',
+              background: 'none', border: 'none', cursor: 'pointer', fontSize: 15,
+              opacity: 0.6, padding: 4, lineHeight: 1,
+            }}
+          >
+            {visivel ? '🙈' : '👁️'}
+          </button>
+        )}
+      </div>
     </div>
   )
 }

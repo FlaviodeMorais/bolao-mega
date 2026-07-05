@@ -708,6 +708,15 @@ export default function EsporteAdmin() {
                             💵 Confirmar pagamento
                           </button>
                         )}
+                        <button type="button" className={styles.btnExcluir}
+                          title="Excluir participante"
+                          onClick={async () => {
+                            if (!confirm(`Excluir ${p.nome}?`)) return
+                            await fetch(`/api/esporte/participantes/${p.id}`, { method: 'DELETE' })
+                            const pd = await fetch(`/api/esporte/participantes?bolao=${bolaoSel!.slug}&admin=1`).then(r => r.json())
+                            setParticipantes(pd.participantes || [])
+                          }}
+                        >✕</button>
                       </div>
                     </div>
                   )

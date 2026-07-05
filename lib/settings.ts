@@ -81,6 +81,15 @@ export interface PaginaEsporteSettings {
   football_data_key:       string
 }
 
+// Tokens pessoais de CLI (Supabase, Vercel, GitHub) — guardados só como
+// referência operacional do admin; a aplicação não os lê em runtime.
+export interface CliSettings {
+  supabase_token:       string
+  supabase_project_ref: string
+  vercel_token:         string
+  github_token:         string
+}
+
 export interface AllSettings {
   app:              AppSettings
   pagamento:        PagamentoSettings
@@ -89,6 +98,7 @@ export interface AllSettings {
   'paginas.home':   PaginaHomeSettings
   'paginas.bolao':  Record<string, PaginaBolaoSettings>
   'paginas.esporte': PaginaEsporteSettings
+  cli:              CliSettings
 }
 
 // ─── Defaults (valores quando settings não configurado) ───────────────────────
@@ -184,6 +194,12 @@ export const DEFAULTS: AllSettings = {
     ],
     football_data_key: process.env.FOOTBALL_DATA_KEY || '',
   },
+  cli: {
+    supabase_token:       '',
+    supabase_project_ref: '',
+    vercel_token:         '',
+    github_token:         '',
+  },
 }
 
 // ─── Cache em memória (5 minutos) ─────────────────────────────────────────────
@@ -215,6 +231,7 @@ export async function getEmailSettings():     Promise<EmailSettings>       { ret
 export async function getHomeSettings():      Promise<PaginaHomeSettings>  { return fetchNamespace('paginas.home',     DEFAULTS['paginas.home']) }
 export async function getBolaoSettings():     Promise<Record<string, PaginaBolaoSettings>> { return fetchNamespace('paginas.bolao', DEFAULTS['paginas.bolao']) }
 export async function getEsporteSettings():   Promise<PaginaEsporteSettings> { return fetchNamespace('paginas.esporte', DEFAULTS['paginas.esporte']) }
+export async function getCliSettings():       Promise<CliSettings>          { return fetchNamespace('cli',              DEFAULTS.cli) }
 
 /** Invalida o cache de um namespace (chamar após salvar via admin) */
 export function invalidarCache(namespace?: string) {
@@ -234,7 +251,7 @@ export async function salvarSettings(namespace: string, dados: unknown): Promise
 
 /** Retorna todas as configurações de uma vez (para o painel admin) */
 export async function getAllSettings(): Promise<AllSettings> {
-  const [app, pagamento, whatsapp, email, home, bolao, esporte] = await Promise.all([
+  const [app, pagamento, whatsapp, email, home, bolao, esporte, cli] = await Promise.all([
     getAppSettings(),
     getPagamentoSettings(),
     getWhatsappSettings(),
@@ -242,6 +259,7 @@ export async function getAllSettings(): Promise<AllSettings> {
     getHomeSettings(),
     getBolaoSettings(),
     getEsporteSettings(),
+    getCliSettings(),
   ])
-  return { app, pagamento, whatsapp, email, 'paginas.home': home, 'paginas.bolao': bolao, 'paginas.esporte': esporte }
+  return { app, pagamento, whatsapp, email, 'paginas.home': home, 'paginas.bolao': bolao, 'paginas.esporte': esporte, cli }
 }

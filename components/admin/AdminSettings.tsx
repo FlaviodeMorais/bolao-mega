@@ -10,6 +10,7 @@ import WhatsappTab from './settings/WhatsappTab'
 import EmailTab from './settings/EmailTab'
 import LoteriaTab from './settings/LoteriaTab'
 import EsporteTab from './settings/EsporteTab'
+import CliTab from './settings/CliTab'
 
 /**
  * Painel de configurações white-label do admin, organizado em abas.
@@ -61,6 +62,7 @@ export default function AdminSettings() {
   const esporte = settings['paginas.esporte'] ?? {}
   const home    = settings['paginas.home'] ?? {}
   const bolao   = (settings['paginas.bolao'] ?? {}) as Record<string, { regras: string[] }>
+  const cli     = (settings.cli ?? {}) as Record<string, string>
 
   function updateRegra(loteria: string, idx: number, val: string) {
     const atual = bolao[loteria]?.regras ?? []
@@ -145,6 +147,7 @@ export default function AdminSettings() {
               />
             )}
             {aba === 'esporte'  && <EsporteTab esporte={esporte} updateNs={updateNs} salvar={salvar} saving={saving} />}
+            {aba === 'cli'      && <CliTab cli={cli} updateNs={updateNs} salvar={salvar} saving={saving} />}
           </div>
 
           {msg && <div className={styles.settingsMsg}>{msg}</div>}
