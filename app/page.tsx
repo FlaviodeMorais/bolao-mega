@@ -374,7 +374,7 @@ export default function Home() {
   const [loginAberto, setLoginAberto]     = useState(false)
   const [userAuthAberto, setUserAuthAberto] = useState(false)
   const [contaAberta, setContaAberta] = useState(false)
-  const [usuario, setUsuario] = useState<{ nome: string; email: string; telefone: string } | null>(null)
+  const [usuario, setUsuario] = useState<{ nome: string; email: string; telefone: string; senha_temporaria?: boolean } | null>(null)
   const [carrosselIntervaloMs, setCarrosselIntervaloMs] = useState(5000)
   const [tagline, setTagline]             = useState('Bolões de Loteria & Esportes')
   const [homeTitulo, setHomeTitulo]       = useState('')

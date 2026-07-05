@@ -3,12 +3,15 @@ import { useState, useEffect } from 'react'
 import TrevoIcon from '@/components/TrevoIcon'
 
 interface Props {
-  usuario: { nome: string; email: string; telefone: string }
+  usuario: { nome: string; email: string; telefone: string; senha_temporaria?: boolean }
   onClose: () => void
   onLogout: () => void
 }
 
 export default function UserAccountModal({ usuario, onClose, onLogout }: Props) {
+  // Só abre o formulário de troca direto quando a senha ainda é a temporária
+  // (primeiro acesso) - depois de trocada, fica escondido atrás de um link.
+  const [mostrarTrocarSenha, setMostrarTrocarSenha] = useState(!!usuario.senha_temporaria)
   const [senhaAtual, setSenhaAtual] = useState('')
   const [novaSenha, setNovaSenha] = useState('')
   const [confirmaSenha, setConfirmaSenha] = useState('')
@@ -43,6 +46,7 @@ export default function UserAccountModal({ usuario, onClose, onLogout }: Props) 
     if (res.error) { setErro(res.error); return }
     setMsgOk('✅ Senha alterada com sucesso!')
     setSenhaAtual(''); setNovaSenha(''); setConfirmaSenha('')
+    setTimeout(() => setMostrarTrocarSenha(false), 1500)
   }
 
   async function sair() {
@@ -109,37 +113,64 @@ export default function UserAccountModal({ usuario, onClose, onLogout }: Props) 
           {usuario.email}
         </div>
 
-        <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: 1.5, textTransform: 'uppercase', textAlign: 'left', marginBottom: 12 }}>
-          Trocar senha
-        </div>
+        {mostrarTrocarSenha && usuario.senha_temporaria && (
+          <div style={{
+            background: 'rgba(217,119,6,0.1)', border: '1px solid rgba(217,119,6,0.3)',
+            borderRadius: 10, padding: 12, marginBottom: 16, textAlign: 'left',
+          }}>
+            <div style={{ fontSize: 12, color: '#D97706', fontWeight: 600 }}>
+              ⚠️ Você ainda está usando a senha temporária enviada por e-mail. Recomendamos trocar agora.
+            </div>
+          </div>
+        )}
 
-        <input type="password" placeholder="Senha atual" value={senhaAtual}
-          onChange={e => setSenhaAtual(e.target.value)} style={inputStyle} autoFocus />
-        <input type="password" placeholder="Nova senha (mín. 6 caracteres)" value={novaSenha}
-          onChange={e => setNovaSenha(e.target.value)} style={inputStyle} />
-        <input type="password" placeholder="Confirmar nova senha" value={confirmaSenha}
-          onChange={e => setConfirmaSenha(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && trocarSenha()}
-          style={inputStyle} />
+        {mostrarTrocarSenha ? (
+          <>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: 1.5, textTransform: 'uppercase', textAlign: 'left', marginBottom: 12 }}>
+              Trocar senha
+            </div>
 
-        {erro && <div style={{ fontSize: 12, color: '#EF4444', marginBottom: 10, fontWeight: 500 }}>{erro}</div>}
-        {msgOk && <div style={{ fontSize: 12, color: '#00AB67', marginBottom: 10, fontWeight: 600 }}>{msgOk}</div>}
+            <input type="password" placeholder="Senha atual" value={senhaAtual}
+              onChange={e => setSenhaAtual(e.target.value)} style={inputStyle} autoFocus />
+            <input type="password" placeholder="Nova senha (mín. 6 caracteres)" value={novaSenha}
+              onChange={e => setNovaSenha(e.target.value)} style={inputStyle} />
+            <input type="password" placeholder="Confirmar nova senha" value={confirmaSenha}
+              onChange={e => setConfirmaSenha(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && trocarSenha()}
+              style={inputStyle} />
 
-        <button
-          onClick={trocarSenha}
-          disabled={loading}
-          style={{
-            width: '100%', padding: 15, marginTop: 4, marginBottom: 20,
-            background: 'linear-gradient(135deg, #00AB67 0%, #009B63 100%)',
-            color: '#fff', border: 'none', borderRadius: 100,
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-            fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
-            opacity: loading ? 0.7 : 1,
-            transition: 'all .2s',
-          }}
-        >
-          {loading ? 'Aguarde...' : 'Salvar nova senha'}
-        </button>
+            {erro && <div style={{ fontSize: 12, color: '#EF4444', marginBottom: 10, fontWeight: 500 }}>{erro}</div>}
+            {msgOk && <div style={{ fontSize: 12, color: '#00AB67', marginBottom: 10, fontWeight: 600 }}>{msgOk}</div>}
+
+            <button
+              onClick={trocarSenha}
+              disabled={loading}
+              style={{
+                width: '100%', padding: 15, marginTop: 4, marginBottom: 20,
+                background: 'linear-gradient(135deg, #00AB67 0%, #009B63 100%)',
+                color: '#fff', border: 'none', borderRadius: 100,
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.7 : 1,
+                transition: 'all .2s',
+              }}
+            >
+              {loading ? 'Aguarde...' : 'Salvar nova senha'}
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => setMostrarTrocarSenha(true)}
+            style={{
+              width: '100%', padding: '10px 0', marginBottom: 20,
+              background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)',
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              fontSize: 13, fontWeight: 600, cursor: 'pointer', textDecoration: 'underline',
+            }}
+          >
+            Trocar senha
+          </button>
+        )}
 
         <button
           onClick={sair}

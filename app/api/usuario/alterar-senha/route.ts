@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   if (!ok) return NextResponse.json({ error: 'Senha atual incorreta' }, { status: 401 })
 
   const senha_hash = await hashSenha(novaSenha)
-  const { error } = await supabase.from('usuarios').update({ senha_hash }).eq('id', uid)
+  const { error } = await supabase.from('usuarios').update({ senha_hash, senha_temporaria: false }).eq('id', uid)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ ok: true })
