@@ -155,6 +155,18 @@
   color: #fff;
 }
 
+/* Loterias com muitas dezenas (Lotofácil 15, Lotomania 20) não cabem numa
+   linha só com bolas de tamanho fixo em telas estreitas — sem isso a última
+   bola fica cortada fora da viewport (flex-shrink:0 impede encolher). */
+@media (max-width: 480px) {
+  .sorteioBalls {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+  .sorteioBall { width: 26px; height: 26px; font-size: 10px; }
+}
+
 /* ── JOGO DE HOJE (dentro do item de bolão na lista) ── */
 .cardBolaoJogoHoje {
   display: flex; align-items: center; gap: 6px; flex-wrap: wrap;

@@ -35,7 +35,7 @@ export default function Configurador(p: Props) {
               <select className={styles.configSelect} value={p.editDezenas}
                 title="Dezenas por aposta" onChange={e => p.onEditDezenasChange(Number(e.target.value))}>
                 {Object.entries(loteriaCfg.precos).map(([d, pr]) => (
-                  <option key={d} value={d}>{d} dez — R$ {(pr as number).toLocaleString('pt-BR')},00</option>
+                  <option key={d} value={d}>{d} dez — R$ {(pr as number).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</option>
                 ))}
               </select>
             </div>
@@ -62,10 +62,10 @@ export default function Configurador(p: Props) {
           <div className={styles.configCalc}>
             <div className={styles.calcRow}>
               <span>Preço Caixa — {p.editDezenas} dezenas</span>
-              <span>R$ {p.precoCaixa.toLocaleString('pt-BR')},00 / aposta</span>
+              <span>R$ {p.precoCaixa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / aposta</span>
             </div>
             <div className={styles.calcRow}>
-              <span>{p.editApostas} × R$ {p.precoCaixa.toLocaleString('pt-BR')},00</span>
+              <span>{p.editApostas} × R$ {p.precoCaixa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               <span>R$ {p.custoApostas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
             </div>
             {p.editTaxa > 0 && (

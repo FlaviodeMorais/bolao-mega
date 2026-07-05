@@ -1470,6 +1470,15 @@
   .createBtns button { width: 100%; }
 
   .histTable { min-width: 460px; font-size: 11px; }
+
+  /* Grid de frequência (Ferramentas) tem a qtd de colunas definida inline via JS
+     conforme o total de números da loteria (ex: 5 p/ Quina/80) — em telas
+     estreitas isso estoura a largura (bola + contador não cabem em 1fr),
+     cortando a última coluna. Força um teto de colunas e encolhe os itens. */
+  .ferrBallGrid   { grid-template-columns: repeat(4, 1fr) !important; column-gap: 8px; row-gap: 10px; }
+  .ferrBallItem   { min-width: 0; gap: 4px; }
+  .ferrBall       { width: 26px; height: 26px; font-size: 10px; }
+  .ferrBallCount  { font-size: 10px; }
 }
 
 /* ══════════════════════════════════════════
