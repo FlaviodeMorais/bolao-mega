@@ -1,20 +1,19 @@
 'use client'
 import { useState, useEffect } from 'react'
-import TrevoIcon from '@/components/TrevoIcon'
 
 interface Props {
   onClose: () => void
   onAutenticado: (usuario: { id: string; nome: string; email: string; telefone: string }) => void
-  appNome?: string
 }
 
 type Aba = 'entrar' | 'cadastrar'
 
-export default function UserAuthModal({ onClose, onAutenticado, appNome = 'Bolões' }: Props) {
+export default function UserAuthModal({ onClose, onAutenticado }: Props) {
   const [aba, setAba] = useState<Aba>('entrar')
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [telefone, setTelefone] = useState('')
+  const [chavePix, setChavePix] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
   const [loading, setLoading] = useState(false)
@@ -38,13 +37,14 @@ export default function UserAuthModal({ onClose, onAutenticado, appNome = 'Bolõ
       if (!nome.trim()) { setErro('Preencha seu nome'); return }
       if (!email) { setErro('Preencha seu e-mail'); return }
       if (telefone.replace(/\D/g, '').length < 10) { setErro('Telefone inválido'); return }
+      if (!chavePix.trim()) { setErro('Preencha sua Chave PIX'); return }
       if (senha.length < 6) { setErro('Senha deve ter ao menos 6 caracteres'); return }
     }
 
     setLoading(true)
     try {
       const url = aba === 'entrar' ? '/api/usuario/login' : '/api/usuario/cadastro'
-      const body = aba === 'entrar' ? { email, senha } : { nome, email, telefone, senha }
+      const body = aba === 'entrar' ? { email, senha } : { nome, email, telefone, chavePix, senha }
       const res = await fetch(url, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -109,14 +109,11 @@ export default function UserAuthModal({ onClose, onAutenticado, appNome = 'Bolõ
         >✕</button>
 
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
-          <TrevoIcon loteria="mega" size={48} />
+          <img src="/icon.png" alt="BetMais" style={{ width: 48, height: 48, borderRadius: 12, objectFit: 'cover' }} />
         </div>
 
-        <div style={{ fontSize: 26, fontWeight: 800, color: '#00AB67', letterSpacing: -0.5, marginBottom: 4 }}>
+        <div style={{ fontSize: 26, fontWeight: 800, color: '#00AB67', letterSpacing: -0.5, marginBottom: 24 }}>
           {aba === 'entrar' ? 'Entrar' : 'Criar conta'}
-        </div>
-        <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 24 }}>
-          {appNome}
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
@@ -146,10 +143,12 @@ export default function UserAuthModal({ onClose, onAutenticado, appNome = 'Bolõ
           onChange={e => setEmail(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && aba === 'entrar' && submeter()}
           style={inputStyle} autoFocus={aba === 'entrar'} />
-        {aba === 'cadastrar' && (
+        {aba === 'cadastrar' && (<>
           <input type="tel" placeholder="Telefone (com DDD)" value={telefone}
             onChange={e => setTelefone(e.target.value)} style={inputStyle} />
-        )}
+          <input type="text" placeholder="Chave PIX (CPF, e-mail, telefone ou aleatória)" value={chavePix}
+            onChange={e => setChavePix(e.target.value)} style={inputStyle} autoComplete="off" />
+        </>)}
         <input type="password" placeholder="Senha" value={senha}
           onChange={e => setSenha(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && submeter()}

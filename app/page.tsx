@@ -516,7 +516,7 @@ export default function Home() {
 
       {loginAberto && <LoginModal onClose={() => setLoginAberto(false)} appNome={appNome} />}
       {userAuthAberto && (
-        <UserAuthModal onClose={() => setUserAuthAberto(false)} appNome={appNome}
+        <UserAuthModal onClose={() => setUserAuthAberto(false)}
           onAutenticado={u => setUsuario(u)} />
       )}
       {contaAberta && usuario && (
