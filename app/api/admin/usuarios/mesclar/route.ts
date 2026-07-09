@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   if (!vencedorId) {
     // Nenhum dos registros tem conta ainda — cria uma sem senha (admin enviará convite depois)
     const { data, error } = await supabase.from('usuarios').insert({
-      nome:     vencedor.nome,
+      nome:     vencedor.nome.trim().toUpperCase(),
       email:    vencedor.email || null,
       telefone: vencedor.telefone || null,
       chave_pix: vencedor.chave_pix || null,
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   } else {
     // Atualiza os campos escolhidos pelo admin
     await supabase.from('usuarios').update({
-      nome:      vencedor.nome,
+      nome:      vencedor.nome.trim().toUpperCase(),
       email:     vencedor.email || null,
       telefone:  vencedor.telefone || null,
       chave_pix: vencedor.chave_pix || null,

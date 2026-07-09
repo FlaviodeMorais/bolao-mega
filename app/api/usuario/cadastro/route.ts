@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase
     .from('usuarios')
     .insert({
-      nome: nome.trim(), email: emailNorm, telefone: digitos, senha_hash, chave_pix: chavePix.trim(),
+      nome: nome.trim().toUpperCase(), email: emailNorm, telefone: digitos, senha_hash, chave_pix: chavePix.trim(),
       termos_aceitos_em: new Date().toISOString(), termos_versao: TERMOS_VERSAO,
     })
     .select('id')

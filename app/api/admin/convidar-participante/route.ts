@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
   if (!existente) {
     const { error } = await supabase.from('usuarios').insert({
-      nome, email: emailNorm, telefone: telNorm, senha_hash, senha_temporaria: true,
+      nome: nome.trim().toUpperCase(), email: emailNorm, telefone: telNorm, senha_hash, senha_temporaria: true,
     })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   } else {
