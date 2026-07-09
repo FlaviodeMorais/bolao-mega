@@ -1,10 +1,8 @@
 import { getWhatsappSettings, getAppSettings } from './settings'
 
-// Formata lista de cotas de forma clara: "1 cota (nº 4)" ou "3 cotas (nº 2, 5, 8)"
+// Formata quantidade de cotas: "1 cota" ou "3 cotas"
 function fmtCotas(cotas: (string | number)[]): string {
-  const nums = cotas.join(', ')
-  const qtd  = cotas.length
-  return qtd === 1 ? `1 cota (nº ${nums})` : `${qtd} cotas (nº ${nums})`
+  return cotas.length === 1 ? '1 cota' : `${cotas.length} cotas`
 }
 
 const WHAPI_URL = 'https://gate.whapi.cloud'
