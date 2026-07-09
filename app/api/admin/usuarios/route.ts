@@ -48,12 +48,25 @@ export async function GET(req: NextRequest) {
     created_at: string | null
   }[] = []
 
+  function telVariants(t: string): string[] {
+    const d = (t || '').replace(/\D/g, '')
+    if (!d) return []
+    const base = d.startsWith('55') ? d.slice(2) : d
+    return [base, `55${base}`]
+  }
+
   for (const p of todos) {
     const email = p.email?.toLowerCase().trim() || ''
     const tel   = (p.telefone || '').replace(/\D/g, '')
-    const chave = email || tel
-    if (!chave || visto.has(chave)) continue
-    visto.add(chave)
+    const vars  = telVariants(tel)
+
+    // Considera já visto se qualquer variante do telefone ou o e-mail já foi processado
+    const jaVisto = (email && visto.has(email)) || vars.some(v => visto.has(v))
+    if (!email && !tel) continue
+    if (jaVisto) continue
+
+    if (email) visto.add(email)
+    vars.forEach(v => visto.add(v))
 
     const conta = (email && contasPorEmail.get(email)) || (tel && contasPorTel.get(tel)) || null
 

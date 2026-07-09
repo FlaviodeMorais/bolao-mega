@@ -54,20 +54,27 @@ export async function POST(req: NextRequest) {
     ])
   }
 
-  // Também atualiza participantes pelo e-mail/telefone (para quem não tinha usuario_id)
-  for (const p of perdedores) {
-    if (p.usuario_id) continue  // já tratado acima
+  function telVariants(t: string): string[] {
+    const d = (t || '').replace(/\D/g, '')
+    if (!d) return []
+    const base = d.startsWith('55') ? d.slice(2) : d
+    // Gera variantes comuns encontradas no banco: sem DDI, com DDI, com +55
+    return [base, `55${base}`, `+55${base}`, `+55 ${base}`].filter(Boolean)
+  }
+
+  // Atualiza participantes pelo e-mail/telefone (cobre quem não tinha usuario_id e variantes de formato)
+  for (const p of [...perdedores, vencedor]) {
     const conditions: Promise<unknown>[] = []
     if (p.email) {
       conditions.push(
-        supabase.from('participantes').update({ usuario_id: vencedorId }).eq('email', p.email),
-        supabase.from('participantes_esporte').update({ usuario_id: vencedorId }).eq('email', p.email),
+        supabase.from('participantes').update({ usuario_id: vencedorId }).eq('email', p.email).is('usuario_id', null),
+        supabase.from('participantes_esporte').update({ usuario_id: vencedorId }).eq('email', p.email).is('usuario_id', null),
       )
     }
-    if (p.telefone) {
+    for (const v of telVariants(p.telefone || '')) {
       conditions.push(
-        supabase.from('participantes').update({ usuario_id: vencedorId }).eq('telefone', p.telefone),
-        supabase.from('participantes_esporte').update({ usuario_id: vencedorId }).eq('telefone', p.telefone),
+        supabase.from('participantes').update({ usuario_id: vencedorId }).eq('telefone', v).is('usuario_id', null),
+        supabase.from('participantes_esporte').update({ usuario_id: vencedorId }).eq('telefone', v).is('usuario_id', null),
       )
     }
     await Promise.all(conditions)

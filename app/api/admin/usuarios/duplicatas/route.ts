@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verificarToken } from '@/lib/auth'
 
-function normTel(t: string) { return (t || '').replace(/\D/g, '').replace(/^55/, '') }
+function normTel(t: string) {
+  const d = (t || '').replace(/\D/g, '')
+  return d.startsWith('55') ? d.slice(2) : d
+}
 function normEmail(e: string) { return (e || '').toLowerCase().trim() }
 
 // Normaliza nome: remove acentos, minúsculo, remove stop words, ordena tokens
