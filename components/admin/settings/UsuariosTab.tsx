@@ -14,16 +14,39 @@ interface Participante {
   criado_em: string | null
 }
 
+interface RegistroDup {
+  nome: string
+  email: string | null
+  telefone: string
+  chave_pix: string | null
+  usuario_id: string | null
+  senha_temporaria: boolean
+}
+
+interface FormMerge {
+  nome: string
+  email: string
+  telefone: string
+  chave_pix: string
+  vencedor_idx: number
+}
+
 export default function UsuariosTab() {
-  const [lista, setLista]       = useState<Participante[]>([])
-  const [loading, setLoading]   = useState(true)
-  const [busca, setBusca]       = useState('')
-  const [migrando, setMigrando] = useState(false)
-  const [enviando, setEnviando] = useState<string | null>(null)
-  const [editando, setEditando] = useState<string | null>(null)
-  const [form, setForm]         = useState({ nome: '', email: '', telefone: '', chave_pix: '' })
-  const [salvando, setSalvando] = useState(false)
-  const [msg, setMsg]           = useState('')
+  const [lista, setLista]           = useState<Participante[]>([])
+  const [loading, setLoading]       = useState(true)
+  const [busca, setBusca]           = useState('')
+  const [migrando, setMigrando]     = useState(false)
+  const [enviando, setEnviando]     = useState<string | null>(null)
+  const [editando, setEditando]     = useState<string | null>(null)
+  const [form, setForm]             = useState({ nome: '', email: '', telefone: '', chave_pix: '' })
+  const [salvando, setSalvando]     = useState(false)
+  const [msg, setMsg]               = useState('')
+  // Duplicatas
+  const [dupGrupos, setDupGrupos]   = useState<RegistroDup[][]>([])
+  const [dupLoading, setDupLoading] = useState(false)
+  const [dupAberto, setDupAberto]   = useState<number | null>(null)
+  const [mergeForm, setMergeForm]   = useState<FormMerge | null>(null)
+  const [mesclando, setMesclando]   = useState(false)
 
   async function carregar() {
     setLoading(true)
@@ -32,7 +55,51 @@ export default function UsuariosTab() {
     setLoading(false)
   }
 
-  useEffect(() => { carregar() }, [])
+  useEffect(() => { carregar(); carregarDuplic() }, [])
+
+  async function carregarDuplic() {
+    setDupLoading(true)
+    const res = await fetch('/api/admin/usuarios/duplicatas').then(r => r.json())
+    setDupGrupos(res.grupos || [])
+    setDupLoading(false)
+  }
+
+  function abrirMerge(idx: number, grupo: RegistroDup[]) {
+    setDupAberto(idx)
+    // Preenche com os valores mais completos de cada campo
+    const melhor = (campo: keyof RegistroDup) =>
+      grupo.map(r => r[campo]).find(v => v) || ''
+    setMergeForm({
+      nome:          String(melhor('nome') || ''),
+      email:         String(melhor('email') || ''),
+      telefone:      String(melhor('telefone') || ''),
+      chave_pix:     String(melhor('chave_pix') || ''),
+      vencedor_idx:  grupo.findIndex(r => r.usuario_id) ?? 0,
+    })
+  }
+
+  async function executarMerge(grupo: RegistroDup[]) {
+    if (!mergeForm) return
+    setMesclando(true)
+    const vencedor = grupo[mergeForm.vencedor_idx]
+    const perdedores = grupo.filter((_, i) => i !== mergeForm.vencedor_idx)
+    const res = await fetch('/api/admin/usuarios/mesclar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        vencedor: { ...vencedor, ...mergeForm },
+        perdedores,
+      }),
+    }).then(r => r.json())
+    setMesclando(false)
+    if (res.ok) {
+      flash('✅ Contatos mesclados com sucesso')
+      setDupAberto(null)
+      setMergeForm(null)
+      carregar()
+      carregarDuplic()
+    } else flash('❌ ' + res.error)
+  }
 
   function flash(text: string) {
     setMsg(text)
@@ -145,6 +212,117 @@ export default function UsuariosTab() {
           <span>👥 {lista.length} participante(s)</span>
           <span>✅ {comConta} com conta</span>
           {semConta > 0 && <span style={{ color: '#b45309' }}>⚠️ {semConta} sem conta</span>}
+        </div>
+      )}
+
+      {/* ── Duplicatas ── */}
+      {(dupLoading || dupGrupos.length > 0) && (
+        <div style={{ border: '1px solid #fde68a', borderRadius: 10, overflow: 'hidden', background: '#fffbeb' }}>
+          <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontWeight: 700, fontSize: 13, color: '#92400e' }}>
+              ⚠️ {dupLoading ? 'Verificando duplicatas…' : `${dupGrupos.length} grupo(s) duplicado(s) detectado(s)`}
+            </span>
+            {!dupLoading && dupGrupos.length > 0 && (
+              <span style={{ fontSize: 12, color: '#b45309' }}>Clique em cada grupo para revisar e mesclar</span>
+            )}
+          </div>
+
+          {dupGrupos.map((grupo, gi) => (
+            <div key={gi} style={{ borderTop: '1px solid #fde68a' }}>
+              {/* Resumo do grupo */}
+              <div
+                style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', background: dupAberto === gi ? '#fef3c7' : '#fffde7' }}
+                onClick={() => dupAberto === gi ? setDupAberto(null) : abrirMerge(gi, grupo)}
+              >
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#78350f', flex: 1 }}>
+                  {grupo.map(r => r.nome).join(' · ')}
+                </span>
+                <span style={{ fontSize: 11, color: '#a16207', background: '#fef9c3', borderRadius: 4, padding: '2px 8px' }}>
+                  {grupo.length} registros
+                </span>
+                <span style={{ fontSize: 14, color: '#92400e' }}>{dupAberto === gi ? '▲' : '▼'}</span>
+              </div>
+
+              {/* Painel de merge */}
+              {dupAberto === gi && mergeForm && (
+                <div style={{ padding: '16px', background: '#fff', borderTop: '1px solid #fde68a' }}>
+                  {/* Registros lado a lado */}
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${grupo.length}, 1fr)`, gap: 12, marginBottom: 16 }}>
+                    {grupo.map((r, ri) => (
+                      <div key={ri} style={{ border: `2px solid ${mergeForm.vencedor_idx === ri ? '#00AB67' : '#e2e8f0'}`, borderRadius: 8, padding: 10, fontSize: 12 }}>
+                        <div style={{ fontWeight: 700, marginBottom: 6, color: '#0d1b2a' }}>{r.nome}</div>
+                        <div style={{ color: '#64748b' }}>✉️ {r.email || <em>sem e-mail</em>}</div>
+                        <div style={{ color: '#64748b' }}>📱 {r.telefone || <em>sem telefone</em>}</div>
+                        <div style={{ color: '#64748b' }}>PIX: {r.chave_pix || <em>—</em>}</div>
+                        <div style={{ marginTop: 4, color: r.usuario_id ? '#15803d' : '#b45309', fontSize: 11 }}>
+                          {r.usuario_id ? '✅ tem conta' : '⚠️ sem conta'}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setMergeForm(f => f ? { ...f, vencedor_idx: ri } : f)}
+                          style={{ marginTop: 8, width: '100%', fontSize: 11, padding: '4px 0', borderRadius: 6, border: `1px solid ${mergeForm.vencedor_idx === ri ? '#00AB67' : '#cbd5e1'}`, background: mergeForm.vencedor_idx === ri ? '#d1fae5' : '#f8fafc', cursor: 'pointer', color: mergeForm.vencedor_idx === ri ? '#065f46' : '#334155', fontWeight: 600 }}
+                        >
+                          {mergeForm.vencedor_idx === ri ? '★ Registro base' : 'Usar como base'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Campos finais (admin edita) */}
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 8 }}>Cadastro final após mescla:</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+                    {(['nome', 'email', 'telefone', 'chave_pix'] as const).map(campo => (
+                      <div key={campo}>
+                        <label className={styles.settingsLabel}>
+                          {campo === 'nome' ? 'Nome' : campo === 'email' ? 'E-mail' : campo === 'telefone' ? 'Telefone' : 'Chave PIX'}
+                        </label>
+                        <input
+                          type="text"
+                          value={(mergeForm as Record<string, string>)[campo]}
+                          onChange={e => setMergeForm(f => f ? { ...f, [campo]: e.target.value } : f)}
+                          className={styles.settingsInput}
+                          style={{ fontSize: 12 }}
+                        />
+                        {/* Botões de copiar valor de cada registro */}
+                        <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
+                          {grupo.map((r, ri) => {
+                            const val = String((r as Record<string, unknown>)[campo] || '')
+                            return val ? (
+                              <button key={ri} type="button"
+                                onClick={() => setMergeForm(f => f ? { ...f, [campo]: val } : f)}
+                                style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer', color: '#475569' }}
+                                title={`Usar valor do registro ${ri + 1}`}
+                              >
+                                #{ri + 1}: {val.length > 20 ? val.slice(0, 18) + '…' : val}
+                              </button>
+                            ) : null
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                    <button
+                      type="button"
+                      onClick={() => executarMerge(grupo)}
+                      disabled={mesclando}
+                      className={styles.settingsSave}
+                    >
+                      {mesclando ? '⏳ Mesclando…' : '🔀 Confirmar mescla'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setDupAberto(null); setMergeForm(null) }}
+                      style={{ padding: '8px 14px', borderRadius: 6, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, color: '#64748b' }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
