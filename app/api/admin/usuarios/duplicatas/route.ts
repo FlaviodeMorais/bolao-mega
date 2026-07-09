@@ -101,7 +101,11 @@ export async function GET(req: NextRequest) {
       const nomeProx   = nomeSimilar(unicos[i].nome, unicos[j].nome)
       const campoComum = (ti && tj && ti === tj) || (ei && ej && ei === ej)
 
-      if (mesmaTel || mesmoEmail || (nomeProx && campoComum)) {
+      // Ignora se já apontam para o mesmo usuario_id (já foram mesclados)
+      const mesmoUsuario = unicos[i].usuario_id && unicos[j].usuario_id
+        && unicos[i].usuario_id === unicos[j].usuario_id
+
+      if (!mesmoUsuario && (mesmaTel || mesmoEmail || (nomeProx && campoComum))) {
         grupo.push(unicos[j])
         agrupado.add(j)
       }
@@ -110,7 +114,7 @@ export async function GET(req: NextRequest) {
     if (grupo.length > 1) {
       agrupado.add(i)
       // Enriquece com dados da conta se existir
-      grupos.push(grupo.map(r => {
+      const enriquecido = grupo.map(r => {
         const conta = (r.email && contasPorEmail.get(normEmail(r.email)))
                    || (r.telefone && contasPorTel.get(normTel(r.telefone)))
                    || null
@@ -122,7 +126,12 @@ export async function GET(req: NextRequest) {
           usuario_id:       conta?.id        || r.usuario_id || null,
           senha_temporaria: conta?.senha_temporaria || false,
         } as Registro & { chave_pix: string | null; senha_temporaria: boolean }
-      }))
+      })
+
+      // Ignora grupos onde todos os membros já apontam para o mesmo usuario_id
+      const ids = enriquecido.map(r => r.usuario_id).filter(Boolean)
+      const todosIguais = ids.length === enriquecido.length && new Set(ids).size === 1
+      if (!todosIguais) grupos.push(enriquecido)
     }
   }
 
