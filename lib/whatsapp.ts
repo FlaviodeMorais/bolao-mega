@@ -346,7 +346,7 @@ export async function notificarResultadoGrupo(
 ) {
   if (ganhou && premioTotal != null) {
     await toGroup(
-      `🏆 *GANHAMOS! MEGA-SENA #${concurso}*\n\n` +
+      `🏆 *GANHAMOS! #${concurso}*\n\n` +
       `O bolão *${bolaoNome}* acertou! 🎉\n\n` +
       `💰 Prêmio total: *R$ ${premioTotal.toFixed(2).replace('.', ',')}*\n` +
       `🎟️ Valor por cota: *R$ ${(valorPorCota || 0).toFixed(2).replace('.', ',')}*\n\n` +
@@ -424,7 +424,7 @@ export async function notificarAcertosIndividual(
   })
 
   return toNumber(telefone,
-    `${emoji} *RESULTADO — Mega-Sena #${concurso}*\n\n` +
+    `${emoji} *RESULTADO — ${(loteria || 'Mega-Sena').toUpperCase()} #${concurso}*\n\n` +
     `Olá *${nome}*! Aqui está seu resultado do bolão *${bolaoNome}*:\n\n` +
     `🔢 *Dezenas sorteadas:*\n${dezStr}\n\n` +
     `🎟️ *${fmtCotas(cotas)}*\n\n` +
@@ -434,6 +434,46 @@ export async function notificarAcertosIndividual(
       : `_Não foi dessa vez — mas a sorte está chegando! 💪🍀_`),
     loteria
   )
+}
+
+export async function notificarPagamentoEsporte(
+  nome: string,
+  bolaoNome: string,
+  total: number,
+  telefone?: string,
+  participanteId?: string,
+  palpites?: { timeCasa: string; timeFora: string; golCasa: number; golFora: number }[],
+  loteria?: string
+) {
+  const app = await getAppSettings()
+  const linkComprovante = participanteId ? `\n🔗 Comprovante: ${app.url}/p/${participanteId}` : ''
+
+  let palp = ''
+  if (palpites && palpites.length > 0) {
+    palp = `\n⚽ *Seus palpites:*\n` +
+      palpites.map(p => `  ${p.timeCasa} ${p.golCasa} × ${p.golFora} ${p.timeFora}`).join('\n') + '\n'
+  }
+
+  const msgGrupo =
+    `💚 *PAGAMENTO CONFIRMADO*\n\n` +
+    `👤 *${nome}*\n` +
+    `🏆 ${bolaoNome}\n` +
+    `💰 R$ ${total.toFixed(2).replace('.', ',')}\n\n` +
+    `_Boa sorte! 🍀_`
+
+  await toGroup(msgGrupo, loteria)
+
+  if (telefone) {
+    await toNumber(telefone,
+      `✅ *Seu pagamento foi confirmado!*\n\n` +
+      `🏆 *${bolaoNome}*\n` +
+      `💰 R$ ${total.toFixed(2).replace('.', ',')}` +
+      palp +
+      linkComprovante + `\n\n` +
+      `Boa sorte! 🍀`,
+      loteria
+    )
+  }
 }
 
 export async function buscarGrupos(): Promise<{ id: string; name: string }[]> {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { buscarPagamentoMP } from '@/lib/mercadopago'
-import { notificarPagamento } from '@/lib/whatsapp'
+import { notificarPagamento, notificarPagamentoEsporte } from '@/lib/whatsapp'
 import { enviarConfirmacaoPagamento } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
@@ -43,15 +43,31 @@ export async function POST(req: NextRequest) {
       } else {
         const { data: partesEsp } = await supabase
           .from('participantes_esporte')
-          .select('id')
+          .select('id, nome, total, telefone, bolao_slug')
           .eq('mp_payment_id', paymentId)
 
         if (partesEsp && partesEsp.length > 0) {
-          await supabase
-            .from('participantes_esporte')
-            .update({ status: 'pago' })
-            .eq('mp_payment_id', paymentId)
+          await supabase.from('participantes_esporte').update({ status: 'pago' }).eq('mp_payment_id', paymentId)
           await supabase.from('pedidos').update({ status: 'pago' }).eq('mp_payment_id', paymentId)
+
+          for (const part of partesEsp) {
+            const [{ data: bolaoEsp }, { data: palpites }] = await Promise.all([
+              supabase.from('boloes_esporte').select('nome').eq('slug', part.bolao_slug || '').single(),
+              supabase.from('palpites')
+                .select('gol_casa, gol_fora, jogos(time_casa, time_fora)')
+                .eq('participante_id', part.id),
+            ])
+            const palp = (palpites || []).map((p: { gol_casa: number; gol_fora: number; jogos: { time_casa: string; time_fora: string } | null }) => ({
+              timeCasa: p.jogos?.time_casa || '?',
+              timeFora: p.jogos?.time_fora || '?',
+              golCasa:  p.gol_casa,
+              golFora:  p.gol_fora,
+            }))
+            notificarPagamentoEsporte(
+              part.nome, bolaoEsp?.nome || 'Bolão Esportivo',
+              Number(part.total), part.telefone, part.id, palp
+            ).catch(() => {})
+          }
           return NextResponse.json({ ok: true })
         }
 
