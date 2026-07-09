@@ -28,6 +28,7 @@ export default function UsuariosTab() {
   const [form, setForm]           = useState<EditForm>({ nome: '', email: '', telefone: '', chave_pix: '' })
   const [salvando, setSalvando]   = useState(false)
   const [resetando, setResetando] = useState<string | null>(null)
+  const [migrando, setMigrando]   = useState(false)
   const [msg, setMsg]             = useState('')
 
   async function carregar() {
@@ -80,9 +81,25 @@ export default function UsuariosTab() {
     } else flash('❌ ' + res.error)
   }
 
+  async function migrar() {
+    if (!confirm('Isso criará contas para todos os participantes com e-mail que ainda não têm conta, e enviará a senha temporária por e-mail. Continuar?')) return
+    setMigrando(true)
+    const res = await fetch('/api/admin/migrar-usuarios', { method: 'POST' }).then(r => r.json())
+    setMigrando(false)
+    if (!res.ok) { flash('❌ ' + res.error); return }
+    const { criados, ignorados, erros } = res
+    const partes = [
+      criados.length  ? `✅ ${criados.length} conta(s) criada(s)` : '',
+      ignorados.length ? `⏭️ ${ignorados.length} já existia(m)` : '',
+      erros.length    ? `❌ ${erros.length} erro(s): ${erros.slice(0,3).join(', ')}` : '',
+    ].filter(Boolean).join(' · ')
+    flash(partes || '✅ Nenhum participante novo para migrar')
+    if (criados.length) carregar()
+  }
+
   function flash(text: string) {
     setMsg(text)
-    setTimeout(() => setMsg(''), 5000)
+    setTimeout(() => setMsg(''), 8000)
   }
 
   const filtrados = usuarios.filter(u =>
@@ -110,6 +127,14 @@ export default function UsuariosTab() {
         />
         <button type="button" className={styles.settingsSave} onClick={carregar} style={{ whiteSpace: 'nowrap' }}>
           🔄 Atualizar
+        </button>
+        <button
+          type="button"
+          onClick={migrar}
+          disabled={migrando}
+          style={{ whiteSpace: 'nowrap', fontSize: 13, padding: '8px 14px', borderRadius: 8, border: '1px solid #a5b4fc', background: '#eef2ff', cursor: migrando ? 'not-allowed' : 'pointer', color: '#3730a3', fontWeight: 600 }}
+        >
+          {migrando ? '⏳ Migrando…' : '🔁 Migrar participantes'}
         </button>
       </div>
 
