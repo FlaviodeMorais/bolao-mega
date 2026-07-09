@@ -60,7 +60,6 @@ export async function GET(req: NextRequest) {
     const tel   = (p.telefone || '').replace(/\D/g, '')
     const vars  = telVariants(tel)
 
-    // Considera já visto se qualquer variante do telefone ou o e-mail já foi processado
     const jaVisto = (email && visto.has(email)) || vars.some(v => visto.has(v))
     if (!email && !tel) continue
     if (jaVisto) continue
@@ -68,6 +67,7 @@ export async function GET(req: NextRequest) {
     if (email) visto.add(email)
     vars.forEach(v => visto.add(v))
 
+    const chave = email || tel
     const conta = (email && contasPorEmail.get(email)) || (tel && contasPorTel.get(tel)) || null
 
     resultado.push({
