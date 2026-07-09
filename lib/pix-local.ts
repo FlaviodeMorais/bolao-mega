@@ -25,7 +25,7 @@ export async function gerarPixLocal(valor: number, txId: string): Promise<string
   const mai = emv('00', 'br.gov.bcb.pix') + emv('01', chave)
   const adf = emv('05', txId.substring(0, 25))
   let p =
-    emv('00', '01') + emv('01', '12') + emv('26', mai) +
+    emv('00', '01') + emv('26', mai) +
     emv('52', '0000') + emv('53', '986') +
     emv('54', valor.toFixed(2)) + emv('58', 'BR') +
     emv('59', nome.substring(0, 25)) + emv('60', cidade.substring(0, 15)) +
