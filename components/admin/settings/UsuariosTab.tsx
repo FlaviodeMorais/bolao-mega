@@ -70,6 +70,14 @@ export default function UsuariosTab() {
     carregar()
   }
 
+  async function excluirConta(p: Participante) {
+    if (!p.usuario_id) return
+    if (!confirm(`Excluir a conta de ${p.nome}? O histórico de participações é mantido, mas o acesso ao app será removido.`)) return
+    const res = await fetch(`/api/admin/usuarios/${p.usuario_id}`, { method: 'DELETE' }).then(r => r.json())
+    if (res.ok) { flash('✅ Conta excluída'); carregar() }
+    else flash('❌ ' + res.error)
+  }
+
   async function salvarEdicao(p: Participante) {
     if (!p.usuario_id) return
     setSalvando(true)
@@ -204,7 +212,17 @@ export default function UsuariosTab() {
                   }}
                   style={{ fontSize: 12, padding: '5px 10px', borderRadius: 6, border: '1px solid #cbd5e1', background: editando === p.chave ? '#e8f5e9' : '#f8fafc', cursor: 'pointer', color: '#334155' }}
                 >
-                  ✏️
+                  ✏️ Editar
+                </button>
+              )}
+              {/* Excluir conta */}
+              {p.usuario_id && (
+                <button
+                  type="button"
+                  onClick={() => excluirConta(p)}
+                  style={{ fontSize: 12, padding: '5px 10px', borderRadius: 6, border: '1px solid #fca5a5', background: '#fff5f5', cursor: 'pointer', color: '#dc2626' }}
+                >
+                  🗑️ Excluir conta
                 </button>
               )}
             </div>
