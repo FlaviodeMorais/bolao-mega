@@ -13,8 +13,8 @@ export async function GET(req: NextRequest) {
 
   // Busca todos os participantes (loteria + esporte)
   const [{ data: partLot }, { data: partEsp }] = await Promise.all([
-    supabase.from('participantes').select('nome, email, telefone, usuario_id, criado_em'),
-    supabase.from('participantes_esporte').select('nome, email, telefone, usuario_id, criado_em'),
+    supabase.from('participantes').select('nome, email, telefone, usuario_id, created_at'),
+    supabase.from('participantes_esporte').select('nome, email, telefone, usuario_id, created_at'),
   ])
 
   // Busca todas as contas existentes
@@ -30,11 +30,11 @@ export async function GET(req: NextRequest) {
   )
 
   // Deduplica participantes por chave (email ou telefone normalizado)
-  type ParticipanteRow = { nome: string; email: string | null; telefone: string; usuario_id: string | null; criado_em: string }
+  type ParticipanteRow = { nome: string; email: string | null; telefone: string; usuario_id: string | null; created_at: string }
   const todos: ParticipanteRow[] = [
     ...((partLot || []) as ParticipanteRow[]),
     ...((partEsp || []) as ParticipanteRow[]),
-  ].sort((a, b) => (b.criado_em || '').localeCompare(a.criado_em || ''))
+  ].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
 
   const visto = new Set<string>()
   const resultado: {
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
     tem_conta: boolean
     usuario_id: string | null
     senha_temporaria: boolean
-    criado_em: string | null
+    created_at: string | null
   }[] = []
 
   for (const p of todos) {
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
       tem_conta:        !!conta,
       usuario_id:       conta?.id    || null,
       senha_temporaria: conta?.senha_temporaria || false,
-      criado_em:        conta?.criado_em || p.criado_em || null,
+      created_at:       conta?.criado_em || p.created_at || null,
     })
   }
 

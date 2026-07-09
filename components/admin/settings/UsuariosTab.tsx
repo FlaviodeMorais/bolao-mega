@@ -124,7 +124,9 @@ export default function UsuariosTab() {
       </div>
 
       {msg && (
-        <div style={{ padding: '10px 14px', borderRadius: 8, background: msg.startsWith('✅') ? '#e8f5e9' : '#fce4ec', color: msg.startsWith('✅') ? '#1b5e20' : '#b71c1c', fontSize: 13 }}>
+        <div style={{ padding: '10px 14px', borderRadius: 8, fontSize: 13,
+          background: msg.startsWith('❌') ? '#fce4ec' : '#e8f5e9',
+          color:      msg.startsWith('❌') ? '#b71c1c' : '#1b5e20' }}>
           {msg}
         </div>
       )}
