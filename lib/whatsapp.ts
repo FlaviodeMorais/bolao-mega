@@ -1,5 +1,12 @@
 import { getWhatsappSettings, getAppSettings } from './settings'
 
+// Formata lista de cotas de forma clara: "1 cota (nº 4)" ou "3 cotas (nº 2, 5, 8)"
+function fmtCotas(cotas: (string | number)[]): string {
+  const nums = cotas.join(', ')
+  const qtd  = cotas.length
+  return qtd === 1 ? `1 cota (nº ${nums})` : `${qtd} cotas (nº ${nums})`
+}
+
 const WHAPI_URL = 'https://gate.whapi.cloud'
 const ZAPSTER_URL = 'https://api.zapsterapi.com/v1'
 
@@ -219,7 +226,7 @@ export async function notificarInscricao(nome: string, cotas: string[], concurso
   await toGroup(
     `✅ *NOVA INSCRIÇÃO*\n\n` +
     `👤 *${nome}*\n` +
-    `🎟️ Cotas: ${cotas.join(', ')}\n` +
+    `🎟️ ${fmtCotas(cotas)}\n` +
     `💰 Total: R$ ${total.toFixed(2).replace('.', ',')}\n` +
     `🎯 Concurso: #${concurso}\n\n` +
     `_Aguardando pagamento via PIX_`,
@@ -250,7 +257,7 @@ export async function enviarComprovante(
     `💰 *R$ ${valor}*\n\n` +
     `● *De*\n` +
     `  *${nome}*\n` +
-    `  🎟️ Cotas adquiridas: *${cotas.join(', ')}*\n\n` +
+    `  🎟️ ${fmtCotas(cotas)}\n\n` +
     `● *Para*\n` +
     `  *${bolaoNome}*\n` +
     `  Administrador do Bolão\n` +
@@ -278,7 +285,7 @@ export async function notificarPagamento(
   const msg =
     `💚 *PAGAMENTO CONFIRMADO*\n\n` +
     `👤 *${nome}*\n` +
-    `🎟️ Cotas: ${cotas.join(', ')}\n` +
+    `🎟️ ${fmtCotas(cotas)}\n` +
     `💰 R$ ${total.toFixed(2).replace('.', ',')}\n` +
     `🎯 Concurso: #${concurso}\n\n` +
     `_Boa sorte! 🍀_`
@@ -288,7 +295,7 @@ export async function notificarPagamento(
   if (telefone) {
     await toNumber(telefone,
       `✅ *Seu pagamento foi confirmado!*\n\n` +
-      `🎟️ Cotas: *${cotas.join(', ')}*\n` +
+      `🎟️ *${fmtCotas(cotas)}*\n` +
       `💰 R$ ${total.toFixed(2).replace('.', ',')}\n` +
       `🎯 Concurso: #${concurso}` +
       linkComprovante + `\n\n` +
@@ -328,7 +335,7 @@ export async function notificarPremioIndividual(
   await toNumber(telefone,
     `🏆 *PARABÉNS! VOCÊ GANHOU!*\n\n` +
     `*${nome}*, o bolão *${bolaoNome}* ganhou no concurso #${concurso}!\n\n` +
-    `🎟️ Suas cotas: ${cotas.join(', ')}\n` +
+    `🎟️ ${fmtCotas(cotas)}\n` +
     `💰 *Seu prêmio: R$ ${valor}*\n\n` +
     `_O administrador entrará em contato para efetuar o pagamento. Parabéns! 🍀🎉_`,
     loteria
@@ -367,7 +374,7 @@ export async function notificarAcrescimo(
     `O bolão *${bolaoNome}* foi encerrado com cotas não vendidas.\n` +
     `O saldo restante foi dividido entre os participantes.\n\n` +
     `💰 *Seu complemento: R$ ${valor}*\n` +
-    `🎟️ Suas cotas: ${cotas.join(', ')}\n\n` +
+    `🎟️ ${fmtCotas(cotas)}\n\n` +
     `📋 *Código PIX para pagamento:*\n${pixCode}\n\n` +
     `_Copie e pague no seu banco ou app. Boa sorte! 🍀_`,
     loteria
@@ -375,7 +382,7 @@ export async function notificarAcrescimo(
   await toGroup(
     `🔔 *ENCERRAMENTO — ${bolaoNome}*\n\n` +
     `Acréscimo de *R$ ${valor}* enviado para *${nome}* via WhatsApp.\n` +
-    `🎟️ Cotas: ${cotas.join(', ')}`,
+    `🎟️ ${fmtCotas(cotas)}`,
     loteria
   )
 }
@@ -422,7 +429,7 @@ export async function notificarAcertosIndividual(
     `${emoji} *RESULTADO — Mega-Sena #${concurso}*\n\n` +
     `Olá *${nome}*! Aqui está seu resultado do bolão *${bolaoNome}*:\n\n` +
     `🔢 *Dezenas sorteadas:*\n${dezStr}\n\n` +
-    `🎟️ *Suas cotas: ${cotas.join(', ')}*\n\n` +
+    `🎟️ *${fmtCotas(cotas)}*\n\n` +
     `📊 *Seus jogos:*\n${linhasApostas}\n` +
     (maxAcertos >= 4
       ? `🏆 *Parabéns! Você acertou ${maxAcertos} dezenas!*\n\n_O administrador entrará em contato com detalhes do prêmio._`
