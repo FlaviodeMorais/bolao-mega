@@ -7,16 +7,18 @@ interface Props {
   onAutenticado: (usuario: { id: string; nome: string; email: string; telefone: string }) => void
 }
 
-type Aba = 'entrar' | 'cadastrar'
+type Aba = 'entrar' | 'cadastrar' | 'esqueci'
 
 export default function UserAuthModal({ onClose, onAutenticado }: Props) {
   const [aba, setAba] = useState<Aba>('entrar')
   const [nome, setNome] = useState('')
+  const [identificador, setIdentificador] = useState('')  // e-mail ou celular no login
   const [email, setEmail] = useState('')
   const [telefone, setTelefone] = useState('')
   const [chavePix, setChavePix] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
+  const [sucesso, setSucesso] = useState('')
   const [loading, setLoading] = useState(false)
   const [aceitouTermos, setAceitouTermos] = useState(false)
   const [showTermos, setShowTermos] = useState(false)
@@ -34,8 +36,22 @@ export default function UserAuthModal({ onClose, onAutenticado }: Props) {
 
   async function submeter() {
     setErro('')
+    setSucesso('')
+
+    if (aba === 'esqueci') {
+      if (!identificador.trim()) { setErro('Informe seu e-mail ou celular'); return }
+      setLoading(true)
+      await fetch('/api/usuario/esqueci-senha', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identificador }),
+      })
+      setLoading(false)
+      setSucesso('Se o cadastro existir, você receberá a nova senha por WhatsApp e/ou e-mail.')
+      return
+    }
+
     if (aba === 'entrar') {
-      if (!email || !senha) { setErro('Preencha e-mail e senha'); return }
+      if (!identificador || !senha) { setErro('Preencha e-mail/celular e senha'); return }
     } else {
       if (!nome.trim()) { setErro('Preencha seu nome'); return }
       if (!email) { setErro('Preencha seu e-mail'); return }
@@ -48,7 +64,9 @@ export default function UserAuthModal({ onClose, onAutenticado }: Props) {
     setLoading(true)
     try {
       const url = aba === 'entrar' ? '/api/usuario/login' : '/api/usuario/cadastro'
-      const body = aba === 'entrar' ? { email, senha } : { nome, email, telefone, chavePix, senha, aceitouTermos }
+      const body = aba === 'entrar'
+        ? { identificador, senha }
+        : { nome, email, telefone, chavePix, senha, aceitouTermos }
       const res = await fetch(url, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -120,43 +138,83 @@ export default function UserAuthModal({ onClose, onAutenticado }: Props) {
           {aba === 'entrar' ? 'Entrar' : 'Criar conta'}
         </div>
 
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-          <button type="button" onClick={() => { setAba('entrar'); setErro('') }}
-            style={{
-              flex: 1, padding: '10px 0', borderRadius: 100, cursor: 'pointer',
-              fontSize: 13, fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif",
-              border: '1px solid ' + (aba === 'entrar' ? '#00AB67' : 'rgba(255,255,255,0.1)'),
-              background: aba === 'entrar' ? 'rgba(0,171,103,0.15)' : 'transparent',
-              color: aba === 'entrar' ? '#00AB67' : 'rgba(255,255,255,0.4)',
-            }}>Entrar</button>
-          <button type="button" onClick={() => { setAba('cadastrar'); setErro('') }}
-            style={{
-              flex: 1, padding: '10px 0', borderRadius: 100, cursor: 'pointer',
-              fontSize: 13, fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif",
-              border: '1px solid ' + (aba === 'cadastrar' ? '#00AB67' : 'rgba(255,255,255,0.1)'),
-              background: aba === 'cadastrar' ? 'rgba(0,171,103,0.15)' : 'transparent',
-              color: aba === 'cadastrar' ? '#00AB67' : 'rgba(255,255,255,0.4)',
-            }}>Cadastrar</button>
-        </div>
+        {aba !== 'esqueci' && (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+            <button type="button" onClick={() => { setAba('entrar'); setErro(''); setSucesso('') }}
+              style={{
+                flex: 1, padding: '10px 0', borderRadius: 100, cursor: 'pointer',
+                fontSize: 13, fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif",
+                border: '1px solid ' + (aba === 'entrar' ? '#00AB67' : 'rgba(255,255,255,0.1)'),
+                background: aba === 'entrar' ? 'rgba(0,171,103,0.15)' : 'transparent',
+                color: aba === 'entrar' ? '#00AB67' : 'rgba(255,255,255,0.4)',
+              }}>Entrar</button>
+            <button type="button" onClick={() => { setAba('cadastrar'); setErro(''); setSucesso('') }}
+              style={{
+                flex: 1, padding: '10px 0', borderRadius: 100, cursor: 'pointer',
+                fontSize: 13, fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif",
+                border: '1px solid ' + (aba === 'cadastrar' ? '#00AB67' : 'rgba(255,255,255,0.1)'),
+                background: aba === 'cadastrar' ? 'rgba(0,171,103,0.15)' : 'transparent',
+                color: aba === 'cadastrar' ? '#00AB67' : 'rgba(255,255,255,0.4)',
+              }}>Cadastrar</button>
+          </div>
+        )}
 
-        {aba === 'cadastrar' && (
+        {aba === 'esqueci' && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', marginBottom: 16, textAlign: 'left', lineHeight: 1.5 }}>
+              Informe seu e-mail ou número de celular cadastrado. Enviaremos uma nova senha temporária por WhatsApp e/ou e-mail.
+            </div>
+            <input
+              type="text"
+              placeholder="E-mail ou celular (com DDD)"
+              value={identificador}
+              onChange={e => setIdentificador(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && submeter()}
+              style={inputStyle}
+              autoFocus
+            />
+          </div>
+        )}
+
+        {aba === 'entrar' && (<>
+          <input
+            type="text"
+            placeholder="E-mail ou celular (com DDD)"
+            value={identificador}
+            onChange={e => setIdentificador(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && submeter()}
+            style={inputStyle}
+            autoFocus
+          />
+          <input type="password" placeholder="Senha" value={senha}
+            onChange={e => setSenha(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && submeter()}
+            style={inputStyle} />
+          <div style={{ textAlign: 'right', marginTop: -6, marginBottom: 10 }}>
+            <button
+              type="button"
+              onClick={() => { setAba('esqueci'); setErro(''); setSucesso('') }}
+              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
+              Esqueci minha senha
+            </button>
+          </div>
+        </>)}
+
+        {aba === 'cadastrar' && (<>
           <input type="text" placeholder="Nome completo" value={nome}
             onChange={e => setNome(e.target.value)} style={inputStyle} autoFocus />
-        )}
-        <input type="email" placeholder="E-mail" value={email}
-          onChange={e => setEmail(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && aba === 'entrar' && submeter()}
-          style={inputStyle} autoFocus={aba === 'entrar'} />
-        {aba === 'cadastrar' && (<>
+          <input type="email" placeholder="E-mail" value={email}
+            onChange={e => setEmail(e.target.value)} style={inputStyle} />
           <input type="tel" placeholder="Telefone (com DDD)" value={telefone}
             onChange={e => setTelefone(e.target.value)} style={inputStyle} />
           <input type="text" placeholder="Chave PIX (CPF, e-mail, telefone ou aleatória)" value={chavePix}
             onChange={e => setChavePix(e.target.value)} style={inputStyle} autoComplete="off" />
+          <input type="password" placeholder="Senha" value={senha}
+            onChange={e => setSenha(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && submeter()}
+            style={inputStyle} />
         </>)}
-        <input type="password" placeholder="Senha" value={senha}
-          onChange={e => setSenha(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && submeter()}
-          style={inputStyle} />
 
         {aba === 'cadastrar' && (
           <label style={{
@@ -181,22 +239,39 @@ export default function UserAuthModal({ onClose, onAutenticado }: Props) {
             {erro}
           </div>
         )}
+        {sucesso && (
+          <div style={{ fontSize: 12, color: '#34d399', marginBottom: 10, fontWeight: 500, lineHeight: 1.5 }}>
+            {sucesso}
+          </div>
+        )}
 
-        <button
-          onClick={submeter}
-          disabled={loading}
-          style={{
-            width: '100%', padding: 15, marginTop: 4,
-            background: 'linear-gradient(135deg, #00AB67 0%, #009B63 100%)',
-            color: '#fff', border: 'none', borderRadius: 100,
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-            fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
-            opacity: loading ? 0.7 : 1,
-            transition: 'all .2s',
-          }}
-        >
-          {loading ? 'Aguarde...' : aba === 'entrar' ? 'Entrar' : 'Criar conta'}
-        </button>
+        {!sucesso && (
+          <button
+            onClick={submeter}
+            disabled={loading}
+            style={{
+              width: '100%', padding: 15, marginTop: 4,
+              background: 'linear-gradient(135deg, #00AB67 0%, #009B63 100%)',
+              color: '#fff', border: 'none', borderRadius: 100,
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1,
+              transition: 'all .2s',
+            }}
+          >
+            {loading ? 'Aguarde...' : aba === 'entrar' ? 'Entrar' : aba === 'esqueci' ? 'Enviar nova senha' : 'Criar conta'}
+          </button>
+        )}
+
+        {aba === 'esqueci' && (
+          <button
+            type="button"
+            onClick={() => { setAba('entrar'); setErro(''); setSucesso(''); setIdentificador('') }}
+            style={{ marginTop: 12, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 13, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", width: '100%' }}
+          >
+            ← Voltar para login
+          </button>
+        )}
       </div>
 
       {showTermos && (
