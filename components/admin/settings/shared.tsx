@@ -26,7 +26,7 @@ export interface SettingsData {
   google?: Record<string, string>
 }
 
-export type Aba = 'app' | 'home' | 'pagamento' | 'whatsapp' | 'email' | 'esporte' | 'loteria' | 'cli' | 'google'
+export type Aba = 'app' | 'home' | 'pagamento' | 'whatsapp' | 'email' | 'esporte' | 'loteria' | 'cli' | 'google' | 'usuarios'
 
 export const ABAS: { id: Aba; label: string; icon: string }[] = [
   { id: 'app',      label: 'App',       icon: '🏠' },
@@ -38,6 +38,7 @@ export const ABAS: { id: Aba; label: string; icon: string }[] = [
   { id: 'esporte',  label: 'Esporte',   icon: '⚽' },
   { id: 'cli',      label: 'CLIs',      icon: '⌨️' },
   { id: 'google',   label: 'Google',    icon: '📊' },
+  { id: 'usuarios', label: 'Usuários',  icon: '👥' },
 ]
 
 export const LOTERIAS_LABELS: Record<string, string> = {

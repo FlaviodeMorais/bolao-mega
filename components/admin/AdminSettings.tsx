@@ -12,6 +12,7 @@ import LoteriaTab from './settings/LoteriaTab'
 import EsporteTab from './settings/EsporteTab'
 import CliTab from './settings/CliTab'
 import GoogleTab from './settings/GoogleTab'
+import UsuariosTab from './settings/UsuariosTab'
 
 /**
  * Painel de configurações white-label do admin, organizado em abas.
@@ -151,6 +152,7 @@ export default function AdminSettings() {
             {aba === 'esporte'  && <EsporteTab esporte={esporte} updateNs={updateNs} salvar={salvar} saving={saving} />}
             {aba === 'cli'      && <CliTab cli={cli} updateNs={updateNs} salvar={salvar} saving={saving} />}
             {aba === 'google'   && <GoogleTab google={googleCfg} updateNs={updateNs} salvar={salvar} saving={saving} />}
+            {aba === 'usuarios' && <UsuariosTab />}
           </div>
 
           {msg && <div className={styles.settingsMsg}>{msg}</div>}
