@@ -36,6 +36,7 @@ export default function UsuariosTab() {
   const [loading, setLoading]       = useState(true)
   const [busca, setBusca]           = useState('')
   const [migrando, setMigrando]     = useState(false)
+  const [vinculando, setVinculando] = useState(false)
   const [enviando, setEnviando]     = useState<string | null>(null)
   const [editando, setEditando]     = useState<string | null>(null)
   const [form, setForm]             = useState({ nome: '', email: '', telefone: '', chave_pix: '' })
@@ -104,6 +105,15 @@ export default function UsuariosTab() {
   function flash(text: string) {
     setMsg(text)
     setTimeout(() => setMsg(''), 8000)
+  }
+
+  async function vincular() {
+    setVinculando(true)
+    const res = await fetch('/api/admin/vincular-participantes', { method: 'POST' }).then(r => r.json())
+    setVinculando(false)
+    if (!res.ok) { flash('❌ ' + res.error); return }
+    flash(res.msg || `✅ ${res.vinculados} vinculado(s)`)
+    carregar()
   }
 
   async function migrar() {
@@ -190,8 +200,18 @@ export default function UsuariosTab() {
         </button>
         <button
           type="button"
+          onClick={vincular}
+          disabled={vinculando}
+          title="Vincula participantes existentes a contas de usuário pelo e-mail ou telefone"
+          style={{ whiteSpace: 'nowrap', fontSize: 13, padding: '8px 14px', borderRadius: 8, border: '1px solid #6ee7b7', background: '#ecfdf5', cursor: vinculando ? 'not-allowed' : 'pointer', color: '#065f46', fontWeight: 600 }}
+        >
+          {vinculando ? '⏳ Vinculando…' : '🔗 Vincular participantes'}
+        </button>
+        <button
+          type="button"
           onClick={migrar}
           disabled={migrando}
+          title="Cria contas para participantes que ainda não têm, enviando senha temporária"
           style={{ whiteSpace: 'nowrap', fontSize: 13, padding: '8px 14px', borderRadius: 8, border: '1px solid #a5b4fc', background: '#eef2ff', cursor: migrando ? 'not-allowed' : 'pointer', color: '#3730a3', fontWeight: 600 }}
         >
           {migrando ? '⏳ Migrando…' : '🔁 Migrar todos'}

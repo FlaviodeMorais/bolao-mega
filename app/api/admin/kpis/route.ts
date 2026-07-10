@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
 
   const { data: rows } = await supabase
     .from('participantes')
-    .select('id, nome, telefone, cotas, total, status, concurso, bolao_slug, created_at')
+    .select('id, nome, telefone, cotas, total, status, concurso, bolao_slug, created_at, usuario_id')
     .order('created_at', { ascending: true })
 
   if (!rows) return NextResponse.json({ error: 'Sem dados' }, { status: 500 })
@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
 
   // ── Visão geral ─────────────────────────────────────────────────────────
   const totalArrecadado  = pagos.reduce((s, r) => s + Number(r.total), 0)
-  const totalParticipantes = new Set(rows.map(r => r.telefone || r.nome)).size
+  // Prefere usuario_id para identificar o participante; cai no telefone ou nome como fallback
+  const totalParticipantes = new Set(rows.map(r => r.usuario_id || r.telefone || r.nome)).size
   const ticketMedio      = pagos.length ? totalArrecadado / pagos.length : 0
   const taxaConversao    = rows.length ? (pagos.length / rows.length) * 100 : 0
   const totalCotas       = pagos.reduce((s, r) => s + (r.cotas?.length || 0), 0)
@@ -42,7 +43,7 @@ export async function GET(req: NextRequest) {
     totalGasto: number; totalCotas: number; pagamentos: number
   }>()
   for (const r of rows) {
-    const key = r.telefone || r.nome
+    const key = r.usuario_id || r.telefone || r.nome
     if (!partMap.has(key)) {
       partMap.set(key, { nome: r.nome, telefone: r.telefone, concursos: new Set(), totalGasto: 0, totalCotas: 0, pagamentos: 0 })
     }
@@ -80,8 +81,8 @@ export async function GET(req: NextRequest) {
   const concursosOrdenados = Array.from(concursoMap.keys()).sort((a, b) => a - b)
   let retencaoCount = 0; let retencaoTotal = 0
   for (let i = 1; i < concursosOrdenados.length; i++) {
-    const prev = new Set(rows.filter(r => Number(r.concurso) === concursosOrdenados[i-1]).map(r => r.telefone || r.nome))
-    const curr = rows.filter(r => Number(r.concurso) === concursosOrdenados[i]).map(r => r.telefone || r.nome)
+    const prev = new Set(rows.filter(r => Number(r.concurso) === concursosOrdenados[i-1]).map(r => r.usuario_id || r.telefone || r.nome))
+    const curr = rows.filter(r => Number(r.concurso) === concursosOrdenados[i]).map(r => r.usuario_id || r.telefone || r.nome)
     retencaoTotal += prev.size
     retencaoCount += curr.filter(n => prev.has(n)).length
   }
