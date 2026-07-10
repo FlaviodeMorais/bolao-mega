@@ -58,12 +58,15 @@ export async function POST(req: NextRequest) {
             .select('gol_casa, gol_fora, jogos(time_casa, time_fora)')
             .eq('participante_id', part.id),
         ])
-        const palp = (palpites || []).map((p: { gol_casa: number; gol_fora: number; jogos: { time_casa: string; time_fora: string }[] | null }) => ({
-          timeCasa: p.jogos?.[0]?.time_casa || '?',
-          timeFora: p.jogos?.[0]?.time_fora || '?',
-          golCasa:  p.gol_casa,
-          golFora:  p.gol_fora,
-        }))
+        const palp = (palpites || []).map((p: { gol_casa: number; gol_fora: number; jogos: unknown }) => {
+          const j = (Array.isArray(p.jogos) ? p.jogos[0] : p.jogos) as { time_casa?: string; time_fora?: string } | null
+          return {
+            timeCasa: j?.time_casa || '?',
+            timeFora: j?.time_fora || '?',
+            golCasa:  p.gol_casa,
+            golFora:  p.gol_fora,
+          }
+        })
         notificarPagamentoEsporte(
           part.nome, bolaoEsp?.nome || 'Bolão Esportivo',
           Number(part.total), part.telefone, part.id, palp
