@@ -138,10 +138,12 @@ async function buscarDezenasCaixa(
           faixa: r.descricaoFaixa, ganhadores: r.numerodeGanhadores, valor: r.valorPremio,
         }))
         // Salva no cache config para próximas chamadas
-        await supabase.from('config').upsert(
-          { key: cacheKey, value: JSON.stringify(d), updated_at: new Date().toISOString() },
-          { onConflict: 'key' }
-        ).catch(() => {})
+        try {
+          await supabase.from('config').upsert(
+            { key: cacheKey, value: JSON.stringify(d), updated_at: new Date().toISOString() },
+            { onConflict: 'key' }
+          )
+        } catch { /* ignore cache write errors */ }
         return { dezenas, premiosCaixa }
       }
     }

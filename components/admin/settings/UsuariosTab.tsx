@@ -298,7 +298,7 @@ export default function UsuariosTab() {
                         </label>
                         <input
                           type="text"
-                          value={(mergeForm as Record<string, string>)[campo]}
+                          value={(mergeForm as unknown as Record<string, string>)[campo]}
                           onChange={e => setMergeForm(f => f ? { ...f, [campo]: e.target.value } : f)}
                           className={styles.settingsInput}
                           style={{ fontSize: 12 }}
@@ -306,7 +306,7 @@ export default function UsuariosTab() {
                         {/* Botões de copiar valor de cada registro */}
                         <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
                           {grupo.map((r, ri) => {
-                            const val = String((r as Record<string, unknown>)[campo] || '')
+                            const val = String((r as unknown as Record<string, unknown>)[campo] || '')
                             return val ? (
                               <button key={ri} type="button"
                                 onClick={() => setMergeForm(f => f ? { ...f, [campo]: val } : f)}

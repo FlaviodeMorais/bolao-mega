@@ -82,5 +82,30 @@ export async function GET(req: NextRequest) {
     })
   }
 
+  // Inclui contas da tabela usuarios que não apareceram via participantes
+  const idsVistos = new Set(resultado.filter(r => r.usuario_id).map(r => r.usuario_id))
+  for (const u of usuarios || []) {
+    if (idsVistos.has(u.id)) continue
+    const email = u.email?.toLowerCase() || ''
+    const tel   = (u.telefone || '').replace(/\D/g, '')
+    const vars  = telVariants(tel)
+    const jaVisto = (email && visto.has(email)) || vars.some(v => visto.has(v))
+    if (jaVisto) continue
+
+    if (email) visto.add(email)
+    vars.forEach(v => visto.add(v))
+
+    resultado.push({
+      chave:            email || tel || u.id,
+      nome:             u.nome,
+      email:            u.email || null,
+      telefone:         u.telefone || '',
+      tem_conta:        true,
+      usuario_id:       u.id,
+      senha_temporaria: u.senha_temporaria || false,
+      created_at:       u.criado_em || null,
+    })
+  }
+
   return NextResponse.json({ usuarios: resultado })
 }
