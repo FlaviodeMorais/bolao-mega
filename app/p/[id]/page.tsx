@@ -105,7 +105,7 @@ export default async function ComprovantePage({ params }: Props) {
             <div className="comprov-share-section">
               <div className="comprov-share-label">⚽ Seus palpites</div>
               {p.palpites.map((palp, i) => {
-                const jogo = palp.jogos as { time_casa: string; time_fora: string; data_jogo: string | null; fase: string; encerrado: boolean; gol_casa: number | null; gol_fora: number | null } | null
+                const jogo = palp.jogos as unknown as { time_casa: string; time_fora: string; data_jogo: string | null; fase: string; encerrado: boolean; gol_casa: number | null; gol_fora: number | null } | null
                 const acertou = jogo?.encerrado && jogo?.gol_casa === palp.gol_casa && jogo?.gol_fora === palp.gol_fora
                 return (
                   <div key={i} style={{

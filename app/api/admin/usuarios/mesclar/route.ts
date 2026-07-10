@@ -64,17 +64,17 @@ export async function POST(req: NextRequest) {
 
   // Atualiza participantes pelo e-mail/telefone (cobre quem não tinha usuario_id e variantes de formato)
   for (const p of [...perdedores, vencedor]) {
-    const conditions: Promise<unknown>[] = []
+    const conditions: PromiseLike<unknown>[] = []
     if (p.email) {
       conditions.push(
-        supabase.from('participantes').update({ usuario_id: vencedorId }).eq('email', p.email).is('usuario_id', null),
-        supabase.from('participantes_esporte').update({ usuario_id: vencedorId }).eq('email', p.email).is('usuario_id', null),
+        supabase.from('participantes').update({ usuario_id: vencedorId }).eq('email', p.email).is('usuario_id', null).then(),
+        supabase.from('participantes_esporte').update({ usuario_id: vencedorId }).eq('email', p.email).is('usuario_id', null).then(),
       )
     }
     for (const v of telVariants(p.telefone || '')) {
       conditions.push(
-        supabase.from('participantes').update({ usuario_id: vencedorId }).eq('telefone', v).is('usuario_id', null),
-        supabase.from('participantes_esporte').update({ usuario_id: vencedorId }).eq('telefone', v).is('usuario_id', null),
+        supabase.from('participantes').update({ usuario_id: vencedorId }).eq('telefone', v).is('usuario_id', null).then(),
+        supabase.from('participantes_esporte').update({ usuario_id: vencedorId }).eq('telefone', v).is('usuario_id', null).then(),
       )
     }
     await Promise.all(conditions)
