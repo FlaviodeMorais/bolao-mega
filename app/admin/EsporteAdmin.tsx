@@ -705,8 +705,34 @@ export default function EsporteAdmin() {
                               setParticipantes(pd.participantes || [])
                             }}
                           >
-                            💵 Confirmar pagamento
+                            💵 Confirmar
                           </button>
+                        )}
+                        {p.status === 'pago' && (
+                          <>
+                            <button type="button" className={styles.btnAcao}
+                              title="Enviar comprovante por WhatsApp"
+                              onClick={async () => {
+                                const res = await fetch('/api/admin/comprovante', {
+                                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ participante_id: p.id, bolao_slug: bolaoSel!.slug, tipo: 'esporte', via: ['wa'] }),
+                                }).then(r => r.json())
+                                alert(res.ok ? '✅ Enviado por WhatsApp' : '❌ ' + res.error)
+                              }}
+                              style={{ fontSize: 13, padding: '4px 10px' }}
+                            >💬</button>
+                            <button type="button" className={styles.btnAcao}
+                              title="Enviar comprovante por e-mail"
+                              onClick={async () => {
+                                const res = await fetch('/api/admin/comprovante', {
+                                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ participante_id: p.id, bolao_slug: bolaoSel!.slug, tipo: 'esporte', via: ['email'] }),
+                                }).then(r => r.json())
+                                alert(res.ok ? '✅ E-mail enviado' : '❌ ' + res.error)
+                              }}
+                              style={{ fontSize: 13, padding: '4px 10px' }}
+                            >📧</button>
+                          </>
                         )}
                         <button type="button" className={styles.btnExcluir}
                           title="Excluir participante"

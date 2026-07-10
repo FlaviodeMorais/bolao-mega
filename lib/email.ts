@@ -361,6 +361,39 @@ export async function enviarAcertosIndividual(
   return send(email, `${maxAcertos >= 4 ? '🏆' : '🎲'} Seu resultado — Concurso #${concurso}`, layout('Acertos do Bolão', corpo, loteriaLabel))
 }
 
+// ── Confirmação de pagamento — bolão esportivo ────────────────────────────────
+export async function enviarConfirmacaoPagamentoEsporte(
+  email: string, nome: string, bolaoNome: string, total: number,
+  palpites: { timeCasa: string; timeFora: string; golCasa: number; golFora: number }[],
+  participanteId?: string,
+) {
+  const valorStr = `R$ ${total.toFixed(2).replace('.', ',')}`
+  const linkComp = participanteId ? `<div style="text-align:center;margin-top:20px;"><a href="${APP_URL}/p/${participanteId}" style="display:inline-block;background:#00AB67;color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-weight:700;font-size:14px;">🔗 Ver comprovante</a></div>` : ''
+  const palp = palpites.length > 0
+    ? `<div style="margin-top:20px;">
+        <div style="color:#64748B;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">⚽ Seus palpites</div>
+        ${palpites.map(p => `<div style="background:#F8FAFB;border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;margin-bottom:6px;font-size:14px;color:#0D1B2A;">
+          <strong>${p.timeCasa}</strong> ${p.golCasa} × ${p.golFora} <strong>${p.timeFora}</strong>
+        </div>`).join('')}
+      </div>`
+    : ''
+  const corpo = `
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="display:inline-flex;align-items:center;justify-content:center;background:#F0FDF4;border-radius:50%;width:64px;height:64px;font-size:28px;">✅</div>
+      <h2 style="color:#0D1B2A;margin:12px 0 4px;font-size:20px;">Pagamento confirmado!</h2>
+      <p style="color:#64748B;margin:0;font-size:14px;">Você está participando do ${bolaoNome}. Boa sorte!</p>
+    </div>
+    ${statCard([
+      { label: 'Participante', valor: nome },
+      { label: 'Bolão', valor: bolaoNome },
+      { label: 'Valor pago', valor: valorStr, cor: '#00AB67' },
+    ])}
+    ${palp}
+    ${linkComp}
+  `
+  return send(email, `✅ Comprovante de participação — ${bolaoNome}`, layout('Comprovante de Participação', corpo, 'Esporte'))
+}
+
 // ── Premiação do bolão esportivo (encerramento) ────────────────────────────────
 export async function enviarPremioEsporte(
   email: string, nome: string, bolaoNome: string,
