@@ -5,19 +5,30 @@ export async function GET(req: NextRequest) {
   const paymentId = req.nextUrl.searchParams.get('paymentId')
   if (!paymentId) return NextResponse.json({ status: 'unknown' })
 
-  const { data: participanteMega } = await supabase
+  // Verifica o pedido primeiro (cobre carrinho com múltiplos itens)
+  const { data: pedido } = await supabase
+    .from('pedidos')
+    .select('id, status, mp_payment_id')
+    .eq('mp_payment_id', paymentId)
+    .maybeSingle()
+
+  if (pedido) return NextResponse.json(pedido)
+
+  // Fallback: participante loteria
+  const { data: partes } = await supabase
     .from('participantes')
     .select('id, nome, cotas, total, status, mp_payment_id, created_at')
     .eq('mp_payment_id', paymentId)
-    .single()
+    .limit(1)
 
-  if (participanteMega) return NextResponse.json(participanteMega)
+  if (partes?.[0]) return NextResponse.json(partes[0])
 
-  const { data: participanteEsporte } = await supabase
+  // Fallback: participante esporte
+  const { data: partesEsp } = await supabase
     .from('participantes_esporte')
     .select('id, nome, total, status, mp_payment_id, created_at')
     .eq('mp_payment_id', paymentId)
-    .single()
+    .limit(1)
 
-  return NextResponse.json(participanteEsporte || { status: 'unknown' })
+  return NextResponse.json(partesEsp?.[0] || { status: 'unknown' })
 }
