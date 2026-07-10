@@ -17,6 +17,18 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(APP_URL),
     title:       `${app.grupo_nome} – ${app.nome}`,
     description: app.descricao,
+    openGraph: {
+      title:       `${app.grupo_nome} – ${app.nome}`,
+      description: app.descricao,
+      siteName:    app.nome,
+      images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
+    },
+    twitter: {
+      card:        'summary_large_image',
+      title:       `${app.grupo_nome} – ${app.nome}`,
+      description: app.descricao,
+      images:      ['/opengraph-image'],
+    },
     appleWebApp: {
       capable:         true,
       statusBarStyle:  'black-translucent',
