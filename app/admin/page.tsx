@@ -230,16 +230,9 @@ export default function AdminPage() {
       body: JSON.stringify({ id: b.id }),
     }).then(r => r.json())
     if (res.error) {
-      // Bolão tem histórico de participantes - exclusão nunca apaga esses dados.
-      // Oferece "Cancelar" (ativo=false) como alternativa: some da home, mas
-      // mantém comprovantes, KPIs e o painel de Histórico intactos.
-      const usarCancelar = confirm(`❌ ${res.error}\n\nDeseja ocultar o bolão agora (Cancelar) em vez de excluir?`)
-      if (usarCancelar) {
-        await fetch('/api/boloes', {
-          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: b.id, ativo: false }),
-        })
-        await carregarBoloes()
+      const arquivar = confirm(`❌ ${res.error}\n\nDeseja arquivar o bolão? Ele sairá da lista, mas todos os dados e KPIs são mantidos.`)
+      if (arquivar) {
+        await boloes.arquivarBolao(b.id)
         if (bolaoAtual?.id === b.id) fecharBolao()
       }
       return
