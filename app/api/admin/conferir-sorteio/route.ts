@@ -3,7 +3,6 @@ import { supabase } from '@/lib/supabase'
 import { verificarToken } from '@/lib/auth'
 import { getLoteria, type LoteriaId } from '@/lib/loterias'
 
-// Config de classificação por loteria
 interface LoteriaCheck { dezenasDrawn: number; minAcertos: number; maxNum: number }
 const CHECK: Record<LoteriaId, LoteriaCheck> = {
   mega:      { dezenasDrawn: 6,  minAcertos: 4,  maxNum: 60 },
@@ -29,15 +28,13 @@ function classificar(bets: number[][], dezenasSorteadas: number[], dezenasPorApo
     }
   }
 
-  const ganhou = premiadas.length > 0
+  const ganhou      = premiadas.length > 0
   const maiorAcertos = premiadas.length ? Math.max(...premiadas.map(p => p.acertos)) : 0
-  const maior = ganhou ? premioLabel(loteria, maiorAcertos) : null
-
-  // resumo compat. com o frontend (mantém senas/quinas/quadras para mega)
+  const maior       = ganhou ? premioLabel(loteria, maiorAcertos) : null
   const resumo = {
     senas:   loteria === 'mega'      ? premiadas.filter(p => p.acertos === 6).length  : 0,
-    quinas:  loteria !== 'lotofacil' ? premiadas.filter(p => p.acertos === (loteria === 'mega' ? 5 : 5)).length : premiadas.filter(p => p.acertos >= 14).length,
-    quadras: premiadas.filter(p => p.acertos === (loteria === 'mega' ? 4 : 4)).length,
+    quinas:  loteria !== 'lotofacil' ? premiadas.filter(p => p.acertos === 5).length  : premiadas.filter(p => p.acertos >= 14).length,
+    quadras: premiadas.filter(p => p.acertos === 4).length,
     total:   premiadas.length,
   }
 
@@ -55,7 +52,105 @@ async function salvarStatus(bolaoId: string, payload: object) {
   await supabase.from('boloes').update({ resultado_conferencia: payload }).eq('id', bolaoId)
 }
 
-// GET — busca resultado na Caixa e confere automaticamente
+// Busca dezenas do concurso em múltiplas fontes para contornar o bloqueio de
+// IP da Vercel na API oficial da Caixa. Ordem de preferência:
+//   1. Cache config (populado pelo cron após cada sorteio)
+//   2. loteria_historico (populado pelo cron de histórico)
+//   3. API alternativa (loteriascaixa-api.herokuapp.com — não bloqueia datacenter)
+//   4. API oficial Caixa com headers de browser (último recurso)
+async function buscarDezenasCaixa(
+  loteria: LoteriaId, concurso: string
+): Promise<{ dezenas: number[]; premiosCaixa: { faixa: string; ganhadores: number; valor: number }[] }> {
+  const cfg = getLoteria(loteria)
+  const chk = CHECK[loteria]
+  // Slug da loteria no cache config usa o mesmo padrão do apiSlug mas sem hífen
+  const cacheKey = `resultado_${cfg.apiSlug.replace(/-/g, '')}`
+
+  // 1. Cache do config (escrito pelo cron após sorteio)
+  try {
+    const { data: cached } = await supabase
+      .from('config').select('value').eq('key', cacheKey).single()
+    if (cached?.value) {
+      const d = JSON.parse(cached.value)
+      if (String(d.numero) === String(concurso)) {
+        const dezenas = (d.listaDezenas || []).map(Number).filter((n: number) => n >= 1 && n <= chk.maxNum)
+        if (dezenas.length === chk.dezenasDrawn) {
+          const premiosCaixa = (d.listaRateioPremio || []).map((r: { descricaoFaixa?: string; faixa?: string; numerodeGanhadores?: number; ganhadores?: number; valorPremio?: number; valor?: number }) => ({
+            faixa:     r.descricaoFaixa || r.faixa || '',
+            ganhadores: r.numerodeGanhadores ?? r.ganhadores ?? 0,
+            valor:      r.valorPremio ?? r.valor ?? 0,
+          }))
+          return { dezenas, premiosCaixa }
+        }
+      }
+    }
+  } catch { /* continua */ }
+
+  // 2. loteria_historico
+  try {
+    const { data: hist } = await supabase
+      .from('loteria_historico')
+      .select('dezenas').eq('loteria', loteria).eq('concurso', Number(concurso)).single()
+    if (hist?.dezenas?.length === chk.dezenasDrawn) {
+      return { dezenas: hist.dezenas.map(Number), premiosCaixa: [] }
+    }
+  } catch { /* continua */ }
+
+  // 3. API alternativa (não bloqueia Vercel)
+  const ALT_BASE = 'https://loteriascaixa-api.herokuapp.com/api'
+  try {
+    const res = await fetch(`${ALT_BASE}/${cfg.apiSlug}/${concurso}`, { cache: 'no-store', signal: AbortSignal.timeout(6000) })
+    if (res.ok) {
+      const d = await res.json()
+      const dezenas = ((d.dezenas || d.listaDezenas) as (string | number)[])
+        .map(Number).filter((n: number) => n >= 1 && n <= chk.maxNum)
+      if (dezenas.length === chk.dezenasDrawn) {
+        const premiosCaixa = (d.premiacoes || []).map((r: { descricao?: string; ganhadores?: number; valorPremio?: number }) => ({
+          faixa: r.descricao || '', ganhadores: r.ganhadores ?? 0, valor: r.valorPremio ?? 0,
+        }))
+        return { dezenas, premiosCaixa }
+      }
+    }
+  } catch { /* continua */ }
+
+  // 4. API oficial Caixa (com headers de browser para tentar contornar bloqueio)
+  try {
+    const res = await fetch(
+      `https://servicebus2.caixa.gov.br/portaldeloterias/api/${cfg.apiSlug}/${concurso}`,
+      {
+        cache: 'no-store',
+        signal: AbortSignal.timeout(8000),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+          'Referer':    'https://loterias.caixa.gov.br/',
+          'Origin':     'https://loterias.caixa.gov.br',
+          'Accept':     'application/json, text/plain, */*',
+          'Accept-Language': 'pt-BR,pt;q=0.9',
+        },
+      }
+    )
+    if (res.ok) {
+      const d = await res.json()
+      const dezenas = (d.listaDezenas || d.dezenasSorteadasOrdemSorteio || d.dezenas || [])
+        .map((n: string | number) => Number(n)).filter((n: number) => n >= 1 && n <= chk.maxNum)
+      if (dezenas.length === chk.dezenasDrawn) {
+        const premiosCaixa = (d.listaRateioPremio || []).map((r: { descricaoFaixa: string; numerodeGanhadores: number; valorPremio: number }) => ({
+          faixa: r.descricaoFaixa, ganhadores: r.numerodeGanhadores, valor: r.valorPremio,
+        }))
+        // Salva no cache config para próximas chamadas
+        await supabase.from('config').upsert(
+          { key: cacheKey, value: JSON.stringify(d), updated_at: new Date().toISOString() },
+          { onConflict: 'key' }
+        ).catch(() => {})
+        return { dezenas, premiosCaixa }
+      }
+    }
+  } catch { /* esgotou todas as fontes */ }
+
+  return { dezenas: [], premiosCaixa: [] }
+}
+
+// GET — busca resultado e confere automaticamente
 export async function GET(req: NextRequest) {
   const token = req.cookies.get('admin_token')?.value
   if (!token || !(await verificarToken(token))) {
@@ -73,62 +168,25 @@ export async function GET(req: NextRequest) {
     .from('boloes').select('apostas_data, dezenas, loteria, resultado_conferencia').eq('id', bolaoId).single()
 
   if (!bolao?.apostas_data?.bets?.length) {
-    return NextResponse.json({
-      error: 'Nenhuma aposta carregada. Use "📊 Carregar Apostas" primeiro.',
-    }, { status: 422 })
+    return NextResponse.json({ error: 'Nenhuma aposta carregada. Use "📊 Carregar Apostas" primeiro.' }, { status: 422 })
   }
 
+  const loteria = (bolao.loteria || 'mega') as LoteriaId
+
+  // Se já conferido e tem premios_caixa, retorna o salvo direto
   const rc = bolao.resultado_conferencia as { status?: string; premios_caixa?: unknown[] } | null
   if (rc?.status === 'ganhamos' || rc?.status === 'nao_premiada') {
-    // Se já tem premios_caixa, retorna direto
-    if (rc.premios_caixa) {
-      return NextResponse.json({ ok: true, total_apostas: bolao.apostas_data.bets.length, ...rc })
-    }
-    // Se não tem premios_caixa, busca na Caixa e atualiza o salvo
-    const lotRc = (bolao.loteria || 'mega') as LoteriaId
-    const cfgRc = getLoteria(lotRc)
-    let premiosRc: { faixa: string; ganhadores: number; valor: number }[] = []
-    try {
-      const r = await fetch(`https://servicebus2.caixa.gov.br/portaldeloterias/api/${cfgRc.apiSlug}/${concurso}`, { cache: 'no-store' })
-      if (r.ok) {
-        const d = await r.json()
-        if (Array.isArray(d.listaRateioPremio)) {
-          premiosRc = d.listaRateioPremio.map((r: { descricaoFaixa: string; numerodeGanhadores: number; valorPremio: number }) => ({
-            faixa: r.descricaoFaixa, ganhadores: r.numerodeGanhadores, valor: r.valorPremio,
-          }))
-        }
-      }
-    } catch { /* ignora */ }
-    const updated = { ...rc, premios_caixa: premiosRc }
+    if (rc.premios_caixa) return NextResponse.json({ ok: true, total_apostas: bolao.apostas_data.bets.length, ...rc })
+    // Tinha resultado mas sem premios_caixa — busca e complementa
+    const { premiosCaixa } = await buscarDezenasCaixa(loteria, concurso)
+    const updated = { ...rc, premios_caixa: premiosCaixa }
     await salvarStatus(bolaoId, updated)
     return NextResponse.json({ ok: true, total_apostas: bolao.apostas_data.bets.length, ...updated })
   }
 
-  const loteria = (bolao.loteria || 'mega') as LoteriaId
-  const cfg     = getLoteria(loteria)
-  const chk     = CHECK[loteria]
-
-  let dezenas: number[] = []
-  let premiosCaixa: { faixa: string; ganhadores: number; valor: number }[] = []
-  try {
-    const r = await fetch(
-      `https://servicebus2.caixa.gov.br/portaldeloterias/api/${cfg.apiSlug}/${concurso}`,
-      { cache: 'no-store' }
-    )
-    if (r.ok) {
-      const d = await r.json()
-      dezenas = (d.listaDezenas || d.dezenasSorteadasOrdemSorteio || d.dezenas || [])
-        .map((n: string | number) => Number(n))
-        .filter((n: number) => n >= 1 && n <= chk.maxNum)
-      if (Array.isArray(d.listaRateioPremio)) {
-        premiosCaixa = d.listaRateioPremio.map((r: { descricaoFaixa: string; numerodeGanhadores: number; valorPremio: number }) => ({
-          faixa: r.descricaoFaixa,
-          ganhadores: r.numerodeGanhadores,
-          valor: r.valorPremio,
-        }))
-      }
-    }
-  } catch { /* ignora */ }
+  const { dezenas, premiosCaixa } = await buscarDezenasCaixa(loteria, concurso)
+  const chk = CHECK[loteria]
+  const cfg = getLoteria(loteria)
 
   if (dezenas.length === chk.dezenasDrawn) {
     const dezenasPorAposta = bolao.apostas_data.dezenas_por_aposta ?? bolao.dezenas ?? cfg.minDezenas
@@ -138,10 +196,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: true, dezenas_sorteadas: dezenas, dezenas_por_aposta: dezenasPorAposta, total_apostas: bolao.apostas_data.bets.length, premios_caixa: premiosCaixa, ...resultado })
   }
 
-  // Não apurado ainda
+  // Não apurado ainda — tenta buscar data do próximo concurso
   let dataProximo = ''
   try {
-    const r = await fetch(`https://servicebus2.caixa.gov.br/portaldeloterias/api/${cfg.apiSlug}`, { cache: 'no-store' })
+    const r = await fetch(`https://servicebus2.caixa.gov.br/portaldeloterias/api/${cfg.apiSlug}`, {
+      cache: 'no-store', signal: AbortSignal.timeout(5000),
+      headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://loterias.caixa.gov.br/', 'Origin': 'https://loterias.caixa.gov.br' },
+    })
     if (r.ok) { const d = await r.json(); dataProximo = d.dataProximoConcurso || '' }
   } catch { /* não crítico */ }
 
@@ -149,7 +210,7 @@ export async function GET(req: NextRequest) {
   await salvarStatus(bolaoId, payload)
   return NextResponse.json({
     ok: true, status: 'nao_apurado', data_encerramento: dataProximo,
-    message: `Concurso #${concurso} (${cfg.label}) ainda não apurado. Tente novamente após o sorteio.`,
+    message: `Concurso #${concurso} (${cfg.label}) ainda não apurado ou indisponível. Tente novamente em alguns minutos ou insira as dezenas manualmente.`,
   })
 }
 
