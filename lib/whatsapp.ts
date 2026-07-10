@@ -5,6 +5,14 @@ function fmtCotas(cotas: (string | number)[]): string {
   return cotas.length === 1 ? '1 cota' : `${cotas.length} cotas`
 }
 
+const LOTERIA_LABEL: Record<string, string> = {
+  mega:      'Mega-Sena',
+  megasena:  'Mega-Sena',
+  quina:     'Quina',
+  lotofacil: 'Lotofácil',
+  lotomania: 'Lotomania',
+}
+
 const WHAPI_URL = 'https://gate.whapi.cloud'
 const ZAPSTER_URL = 'https://api.zapsterapi.com/v1'
 
@@ -221,9 +229,11 @@ export async function enviarQRCodePIX(
 }
 
 export async function notificarInscricao(nome: string, cotas: string[], concurso: number, total: number, loteria?: string) {
+  const loteriaLine = loteria ? `🍀 ${LOTERIA_LABEL[loteria] || loteria}\n` : ''
   await toGroup(
     `✅ *NOVA INSCRIÇÃO*\n\n` +
     `👤 *${nome}*\n` +
+    loteriaLine +
     `🎟️ ${fmtCotas(cotas)}\n` +
     `💰 Total: R$ ${total.toFixed(2).replace('.', ',')}\n` +
     `🎯 Concurso: #${concurso}\n\n` +
@@ -280,9 +290,11 @@ export async function notificarPagamento(
 ) {
   const app = await getAppSettings()
   const linkComprovante = participanteId ? `\n🔗 Comprovante: ${app.url}/p/${participanteId}` : ''
+  const loteriaLine = loteria ? `🍀 ${LOTERIA_LABEL[loteria] || loteria}\n` : ''
   const msg =
     `💚 *PAGAMENTO CONFIRMADO*\n\n` +
     `👤 *${nome}*\n` +
+    loteriaLine +
     `🎟️ ${fmtCotas(cotas)}\n` +
     `💰 R$ ${total.toFixed(2).replace('.', ',')}\n` +
     `🎯 Concurso: #${concurso}\n\n` +
@@ -293,6 +305,7 @@ export async function notificarPagamento(
   if (telefone) {
     await toNumber(telefone,
       `✅ *Seu pagamento foi confirmado!*\n\n` +
+      loteriaLine +
       `🎟️ *${fmtCotas(cotas)}*\n` +
       `💰 R$ ${total.toFixed(2).replace('.', ',')}\n` +
       `🎯 Concurso: #${concurso}` +
@@ -466,7 +479,7 @@ export async function notificarPagamentoEsporte(
   if (telefone) {
     await toNumber(telefone,
       `✅ *Seu pagamento foi confirmado!*\n\n` +
-      `🏆 *${bolaoNome}*\n` +
+      `🏆 ${bolaoNome}\n` +
       `💰 R$ ${total.toFixed(2).replace('.', ',')}` +
       palp +
       linkComprovante + `\n\n` +
