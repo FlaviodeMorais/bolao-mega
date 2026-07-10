@@ -327,6 +327,7 @@ export default function AdminPage() {
     onAcertosDestinatarioChange: setAcertosDestinatario,
     onToggleEncerrar: () => { setShowEncerrar(v => !v); setEncerrarOk(null) },
     onEncerrarBolao: encerrarBolao,
+    onArquivarBolao: () => boloes.arquivarBolao(boloes.bolaoAtual!.id),
     onToggleConfig: () => setShowConfig(v => !v),
     onEditDezenasChange: setEditDezenas,
     onEditApostasChange: setEditApostas,

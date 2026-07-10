@@ -4,7 +4,7 @@ import { getLoteria, type LoteriaId } from '@/lib/loterias'
 export interface Bolao {
   id: string; nome: string; slug: string; valor_cota: number
   total_cotas: number; ativo: boolean; dezenas: number; num_apostas: number
-  taxa_admin: number; encerrado: boolean; loteria: LoteriaId
+  taxa_admin: number; encerrado: boolean; arquivado: boolean; loteria: LoteriaId
   apostas_data?: { bets: number[][]; total_apostas: number } | null
   resultado_conferencia?: Record<string, unknown> | null
 }
@@ -86,6 +86,23 @@ export function useBoloes() {
     setNovoNome(''); setNovoSlug(''); setShowCreate(false); setCriarErro('')
   }
 
+  async function arquivarBolao(bolaoId: string) {
+    await fetch('/api/boloes', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: bolaoId, arquivado: true }),
+    })
+    setBolaoAtual(null)
+    await carregarBoloes()
+  }
+
+  async function desarquivarBolao(bolaoId: string) {
+    await fetch('/api/boloes', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: bolaoId, arquivado: false }),
+    })
+    await carregarBoloes()
+  }
+
   async function salvarConfig(bolaoId: string) {
     setSalvando(true)
     const cfg   = getLoteria(bolaoAtual?.loteria)
@@ -121,5 +138,6 @@ export function useBoloes() {
     setBoloes,
     carregarBoloes, aplicarConfigDoBolao,
     copiarLink, renomearBolao, criarBolao, salvarConfig,
+    arquivarBolao, desarquivarBolao,
   }
 }

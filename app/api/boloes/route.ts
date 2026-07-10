@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verificarToken } from '@/lib/auth'
 
-export async function GET() {
-  const { data } = await supabase
-    .from('boloes')
-    .select('*')
+export async function GET(req: NextRequest) {
+  const todos = req.nextUrl.searchParams.get('todos') === '1'
+  let q = supabase.from('boloes').select('*')
+  if (!todos) q = q.eq('arquivado', false)
+  const { data } = await q
     .order('ativo', { ascending: false })
     .order('criado_em', { ascending: false })
   return NextResponse.json({ boloes: data || [] })
@@ -58,6 +59,7 @@ export async function PATCH(req: NextRequest) {
   if ('ativo'       in body) fields.ativo       = body.ativo
   if ('nome'        in body) fields.nome        = body.nome
   if ('loteria'     in body) fields.loteria     = body.loteria
+  if ('arquivado'   in body) fields.arquivado   = body.arquivado
 
   const { error } = await supabase.from('boloes').update(fields).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

@@ -7,7 +7,7 @@ type Props = Pick<BolaoDetailPanelProps,
   | 'bolao' | 'cotasLivres' | 'pagosLista'
   | 'lembreteMsg' | 'compMsg'
   | 'showEncerrar' | 'encerrando' | 'encerrarOk'
-  | 'onToggleEncerrar' | 'onEncerrarBolao'
+  | 'onToggleEncerrar' | 'onEncerrarBolao' | 'onArquivarBolao'
 >
 
 /** Botão e painel de encerramento do bolão com rateio das cotas restantes. */
@@ -26,8 +26,21 @@ export default function Encerramento(p: Props) {
       {p.compMsg && <div className={styles.lembreteMsg}>{p.compMsg}</div>}
 
       {bolao.encerrado && (
-        <div className={styles.encerradoBanner}>
-          ⛔ Bolão encerrado — complemento de pagamento enviado por e-mail
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div className={styles.encerradoBanner} style={{ flex: 1 }}>
+            ⛔ Bolão encerrado — complemento de pagamento enviado por e-mail
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm('Arquivar este bolão? Ele sairá da lista do admin, mas todos os dados e KPIs são mantidos.')) {
+                p.onArquivarBolao()
+              }
+            }}
+            style={{ whiteSpace: 'nowrap', fontSize: 12, padding: '6px 14px', borderRadius: 8, border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer', color: '#475569', fontWeight: 600 }}
+          >
+            🗄 Arquivar bolão
+          </button>
         </div>
       )}
       {p.encerrarOk && (
