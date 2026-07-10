@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { buscarPagamentoMP } from '@/lib/mercadopago'
 import { notificarPagamento, notificarPagamentoEsporte } from '@/lib/whatsapp'
-import { enviarConfirmacaoPagamento } from '@/lib/email'
+import { enviarConfirmacaoPagamento, enviarConfirmacaoPagamentoEsporte } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,88 +12,90 @@ export async function POST(req: NextRequest) {
     const paymentId = String(body.data?.id)
     const pagamento = await buscarPagamentoMP(paymentId)
 
-    if (pagamento?.status === 'approved') {
-      // Pagamento principal — pode cobrir 1 participante (fluxo antigo, direto)
-      // ou N participantes de bolões diferentes compartilhando o mesmo
-      // mp_payment_id (checkout consolidado do carrinho, Fase 3). Por isso não
-      // usa .single() aqui: precisa iterar todas as linhas pra notificar cada uma.
-      const { data: partes } = await supabase
-        .from('participantes')
-        .select('id, nome, cotas, total, concurso, telefone, email, bolao_slug')
-        .eq('mp_payment_id', paymentId)
+    if (pagamento?.status !== 'approved') return NextResponse.json({ ok: true })
 
-      if (partes && partes.length > 0) {
-        await supabase.from('participantes').update({ status: 'pago' }).eq('mp_payment_id', paymentId)
-        await supabase.from('pedidos').update({ status: 'pago' }).eq('mp_payment_id', paymentId)
+    // Atualiza pedidos (cobre tanto loteria quanto esporte — mesmo mp_payment_id)
+    await supabase.from('pedidos').update({ status: 'pago' }).eq('mp_payment_id', paymentId)
 
-        for (const part of partes) {
-          const { data: bolaoInfo } = await supabase
-            .from('boloes').select('nome, num_apostas, dezenas, loteria').eq('slug', part.bolao_slug || '').single()
+    // ── Participantes de loteria ──────────────────────────────────────────────
+    const { data: partes } = await supabase
+      .from('participantes')
+      .select('id, nome, cotas, total, concurso, telefone, email, bolao_slug')
+      .eq('mp_payment_id', paymentId)
 
-          notificarPagamento(part.nome, part.cotas, part.concurso, Number(part.total), part.telefone, part.id, bolaoInfo?.loteria).catch(() => {})
+    if (partes && partes.length > 0) {
+      await supabase.from('participantes').update({ status: 'pago' }).eq('mp_payment_id', paymentId)
 
-          if (part.email) {
-            enviarConfirmacaoPagamento(
-              part.email, part.nome, part.cotas, Number(part.total),
-              part.concurso, bolaoInfo?.nome || 'Bolão Mega-Sena',
-              bolaoInfo?.num_apostas || 1, bolaoInfo?.dezenas || 6
-            ).catch(() => {})
-          }
-        }
-      } else {
-        const { data: partesEsp } = await supabase
-          .from('participantes_esporte')
-          .select('id, nome, total, telefone, bolao_slug')
-          .eq('mp_payment_id', paymentId)
+      for (const part of partes) {
+        const { data: bolaoInfo } = await supabase
+          .from('boloes').select('nome, num_apostas, dezenas, loteria').eq('slug', part.bolao_slug || '').single()
 
-        if (partesEsp && partesEsp.length > 0) {
-          await supabase.from('participantes_esporte').update({ status: 'pago' }).eq('mp_payment_id', paymentId)
-          await supabase.from('pedidos').update({ status: 'pago' }).eq('mp_payment_id', paymentId)
+        notificarPagamento(part.nome, part.cotas, part.concurso, Number(part.total), part.telefone, part.id, bolaoInfo?.loteria).catch(() => {})
 
-          for (const part of partesEsp) {
-            const [{ data: bolaoEsp }, { data: palpites }] = await Promise.all([
-              supabase.from('boloes_esporte').select('nome').eq('slug', part.bolao_slug || '').single(),
-              supabase.from('palpites')
-                .select('gol_casa, gol_fora, jogos(time_casa, time_fora)')
-                .eq('participante_id', part.id),
-            ])
-            const palp = (palpites || []).map((p: { gol_casa: number; gol_fora: number; jogos: { time_casa: string; time_fora: string } | null }) => ({
-              timeCasa: p.jogos?.time_casa || '?',
-              timeFora: p.jogos?.time_fora || '?',
-              golCasa:  p.gol_casa,
-              golFora:  p.gol_fora,
-            }))
-            notificarPagamentoEsporte(
-              part.nome, bolaoEsp?.nome || 'Bolão Esportivo',
-              Number(part.total), part.telefone, part.id, palp
-            ).catch(() => {})
-          }
-          return NextResponse.json({ ok: true })
-        }
-
-        // Pagamento de acréscimo (sempre individual, não faz parte do carrinho)
-        const { data: partAcr } = await supabase
-          .from('participantes')
-          .select('nome, cotas, acrescimo, concurso, telefone, email')
-          .eq('acrescimo_payment_id', paymentId)
-          .single()
-
-        if (partAcr) {
-          await supabase.from('participantes')
-            .update({ acrescimo_pago: true })
-            .eq('acrescimo_payment_id', paymentId)
-          notificarPagamento(
-            partAcr.nome, partAcr.cotas, partAcr.concurso,
-            Number(partAcr.acrescimo), partAcr.telefone
+        if (part.email) {
+          enviarConfirmacaoPagamento(
+            part.email, part.nome, part.cotas, Number(part.total),
+            part.concurso, bolaoInfo?.nome || 'Bolão', bolaoInfo?.num_apostas || 1, bolaoInfo?.dezenas || 6,
           ).catch(() => {})
         }
+      }
+    }
+
+    // ── Participantes de esporte (sempre verificado — suporta carrinho misto) ─
+    const { data: partesEsp } = await supabase
+      .from('participantes_esporte')
+      .select('id, nome, total, telefone, email, bolao_slug')
+      .eq('mp_payment_id', paymentId)
+
+    if (partesEsp && partesEsp.length > 0) {
+      await supabase.from('participantes_esporte').update({ status: 'pago' }).eq('mp_payment_id', paymentId)
+
+      for (const part of partesEsp) {
+        const [{ data: bolaoEsp }, { data: palpites }] = await Promise.all([
+          supabase.from('boloes_esporte').select('nome').eq('slug', part.bolao_slug || '').single(),
+          supabase.from('palpites')
+            .select('gol_casa, gol_fora, jogos(time_casa, time_fora)')
+            .eq('participante_id', part.id),
+        ])
+        const palp = (palpites || []).map((p: { gol_casa: number; gol_fora: number; jogos: { time_casa: string; time_fora: string } | null }) => ({
+          timeCasa: p.jogos?.time_casa || '?',
+          timeFora: p.jogos?.time_fora || '?',
+          golCasa:  p.gol_casa,
+          golFora:  p.gol_fora,
+        }))
+        const bolaoNome = bolaoEsp?.nome || 'Bolão Esportivo'
+
+        if (part.telefone) {
+          notificarPagamentoEsporte(part.nome, bolaoNome, Number(part.total), part.telefone, part.id, palp).catch(() => {})
+        }
+        if (part.email) {
+          enviarConfirmacaoPagamentoEsporte(part.email, part.nome, bolaoNome, Number(part.total), palp, part.id).catch(() => {})
+        }
+      }
+    }
+
+    // Pagamento de acréscimo (sempre individual, sem pedido associado)
+    if ((!partes || partes.length === 0) && (!partesEsp || partesEsp.length === 0)) {
+      const { data: partAcr } = await supabase
+        .from('participantes')
+        .select('nome, cotas, acrescimo, concurso, telefone, email, bolao_slug')
+        .eq('acrescimo_payment_id', paymentId)
+        .single()
+
+      if (partAcr) {
+        await supabase.from('participantes').update({ acrescimo_pago: true }).eq('acrescimo_payment_id', paymentId)
+        const { data: bolaoInfo } = await supabase
+          .from('boloes').select('loteria').eq('slug', partAcr.bolao_slug || '').single()
+        notificarPagamento(
+          partAcr.nome, partAcr.cotas, partAcr.concurso,
+          Number(partAcr.acrescimo), partAcr.telefone, undefined, bolaoInfo?.loteria,
+        ).catch(() => {})
       }
     }
 
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('[webhook/mercadopago] erro ao processar notificação:', err)
-    // Status != 2xx faz o Mercado Pago reenviar a notificação mais tarde
     return NextResponse.json({ ok: false, error: String(err) }, { status: 500 })
   }
 }
