@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     const senha_hash = await hashSenha(senhaTemp)
 
     const { error } = await supabase.from('usuarios').insert({
-      nome: dados.nome, email, telefone: dados.telefone, senha_hash, senha_temporaria: true,
+      nome: dados.nome.trim().toUpperCase(), email, telefone: dados.telefone, senha_hash, senha_temporaria: true,
     })
     if (error) { erros.push(`${email}: ${error.message}`); continue }
 

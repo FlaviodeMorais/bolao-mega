@@ -23,7 +23,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params
   const body = await req.json()
   const campos: Record<string, string> = {}
-  if (body.nome)      campos.nome      = String(body.nome).trim()
+  if (body.nome)      campos.nome      = String(body.nome).trim().toUpperCase()
   if (body.email)     campos.email     = String(body.email).toLowerCase().trim()
   if (body.telefone)  campos.telefone  = String(body.telefone).replace(/\D/g, '')
   if (body.chave_pix) campos.chave_pix = String(body.chave_pix).trim()

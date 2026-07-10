@@ -29,6 +29,9 @@ interface SorteioInfo {
   dataSomenteData: string
   diaSemana: string
   dezenas: number[]
+  ultimoConcurso: number
+  ganhadores: number | null
+  acumulado: boolean
   corA: string
   corGlow: string
 }
@@ -46,7 +49,7 @@ function premioEmPalavras(val: number): string {
   return `R$${(val / 1e3).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} Mil`
 }
 
-const LOTERIAS_HOME: Omit<SorteioInfo, 'concurso' | 'premio' | 'premioLabel' | 'data' | 'dataSomenteData' | 'diaSemana' | 'dezenas'>[] = [
+const LOTERIAS_HOME: Omit<SorteioInfo, 'concurso' | 'premio' | 'premioLabel' | 'data' | 'dataSomenteData' | 'diaSemana' | 'dezenas' | 'ultimoConcurso' | 'ganhadores' | 'acumulado'>[] = [
   { id: 'mega',      label: 'Mega-Sena',  apiSlug: 'megasena',  corA: '#00AB67', corGlow: 'rgba(0,171,103,0.18)' },
   { id: 'quina',     label: 'Quina',      apiSlug: 'quina',     corA: '#005DA4', corGlow: 'rgba(0,93,164,0.18)'  },
   { id: 'lotofacil', label: 'Lotofácil',  apiSlug: 'lotofacil', corA: '#803594', corGlow: 'rgba(128,53,148,0.18)'},
@@ -148,10 +151,30 @@ function SorteioCard({ s, boloes, host, msgSemBolao }: { s: SorteioInfo; boloes:
         {/* Último resultado */}
         {s.dezenas.length > 0 && (
           <div className={styles.sorteioUltimo}>
-            <div className={styles.sorteioUltimoLabel}>Último resultado</div>
+            <div className={styles.sorteioUltimoLabel}>
+              Último resultado
+              {s.ultimoConcurso > 0 && (
+                <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 600, opacity: 0.6 }}>
+                  concurso #{s.ultimoConcurso}
+                </span>
+              )}
+            </div>
             <div className={styles.sorteioNumeros} style={{ color: s.corA }}>
               {s.dezenas.map(n => String(n).padStart(2, '0')).join('  ')}
             </div>
+            {s.ganhadores !== null && (
+              <div style={{ marginTop: 6, fontSize: 12, fontWeight: 600,
+                color: s.acumulado ? '#60a5fa' : s.corA,
+                opacity: 0.9 }}>
+                {s.acumulado
+                  ? '🔥 Acumulou — nenhum ganhador'
+                  : s.ganhadores === 0
+                    ? '🔥 Acumulou — nenhum ganhador'
+                    : s.ganhadores === 1
+                      ? `🏆 1 ganhador`
+                      : `🏆 ${s.ganhadores} ganhadores`}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -451,7 +474,10 @@ export default function Home() {
           data: dataStr,
           dataSomenteData,
           diaSemana,
-          dezenas: (d?.listaDezenas || []).map(Number),
+          dezenas:         (d?.listaDezenas || []).map(Number),
+          ultimoConcurso:  d?.numero || 0,
+          ganhadores:      d?.listaRateioPremio?.[0]?.numeroDeGanhadores ?? null,
+          acumulado:       d?.acumulado ?? false,
         })
       })
       setSorteios(lista)

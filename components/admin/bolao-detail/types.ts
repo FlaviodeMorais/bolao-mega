@@ -7,7 +7,7 @@ export interface Participante {
 export interface Bolao {
   id: string; nome: string; slug: string; valor_cota: number
   total_cotas: number; dezenas: number; num_apostas: number
-  taxa_admin: number; encerrado: boolean; loteria?: string
+  taxa_admin: number; encerrado: boolean; arquivado: boolean; loteria?: string
   apostas_data?: { bets: number[][]; total_apostas: number } | null
   resultado_conferencia?: Record<string, unknown> | null
 }
@@ -111,9 +111,10 @@ export interface BolaoDetailPanelProps {
   acertosDestinatario: string
   onAcertosDestinatarioChange: (v: string) => void
 
-  // Callbacks — encerramento
+  // Callbacks — encerramento / arquivamento
   onToggleEncerrar: () => void
   onEncerrarBolao: () => void
+  onArquivarBolao: () => void
 
   // Callbacks — config
   onToggleConfig: () => void
