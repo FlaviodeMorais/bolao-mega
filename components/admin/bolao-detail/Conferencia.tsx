@@ -55,7 +55,7 @@ export default function Conferencia(p: Props) {
               </div>
             </div>
           )}
-          {p.conferirResult?.premios_caixa && p.conferirResult.premios_caixa.length > 0 && (() => {
+          {p.conferirResult?.premios_caixa && p.conferirResult.premios_caixa.some(f => f.faixa?.trim()) && (() => {
             // Normaliza nomes de faixas para comparação entre nossos labels e os da Caixa
             const normFaixa = (f: string) => {
               const s = f.toLowerCase().trim()
@@ -99,7 +99,7 @@ export default function Conferencia(p: Props) {
                 </>
               )}
               <div className={styles.premiosCaixaGrid}>
-                {p.conferirResult!.premios_caixa!.map(f => (
+                {p.conferirResult!.premios_caixa!.filter(f => f.faixa?.trim()).map(f => (
                   <div key={f.faixa} className={styles.premioFaixaRow}>
                     <span className={styles.premioFaixaNome}>{f.faixa}</span>
                     {f.valor > 0 ? (

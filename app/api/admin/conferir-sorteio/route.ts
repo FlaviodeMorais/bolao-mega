@@ -105,9 +105,11 @@ async function buscarDezenasCaixa(
       const dezenas = ((d.dezenas || d.listaDezenas) as (string | number)[])
         .map(Number).filter((n: number) => n >= 1 && n <= chk.maxNum)
       if (dezenas.length === chk.dezenasDrawn) {
-        const premiosCaixa = (d.premiacoes || []).map((r: { descricao?: string; ganhadores?: number; valorPremio?: number }) => ({
-          faixa: r.descricao || '', ganhadores: r.ganhadores ?? 0, valor: r.valorPremio ?? 0,
-        }))
+        const premiosCaixa = (d.premiacoes || d.listaRateioPremio || []).map((r: Record<string, unknown>) => ({
+          faixa:      String(r.descricao || r.descricaoFaixa || r.faixa || r.nome || ''),
+          ganhadores: Number(r.ganhadores ?? r.numerodeGanhadores ?? 0),
+          valor:      Number(r.valorPremio ?? r.valor ?? 0),
+        })).filter((f: { faixa: string }) => f.faixa)
         return { dezenas, premiosCaixa }
       }
     }
