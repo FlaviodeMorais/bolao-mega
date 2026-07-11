@@ -1,34 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { buscarPagamentoMP } from '@/lib/mercadopago'
+import { confirmarPagamento } from '@/lib/confirmar-pagamento'
 
 export async function GET(req: NextRequest) {
   const paymentId = req.nextUrl.searchParams.get('paymentId')
   if (!paymentId) return NextResponse.json({ status: 'unknown' })
 
-  // Verifica o pedido primeiro (cobre carrinho com múltiplos itens)
+  // Consulta o MP diretamente — fonte de verdade
+  try {
+    const mp = await buscarPagamentoMP(paymentId)
+    if (mp?.status === 'approved') {
+      // Confirma no banco e notifica (idempotente — não renotifica se já estiver pago)
+      await confirmarPagamento(paymentId)
+      return NextResponse.json({ status: 'approved' })
+    }
+    if (mp?.status) {
+      return NextResponse.json({ status: mp.status })
+    }
+  } catch { /* MP indisponível — cai no fallback do banco */ }
+
+  // Fallback: lê o banco (MP token não configurado ou erro de rede)
   const { data: pedido } = await supabase
-    .from('pedidos')
-    .select('id, status, mp_payment_id')
-    .eq('mp_payment_id', paymentId)
-    .maybeSingle()
+    .from('pedidos').select('status').eq('mp_payment_id', paymentId).maybeSingle()
+  if (pedido) return NextResponse.json({ status: pedido.status })
 
-  if (pedido) return NextResponse.json(pedido)
-
-  // Fallback: participante loteria
   const { data: partes } = await supabase
-    .from('participantes')
-    .select('id, nome, cotas, total, status, mp_payment_id, created_at')
-    .eq('mp_payment_id', paymentId)
-    .limit(1)
+    .from('participantes').select('status').eq('mp_payment_id', paymentId).limit(1)
+  if (partes?.[0]) return NextResponse.json({ status: partes[0].status })
 
-  if (partes?.[0]) return NextResponse.json(partes[0])
-
-  // Fallback: participante esporte
   const { data: partesEsp } = await supabase
-    .from('participantes_esporte')
-    .select('id, nome, total, status, mp_payment_id, created_at')
-    .eq('mp_payment_id', paymentId)
-    .limit(1)
+    .from('participantes_esporte').select('status').eq('mp_payment_id', paymentId).limit(1)
 
-  return NextResponse.json(partesEsp?.[0] || { status: 'unknown' })
+  return NextResponse.json({ status: partesEsp?.[0]?.status ?? 'unknown' })
 }
